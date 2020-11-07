@@ -5,7 +5,7 @@
  * @authorLink https://github.com/Japanese-Schoolgirl
  * @donate https://donate.qiwi.com/payin/Schoolgirl
  * @website https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures
- * @source https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/CustomPanelForSendingPictures.plugin.js
+ * @source https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
  */
 
 module.exports = (() =>
@@ -27,7 +27,7 @@ module.exports = (() =>
 			version: "0.0.2",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview.",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
-			github_raw: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/CustomPanelForSendingPictures.plugin.js"
+			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
 		},
 		changelog:
 		[

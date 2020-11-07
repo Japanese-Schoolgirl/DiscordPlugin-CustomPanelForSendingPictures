@@ -7,9 +7,9 @@ This plugin adds special "Pictures" button to the right of Emojis selection butt
 Files of ".src" and ".sent" types are JSON files and contain a link to the web file.
 After the scan panel will show previews of all your files in the folder. After clicking a file in this panel you'll immediately send picture file (or a link of picture in case of ".src" and ".sent") to currently opened Discord chat.
 Files of ".sent" type will replace files with identical name and extension. ".sent" files will automatically generate after sending local files and will be used if you have enabled corresponding setting.
-Work Example:
+### Work Example:
 ![Work Example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
-Configuration menu:
+### Configuration menu:
 ![Configuration menu](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings.png)
 
 
