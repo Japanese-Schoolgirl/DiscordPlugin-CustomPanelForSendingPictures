@@ -1,5 +1,5 @@
 # Introduction:
-This plugin was written for my own use and for people I'm communicating with. But since plugin can be useful for someone else I'm uploading it here. In case you'd want to rewrite this plugin (and considering my inexperience, you probably should) also check the licence file.<br />
+This plugin was written for my own use and for people I'm communicating with. But since plugin can be useful for someone else I'm uploading it here. In case you want to rewrite this plugin (and considering my inexperience, you probably should) also check the licence file.<br />
 
 P.S. I rarely use GitHub, so it is my first time in dealing with such project. Don't be surprised with some weirdness regarding commits etc. Also my native language isn't English so there may be mistakes in wording.<br />
 
@@ -38,4 +38,4 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 - ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because file sending doesn't return an ID):<br />
 - Configuration parsing is a bit janky, I'd like to fix it ASAP;<br />
 - Code should be reorganized, sometimes it reacts weirdly to multiple reloads and it has plenty of room for optimization;<br />
-- To add support of subfolders, that will be shown as sections/groups in emoji panel.<br />
+- Add support of subfolders, that will be shown as sections/groups in emoji panel.<br />

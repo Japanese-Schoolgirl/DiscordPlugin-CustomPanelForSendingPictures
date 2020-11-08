@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.0.5",
+			version: "0.0.6",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview.",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: "Fixed styles behaviour",
+				title: "Now more stable",
 				type: "fixed",
-				items: ["Add scroller and fixes resize bugs."]
+				items: ["Slightly changed structure. The plugin should start working more stable."]
 			}
 		]
 	};
@@ -45,8 +45,7 @@ module.exports = (() =>
 
 /*========================| Core |========================*/
 	//-----------| Check at ZeresPlugin Library |-----------//
-	return !global.ZeresPluginLibrary ? class
-	{
+	return !global.ZeresPluginLibrary ? class {
 		constructor() { this._config = config; }
 
 		getName() {return config.info.name;}
@@ -62,7 +61,7 @@ module.exports = (() =>
 				onConfirm: () => {
 					require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (err, res, body) => {
 						if (err) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
-						await new Promise(r => fs_.writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
+						await new Promise(r => fs_.writeFile(path_.join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
 					});
 				}
 			});
@@ -154,10 +153,11 @@ module.exports = (() =>
 				buttonRefresh: 		'CPFSP_btnRefresh'
 				
 			}
+			var funcs_ = {}; // Object for store all custom functions
 	//-----------|  End of Styles section |-----------//
 
 	//-----------|  Functions |-----------//
-			function setStyles(command = null)
+			funcs_.setStyles = (command = null) =>
 			{
 				if(document.getElementById(elementNames.id) && command == 'delete') { return document.getElementById(elementNames.id).remove(); }
 				if(document.getElementById(elementNames.id)) { return }
@@ -166,9 +166,9 @@ module.exports = (() =>
 				pluginStyles.innerHTML = CPFSP_Styles;
 				return document.body.append(pluginStyles);
 			}
-			function saveSettings(data)
+			funcs_.saveSettings = (data) =>
 			{
-				if(!Object.keys(data).length) { return loadDefaultSettings(); } // This happen when folder is empty
+				if(!Object.keys(data).length) { return funcs_.loadDefaultSettings(); } // This happen when folder is empty
 				fs_.writeFile(settingsPath, JSON.stringify(data), function(err)
 				{
 					if(err)
@@ -179,23 +179,23 @@ module.exports = (() =>
 				scaningReady = true;
 				// console.log('Path: ', __dirname);
 			}
-			function loadSettings()
+			funcs_.loadSettings = () =>
 			{
 				let newPicsSettings = [];
-				if(!fs_.existsSync(settingsPath)) { loadDefaultSettings(); return picsSettings; } // This happen when settings file doesn't exist
+				if(!fs_.existsSync(settingsPath)) { funcs_.loadDefaultSettings(); return picsSettings; } // This happen when settings file doesn't exist
 				try { newPicsSettings = JSON.parse(fs_.readFileSync(settingsPath)); }
 				catch(err) { console.warn('There has been an error parsing your settings JSON:', err.message); return picsSettings; }
-				if(!Object.keys(newPicsSettings).length) { loadDefaultSettings(); return picsSettings; }  // This happen when settings file is empty
+				if(!Object.keys(newPicsSettings).length) { funcs_.loadDefaultSettings(); return picsSettings; }  // This happen when settings file is empty
 				picsSettings = newPicsSettings;
 				return picsSettings;
 			}
-			function loadDefaultSettings()
+			funcs_.loadDefaultSettings = () =>
 			{
 				picsSettings = [ { name: 'Placeholder', link: 'https://loremipsum.png' } ]; // Placeholder
-				saveSettings(picsSettings);
+				funcs_.saveSettings(picsSettings);
 				scaningReady = true;
 			}
-			function loadConfiguration()
+			funcs_.loadConfiguration = () =>
 			{
 				let newData;
 				if(!fs_.existsSync(configPath)) { return } // This happen when settings file doesn't exist
@@ -207,7 +207,7 @@ module.exports = (() =>
 				Configuration.OnlyForcedUpdate.Value = newData.OnlyForcedUpdate.Value;
 				Configuration.sentType2srcType.Value = newData.sentType2srcType.Value;
 			}
-			function saveConfiguration()
+			funcs_.saveConfiguration = () =>
 			{
 				let exportData = JSON.stringify(Configuration);
 				fs_.writeFile(configPath, exportData, function(err)
@@ -217,9 +217,9 @@ module.exports = (() =>
 						return console.warn('There has been an error saving your config data:', err.message);
 					}
 				});
-				loadConfiguration();
+				funcs_.loadConfiguration();
 			}
-			function scanFolderPictures(forced = null)
+			funcs_.scanFolderPictures = (forced = null) =>
 			{
 				if(Configuration.OnlyForcedUpdate.Value && !forced) { scaningReady = true; return true }
 				if(fs_.existsSync(picturesPath))
@@ -262,7 +262,7 @@ module.exports = (() =>
 							if(finded) { finded.link = file.link; }
 						});
 						// DEBUG // console.log(newPicsSettings);
-						saveSettings(newPicsSettings); // Apply new settings
+						funcs_.saveSettings(newPicsSettings); // Apply new settings
 					});
 				}
 				else
@@ -272,7 +272,7 @@ module.exports = (() =>
 				}
 				return true
 			}
-			async function moveToPicturesPanel(elem = null)
+			funcs_.moveToPicturesPanel = async (elem = null) =>
 			{
 				let command = elem ? elem.target.getAttribute('command') : null;
 				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
@@ -281,7 +281,7 @@ module.exports = (() =>
 				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
 				if(!emojisPanel) { return }
 				scaningReady = false; // Spaghetti fix long loading files
-				scanFolderPictures(command);
+				funcs_.scanFolderPictures(command);
 				(function waitingScan()
 				{
 					if(!scaningReady) { return setTimeout(()=> { waitingScan(); }, 10); }
@@ -297,7 +297,7 @@ module.exports = (() =>
 					let elementRow = document.createElement('ul');
 					let rowIndex = 1;
 					let colIndex = 1;
-					loadSettings().forEach((file)=>
+					funcs_.loadSettings().forEach((file)=>
 					{
 						/* // DEPRECATED //
 						if(colIndex > 13)
@@ -330,7 +330,7 @@ module.exports = (() =>
 						newPicture.setAttribute('aria-label', file.name);
 						newPicture.setAttribute('alt', file.name);
 						newPicture.setAttribute('class', elementNames.newPicture);
-						newPicture.addEventListener('click', send2ChatBox);
+						newPicture.addEventListener('click', funcs_.send2ChatBox);
 						elementCol.append(newPicture); // Add IMG to "li"
 						elementRow.append(elementCol); // Add "li" to "ul"
 						colIndex++;
@@ -343,11 +343,11 @@ module.exports = (() =>
 					buttonRefresh.setAttribute('class', elementNames.buttonRefresh);
 					buttonRefresh.setAttribute('command', 'refresh');
 					buttonRefresh.innerText = 'Refresh';
-					buttonRefresh.addEventListener('click', moveToPicturesPanel);
+					buttonRefresh.addEventListener('click', funcs_.moveToPicturesPanel);
 					emojisPanel.insertBefore(buttonRefresh, emojisPanel.firstChild); // Add button to panel
 				})();
 			}
-			async function addPicturesPanelButton(emojisGUI)
+			funcs_.addPicturesPanelButton = async (emojisGUI) =>
 			{
 				if(!emojisGUI) { return }
 				// let emojiButton = document.querySelector('button[class*="emojiButton"]'); // Emojis button in chat
@@ -359,17 +359,17 @@ module.exports = (() =>
 				buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonID);
 				let buttonClass = emojisMenu.querySelector('button').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
 				buttonCPFSP.setAttribute('class', buttonClass);
-				buttonCPFSP.removeEventListener('click', moveToPicturesPanel); // Insurance
-				buttonCPFSP.addEventListener('click', moveToPicturesPanel);
+				buttonCPFSP.removeEventListener('click', funcs_.moveToPicturesPanel); // Insurance
+				buttonCPFSP.addEventListener('click', funcs_.moveToPicturesPanel);
 				emojisMenu.append(buttonCPFSP);
 			}
-			async function send2ChatBox(from)
+			funcs_.send2ChatBox = async (from) =>
 			{
 				if(!from) { return }
 				let link = from.target.getAttribute('src'); // Only for events from clicking at imgs
 				let path = from.target.getAttribute('path');
 				let name = from.target.getAttribute('alt');
-				let channelID = ZLibrary.DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
+				let channelID = DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
 				let ChatBox = document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]'); // User's textbox
 				let ChatBoxText = ChatBox ? Array.from(ChatBox.querySelectorAll('span')).pop() : null;
 				if(!ChatBoxText) { return } // Stop method if user doesn't have access to chat
@@ -386,15 +386,15 @@ module.exports = (() =>
 					content: `${link}`
 				}); // Add text to user's textbox
 				*/
-				ZLibrary.DiscordAPI.currentChannel.sendMessage(link);
+				DiscordAPI.currentChannel.sendMessage(link);
 			}
-			var DiscordMenuObserver = new MutationObserver((mutations) =>
+			funcs_.DiscordMenuObserver = new MutationObserver((mutations) =>
 			{
 				mutations.forEach((mutation) =>
 				{
 					if(!mutation.target.parentNode) { return }
 					if(mutation.target.parentNode.getAttribute('role') != 'tabpanel') { return } // Find "emoji-picker-tab-panel" and "gif-picker-tab-panel"
-					addPicturesPanelButton(mutation.target.parentNode.parentNode);
+					funcs_.addPicturesPanelButton(mutation.target.parentNode.parentNode);
 				});
 			})
 
@@ -407,24 +407,32 @@ module.exports = (() =>
 				getVersion() { return config.info.version; }
 				getDescription() { return config.info.description; }
 
-	//-----------| Method |-----------//
+	//-----------| Default Methods |-----------//
 				async onStart()
 				{
-					loadConfiguration();
-					loadSettings();
-					setStyles();
-					console.log(config.info.name, 'loaded');
+					try
+					{
+						if(!funcs_) { return console.warn('There is error with functions declaration'); }
+						funcs_.loadConfiguration();
+						funcs_.loadSettings();
+						funcs_.setStyles();
+						console.log(config.info.name, 'loaded');
 
-					scanFolderPictures();
-					DiscordMenuObserver.observe(document.body, { childList: true, subtree: true });
+						funcs_.scanFolderPictures();
+						funcs_.DiscordMenuObserver.observe(document.body, { childList: true, subtree: true });
+					} catch(err) { console.warn('There is error with starting plugin:', err); }
 				}
 
 				onStop()
 				{
-					setStyles('delete');
-					DiscordMenuObserver.disconnect();
-					console.log(config.info.name, 'stopped');
-					Patcher.unpatchAll();
+					try
+					{
+						funcs_.DiscordMenuObserver.disconnect();
+						funcs_.setStyles('delete');
+						funcs_ = null;
+						console.log(config.info.name, 'stopped');
+						Patcher.unpatchAll();
+					} catch(err) { console.warn('There is error with stoping plugin:', err); }
 				}
 
 				getSettingsPanel()
@@ -440,17 +448,17 @@ module.exports = (() =>
 						.append(new Settings.Switch(Configuration.UseSentLinks.Title, Configuration.UseSentLinks.Description, Configuration.UseSentLinks.Value, checked =>
 						{
 							Configuration.UseSentLinks.Value = checked;
-							saveConfiguration();
+							funcs_.saveConfiguration();
 						}))
 						.append(new Settings.Switch(Configuration.OnlyForcedUpdate.Title, Configuration.OnlyForcedUpdate.Description, Configuration.OnlyForcedUpdate.Value, checked =>
 						{
 							Configuration.OnlyForcedUpdate.Value = checked;
-							saveConfiguration();
+							funcs_.saveConfiguration();
 						}))
 						.append(new Settings.Switch(Configuration.sentType2srcType.Title, Configuration.OnlyForcedUpdate.Description, Configuration.sentType2srcType.Value, checked =>
 						{
 							Configuration.sentType2srcType.Value = checked;
-							saveConfiguration();
+							funcs_.saveConfiguration();
 						}));
 					return Panel;
 				}
