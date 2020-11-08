@@ -18,8 +18,10 @@ I use [EnhancedDiscord](https://github.com/joe27g/EnhancedDiscord) and can only 
 Plugin also uses [Zere's Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js).
 
 # Installation
-1) Place plugin's ".js" file into your plugin folder;
-2) After enabling the plugin, it will create a new folder in your plugin folder.
+1) Install [EnhancedDiscord](https://enhanceddiscord.com/EnhancedDiscord.exe) or [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe);
+2) Place [Zere's Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) file into your plugin folder;
+3) Place plugin's ".js" file into your plugin folder;
+4) After enabling the plugin, it will create a new folder in your plugin folder, in which you need to move images that you want to use.
 P.S. Plugin will save all information about folder's contents in CustomPanelForSendingPictures.settings.json file, and your plugin settings in CustomPanelForSendingPictures.config.json (you can also delete those files to reset all settings);
 
 # Support:

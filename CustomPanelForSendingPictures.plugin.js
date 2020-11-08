@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.0.2",
+			version: "0.0.3",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview.",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: "First build",
+				title: "Fixed styles behaviour",
 				type: "fixed",
-				items: ["Howdy!"]
+				items: ["Add scroller and fixes resize bugs."]
 			}
 		]
 	};
@@ -76,7 +76,7 @@ module.exports = (() =>
 		{
 
 			const { Patcher, DiscordAPI, DiscordModules, Settings, PluginUtilities } = Api;
-	//-----------| Create Settings and Functions |-----------//
+	//-----------| Create Settings and Variables |-----------//
 			var picsSettings = [];
 			var pluginPath, settingsPath, configPath, picturesPath;
 			pluginPath = __dirname.indexOf('\\electron.asar\\') != -1 ? __dirname.split('app-')[0] : __dirname + '\\';
@@ -85,15 +85,87 @@ module.exports = (() =>
 			picturesPath = pluginPath + config.info.name + '\\';
 			let sentType = '.sent';
 			let srcType = '.src';
-			let CPFSP_panelID = 'CPFSP_Panel';
-			let CPFSP_buttonID = 'CPFSP_Button';
 			let scaningReady = true;
 			var Configuration = {
 				UseSentLinks:		{ Value: true, 	Title: `Use Sent Links`, 	Description: `To create and use .sent files that are replacing file sending by sending links.` },
 				OnlyForcedUpdate:		{ Value: false, 	Title: `Only Forced Update`, 	Description: `Doesn't allow plugin to automatically update settings with used files without user interaction.` },
 				sentType2srcType:		{ Value: false, 	Title: `Treat ${sentType} as ${srcType}`, 	Description: `To use ${sentType} as ${srcType}.` }
 			};
+	//-----------|  Start of Styles section |-----------//
+			var CPFSP_Styles = ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
+#CPFSP_Panel {
+	grid-row: 2/2;
+	overflow: hidden;
+	position: relative;
+}
+.CPFSP_List {
+	top: 30px;
+	right: 0px;
+	bottom: 8px;
+	left: 8px;
+	position: absolute;
+	overflow: hidden scroll;
+	padding-right: 0px;
+}
+.CPFSP_Section {
+	height: 100%;
+	margin-bottom: 12px;
+	margin-left: 18px;
+	font-size: 18px;
+	font-weight: 600;
+}
+.CPFSP_ul {
+	/*
+	height: 56px;
+	display: inline-block;
+	grid-auto-flow: column;
+	grid-template-columns: repeat(auto-fill,56px);
+	margin: 15px 0px 0px 15px;
+	*/
+}
+.CPFSP_li {
+	display: inline-block;
+}
+.CPFSP_IMG {
+	height: 48px;
+	width: 48px;
+	cursor: pointer;
+	background-size: 48px;
+}
+.CPFSP_btnRefresh {
+	height: 30px;
+	line-height: 32px;
+	cursor: pointer;
+	color: var(--text-normal);
+	background-color: var(--background-tertiary);
+	text-align: center;
+	min-width: 48px;
+}
+			`
+			var elementNames = {
+				id: 				'CPFSP_StyleSheet',
+				CPFSP_panelID: 		'CPFSP_Panel',
+				CPFSP_buttonID: 	'CPFSP_Button',
+				elementList: 		'CPFSP_List',
+				folderSection:		'CPFSP_Section',
+				elementRow: 		'CPFSP_ul',
+				elementCol: 		'CPFSP_li',
+				newPicture: 		'CPFSP_IMG',
+				buttonRefresh: 		'CPFSP_btnRefresh'
+				
+			}
+	//-----------|  End of Styles section |-----------//
 
+	//-----------|  Functions |-----------//
+			function setStyles(command = null)
+			{
+				if(document.getElementById(elementNames.id) && command == 'delete') { return document.getElementById(elementNames.id).remove(); }
+				if(document.getElementById(elementNames.id)) { return }
+				let pluginStyles = document.createElement('style');
+				pluginStyles.setAttribute('id', elementNames.id);
+				pluginStyles.innerHTML = CPFSP_Styles;
+				return document.body.append(pluginStyles);
+			}
 			function saveSettings(data)
 			{
 				if(!Object.keys(data).length) { return loadDefaultSettings(); } // This happen when folder is empty
@@ -203,9 +275,10 @@ module.exports = (() =>
 			async function moveToPicturesPanel(elem = null)
 			{
 				let command = elem ? elem.target.getAttribute('command') : null;
-				let buttonCPFSP = document.getElementById(CPFSP_buttonID);
+				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
 				if(!buttonCPFSP) { return }
 				let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
+				let emojisDrawer = emojisGUI.parentNode; // drawerSizingWrapper-17Mss4
 				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
 				if(!emojisPanel) { return }
 				scaningReady = false; // Spaghetti fix long loading files
@@ -213,30 +286,39 @@ module.exports = (() =>
 				(function waitingScan()
 				{
 					if(!scaningReady) { return setTimeout(()=> { waitingScan(); }, 10); }
-					if(document.getElementById(CPFSP_panelID) && command != 'refresh') { return } // Will repeat if command == refresh
-					emojisPanel.innerHTML = '';
-					emojisPanel.setAttribute('id', CPFSP_panelID);
+					if(document.getElementById(elementNames.CPFSP_panelID) && command != 'refresh') { return } // Will repeat if command == refresh
+					emojisDrawer.style.width = '1000px'; // Change size of panel's board
+					emojisPanel.innerHTML = ''; // Clear panel
+					emojisPanel.setAttribute('id', elementNames.CPFSP_panelID); // Change panel ID
 
+					let elementList = document.createElement('div');
+					let folderSection = document.createElement('div');
+					elementList.setAttribute('class', elementNames.elementList);
+					folderSection.setAttribute('class', elementNames.folderSection);
+					folderSection.append(document.createElement('text').innerText = 'Main folder'); // Set name to section
+					let elementRow = document.createElement('ul');
 					let rowIndex = 1;
 					let colIndex = 1;
-					let picturesList = document.createElement('ul');
 					loadSettings().forEach((file)=>
 					{
+						/* // DEPRECATED //
 						if(colIndex > 13)
-						{ // 13 is count of Discord emojis in UI
+						{ // is count of Discord emojis in UI
 							rowIndex++;
 							colIndex = 1;
-							emojisPanel.append(picturesList);
-							picturesList = document.createElement('ul');
+							folderSection.append(elementRow); // Add emojis to special section
+							elementRow = document.createElement('ul');
 						}
-						picturesList.setAttribute('role', 'row');
-						picturesList.setAttribute('aria-rowindex', rowIndex);
-						picturesList.setAttribute('style', 'height: 56px; display: grid; grid-auto-flow: column; grid-template-columns: repeat(auto-fill,56px); margin: 25px 0px 0px 25px;'); // Extract from "emojiList" class + additional margin
+						*/
+						elementRow.setAttribute('class', elementNames.elementRow);
+						elementRow.setAttribute('role', 'row');
+						elementRow.setAttribute('aria-rowindex', rowIndex);
 
-						let newElement = document.createElement('li');
-						newElement.setAttribute('role', 'gridcell');
-						newElement.setAttribute('aria-rowindex', rowIndex);
-						newElement.setAttribute('aria-colindex', colIndex);
+						let elementCol = document.createElement('li');
+						elementCol.setAttribute('class', elementNames.elementCol);
+						elementCol.setAttribute('role', 'gridcell');
+						elementCol.setAttribute('aria-rowindex', rowIndex);
+						elementCol.setAttribute('aria-colindex', colIndex);
 						let newPicture = document.createElement('img');
 						newPicture.setAttribute('path', file.link);
 						try
@@ -249,21 +331,22 @@ module.exports = (() =>
 						} catch(err) { console.warn('There is problem with links:', err) }
 						newPicture.setAttribute('aria-label', file.name);
 						newPicture.setAttribute('alt', file.name);
-						newPicture.setAttribute('style', 'cursor: pointer; background-size: 48px; height: 48px; width: 48px;');
+						newPicture.setAttribute('class', elementNames.newPicture);
 						newPicture.addEventListener('click', send2ChatBox);
-						newElement.append(newPicture);
-						picturesList.append(newElement);
+						elementCol.append(newPicture); // Add IMG to "li"
+						elementRow.append(elementCol); // Add "li" to "ul"
 						colIndex++;
 					});
-					emojisPanel.append(picturesList);
+					folderSection.append(elementRow); // Add emojis to special section
+					elementList.append(folderSection); // Add all sections to list
+					emojisPanel.append(elementList); // Add list to panel 
 
 					let buttonRefresh = document.createElement('div'); // Refresh button
-					buttonRefresh.setAttribute('class', 'header');
-					buttonRefresh.setAttribute('style', 'cursor: pointer; color: var(--text-normal); background-color: var(--background-tertiary); text-align: center; min-width: 48px; line-height: 32px; height: 30px;');
+					buttonRefresh.setAttribute('class', elementNames.buttonRefresh);
 					buttonRefresh.setAttribute('command', 'refresh');
 					buttonRefresh.innerText = 'Refresh';
 					buttonRefresh.addEventListener('click', moveToPicturesPanel);
-					emojisPanel.insertBefore(buttonRefresh, emojisPanel.firstChild);
+					emojisPanel.insertBefore(buttonRefresh, emojisPanel.firstChild); // Add button to panel
 				})();
 			}
 			async function addPicturesPanelButton(emojisGUI)
@@ -272,10 +355,10 @@ module.exports = (() =>
 				// let emojiButton = document.querySelector('button[class*="emojiButton"]'); // Emojis button in chat
 				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
 				if(!emojisMenu) { return }
-				if(document.getElementById(CPFSP_buttonID)) { return }
+				if(document.getElementById(elementNames.CPFSP_buttonID)) { return }
 				let buttonCPFSP = document.createElement('button');
 				buttonCPFSP.innerText = 'Pictures';
-				buttonCPFSP.setAttribute('id', CPFSP_buttonID);
+				buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonID);
 				let buttonClass = emojisMenu.querySelector('button').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
 				buttonCPFSP.setAttribute('class', buttonClass);
 				buttonCPFSP.removeEventListener('click', moveToPicturesPanel); // Insurance
@@ -331,6 +414,7 @@ module.exports = (() =>
 				{
 					loadConfiguration();
 					loadSettings();
+					setStyles();
 					console.log(config.info.name, 'loaded');
 
 					scanFolderPictures();
@@ -339,8 +423,9 @@ module.exports = (() =>
 
 				onStop()
 				{
-					console.log(config.info.name, 'stopped');
+					setStyles('delete');
 					DiscordMenuObserver.disconnect();
+					console.log(config.info.name, 'stopped');
 					Patcher.unpatchAll();
 				}
 

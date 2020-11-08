@@ -18,8 +18,10 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 Плагин также использует [Zere's Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js).
 
 # Установка:
-1) Перенесите ".js" файл плагина в папку с вашими плагинами;
-2) После включения этого плагина, в папке с плагином появится папка, в которую вам нужно перенести картинки, которые вы хотите использовать;
+1) Установите [EnhancedDiscord](https://enhanceddiscord.com/EnhancedDiscord.exe) или [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe);
+2) Перенесите [Zere's Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) файл в папку с вашими плагинами;
+3) Перенесите ".js" файл плагина в папку с вашими плагинами;
+4) После включения этого плагина, в папке с плагином появится папка, в которую вам нужно перенести картинки, которые вы хотите использовать.
 
 P.S. Плагин будет хранить информацию о содержимом в папке в файле CustomPanelForSendingPictures.settings.json, а вашу конфигурацию плагина в CustomPanelForSendingPictures.config.json (вы также можете удалить эти файлы, чтобы полностью сбросить все настройки);
 # Поддержка:
