@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.0.4",
+			version: "0.0.5",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview.",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -105,7 +105,7 @@ module.exports = (() =>
 	left: 8px;
 	position: absolute;
 	overflow: hidden scroll;
-	padding-right: 0px;
+	padding-right: 5px;
 }
 .CPFSP_Section {
 	height: 100%;
@@ -120,11 +120,11 @@ module.exports = (() =>
 	display: inline-block;
 	grid-auto-flow: column;
 	grid-template-columns: repeat(auto-fill,56px);
-	margin: 15px 0px 0px 15px;
 	*/
 }
 .CPFSP_li {
 	display: inline-block;
+	margin: 5px 0px 0px 5px;
 }
 .CPFSP_IMG {
 	height: 48px;
