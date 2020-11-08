@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.0.3",
+			version: "0.0.4",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview.",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -278,7 +278,6 @@ module.exports = (() =>
 				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
 				if(!buttonCPFSP) { return }
 				let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
-				let emojisDrawer = emojisGUI.parentNode; // drawerSizingWrapper-17Mss4
 				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
 				if(!emojisPanel) { return }
 				scaningReady = false; // Spaghetti fix long loading files
@@ -287,7 +286,6 @@ module.exports = (() =>
 				{
 					if(!scaningReady) { return setTimeout(()=> { waitingScan(); }, 10); }
 					if(document.getElementById(elementNames.CPFSP_panelID) && command != 'refresh') { return } // Will repeat if command == refresh
-					emojisDrawer.style.width = '1000px'; // Change size of panel's board
 					emojisPanel.innerHTML = ''; // Clear panel
 					emojisPanel.setAttribute('id', elementNames.CPFSP_panelID); // Change panel ID
 
