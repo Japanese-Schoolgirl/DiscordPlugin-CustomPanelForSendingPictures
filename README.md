@@ -9,7 +9,7 @@ Files of ".src" and ".sent" types are JSON files and contain a link to the web f
 After the scan panel will show previews of all your files in the folder. After clicking a file in this panel you'll immediately send picture file (or a link of picture in case of ".src" and ".sent") to currently opened Discord chat.<br />
 Files of ".sent" type will replace files with identical name and extension. ".sent" files will automatically generate after sending local files and will be used if you have enabled corresponding setting.<br />
 ### Work Example:
-![Work Example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
+![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 ### Configuration menu:
 ![Configuration menu](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings.png)
 
@@ -38,4 +38,4 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 - ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because file sending doesn't return an ID):<br />
 - Configuration parsing is a bit janky, I'd like to fix it ASAP;<br />
 - Code should be reorganized, sometimes it reacts weirdly to multiple reloads and it has plenty of room for optimization;<br />
-— To add support of subfolders, that will be shown as sections/groups in emoji panel.<br />
+- To add support of subfolders, that will be shown as sections/groups in emoji panel.<br />
