@@ -24,17 +24,17 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.0.6",
-			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview.",
+			version: "0.0.7",
+			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as section/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
 		},
 		changelog:
 		[
 			{
-				title: "Now more stable",
+				title: "Adds subfolders support",
 				type: "fixed",
-				items: ["Slightly changed structure. The plugin should start working more stable."]
+				items: ["From now on subfolders will be displayed as sections/groups in the panel."]
 			}
 		]
 	};
@@ -84,6 +84,8 @@ module.exports = (() =>
 			picturesPath = pluginPath + config.info.name + '\\';
 			let sentType = '.sent';
 			let srcType = '.src';
+			let mainFolderName = 'Main folder';
+			let folderListName = `?/\\!FolderList!/\\?`;
 			let scaningReady = true;
 			var Configuration = {
 				UseSentLinks:		{ Value: true, 	Title: `Use Sent Links`, 	Description: `To create and use .sent files that are replacing file sending by sending links.` },
@@ -177,11 +179,11 @@ module.exports = (() =>
 					}
 				});
 				scaningReady = true;
-				// console.log('Path: ', __dirname);
+				// DEBUG // console.log('Path: ', __dirname);
 			}
 			funcs_.loadSettings = () =>
 			{
-				let newPicsSettings = [];
+				let newPicsSettings = {};
 				if(!fs_.existsSync(settingsPath)) { funcs_.loadDefaultSettings(); return picsSettings; } // This happen when settings file doesn't exist
 				try { newPicsSettings = JSON.parse(fs_.readFileSync(settingsPath)); }
 				catch(err) { console.warn('There has been an error parsing your settings JSON:', err.message); return picsSettings; }
@@ -191,8 +193,11 @@ module.exports = (() =>
 			}
 			funcs_.loadDefaultSettings = () =>
 			{
+				allPicsSettings = {};
 				picsSettings = [ { name: 'Placeholder', link: 'https://loremipsum.png' } ]; // Placeholder
-				funcs_.saveSettings(picsSettings);
+				allPicsSettings[folderListName] = { name: mainFolderName, path: picturesPath };
+				allPicsSettings[mainFolderName] = picsSettings;
+				funcs_.saveSettings(allPicsSettings);
 				scaningReady = true;
 			}
 			funcs_.loadConfiguration = () =>
@@ -219,58 +224,102 @@ module.exports = (() =>
 				});
 				funcs_.loadConfiguration();
 			}
-			funcs_.scanFolderPictures = (forced = null) =>
-			{
+			funcs_.scanDirectory = (forced = null) =>
+			{ // Scanning plugin folder
 				if(Configuration.OnlyForcedUpdate.Value && !forced) { scaningReady = true; return true }
 				if(fs_.existsSync(picturesPath))
 				{ // Exist
-					fs_.readdir(picturesPath, function(err, files)
-					{
-						if(err) { return console.warn('Unable to scan directory:' + err); }
-						let newPicsSettings = [];
-						let alreadySendedFiles = [];
-						let index = 0;
-						files.forEach((file) =>
-						{
-							let fileTypesAllow = ['.jpg', '.jpeg', '.bmp', '.png', '.gif', srcType, sentType];
-							let fileType = path_.extname(file);
-							let filePath = picturesPath + file;
-							let webLink;
-							if(fileTypesAllow.indexOf(fileType) == -1) { return } // Check at filetype
-							if(fileType == sentType || fileType == srcType)
-							{
-								try { webLink = JSON.parse(fs_.readFileSync(filePath)); }
-								catch(err) { console.warn(`There has been an error parsing ${sentType} file:`, err.message); return }
-								if(Configuration.sentType2srcType.Value) { fileType = srcType; }
-							}
-							if(fileType == sentType)
-							{
-								if(!Configuration.UseSentLinks.Value) { return } // Doesn't uses this files type if user don't turn on it
-								alreadySendedFiles.push({ name: file, link: webLink });
-								return;
-							}
-
-							if(fileType == srcType) { newPicsSettings[index] = { name: file, link: webLink }; }
-							else { newPicsSettings[index] = { name: file, link: 'file:///' + filePath }; }
-							index++; // Index will increase ONLY if file is allowed
-						});
-						// DEBUG // console.log(newPicsSettings);
-						// DEBUG // console.log(alreadySendedFiles);
-						alreadySendedFiles.forEach((file) =>
-						{ // Replace all local links with web links
-							let finded = newPicsSettings.find(el => el.name == file.name.slice(0, -sentType.length));
-							if(finded) { finded.link = file.link; }
-						});
-						// DEBUG // console.log(newPicsSettings);
-						funcs_.saveSettings(newPicsSettings); // Apply new settings
-					});
+					funcs_.findPictures(picturesPath);
+					return true
 				}
 				else
 				{ // Not Exist
 					try { fs_.mkdirSync(picturesPath); } // Create folder
 					catch (err) { console.warn(err.code); }
+					scaningReady = true;
+					return true
 				}
-				return true
+			}
+			funcs_.findPictures = (scanPath, newAllPicsSettings = {}, folderName = null, foldersForScan = [], emtpyFoldersList = []) =>
+			{ // Scanning for pictures in select folder, "foldersForScan" store folders from plugin directory
+				let newPicsSettings = [];
+				let isFirstScan = !folderName; // !(Object.keys(newAllPicsSettings).length);
+				if(!scanPath) { return }
+				if(!fs_.existsSync(scanPath)) { return }
+				if(!folderName) { folderName = mainFolderName; }
+				// function getDirs(scanPath) { return fs_.readdirSync(scanPath).filter(file => fs_.statSync(path_.join(scanPath, file)).isDirectory()); }
+				fs_.readdir(scanPath, function(err, files)
+				{
+					if(err) { return console.warn('Unable to scan directory:' + err); }
+					let alreadySentFiles = [];
+					if(isFirstScan) { foldersForScan.push({ name: mainFolderName, path: picturesPath }); } // Adds necessary information about main folder
+					if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // Unnecessary reordering fix?
+					let currentFolder = isFirstScan ? mainFolderName : folderName; // Get name of current folder
+					let index = 0;
+					files.forEach((file) =>
+					{
+						let isFolder = fs_.statSync(path_.join(scanPath, file)).isDirectory();
+						let fileTypesAllow = ['.jpg', '.jpeg', '.bmp', '.png', '.gif', srcType, sentType];
+						let fileType = path_.extname(file);
+						let filePath = scanPath + file;
+						let webLink;
+						if(isFolder && isFirstScan) { foldersForScan.push({name: file, path: (path_.join(scanPath, file) + '\\') }); } // isFirstScan there prevents scans subfolders in subfolders. However this code not organize for subsubsubsubfolders scan yet
+						if(fileTypesAllow.indexOf(fileType) == -1) { return } // Check at filetype
+						if(fileType == sentType || fileType == srcType)
+						{
+							try { webLink = JSON.parse(fs_.readFileSync(filePath)); }
+							catch(err) { console.warn(`There has been an error parsing ${sentType} file:`, err.message); return }
+							if(Configuration.sentType2srcType.Value) { fileType = srcType; }
+						}
+						if(fileType == sentType)
+						{
+							if(!Configuration.UseSentLinks.Value) { return } // Doesn't uses this files type if user don't turn on it
+							alreadySentFiles.push({ name: file, link: webLink });
+							return;
+						}
+
+						if(fileType == srcType) { newPicsSettings[index] = { name: file, link: webLink }; }
+						else { newPicsSettings[index] = { name: file, link: 'file:///' + filePath }; }
+						index++; // Index will increase ONLY if file is allowed
+					});
+					// DEBUG // console.log(newPicsSettings);
+					// DEBUG // console.log(alreadySentFiles);
+					alreadySentFiles.forEach((file) =>
+					{ // Replace all local links with web links
+						let found = newPicsSettings.find(el => el.name == file.name.slice(0, -sentType.length));
+						if(found) { found.link = file.link; }
+					});
+					if(!Object.keys(files).length)
+					{ // Delete empty folder from list and refresh list
+						//foldersForScan.splice(foldersForScan.findIndex((el) => el.name == currentFolder), 1); // Didn't work properly
+						//foldersForScan.find((el) => el.name == currentFolder).name = 'undefined';
+						//newAllPicsSettings[folderListName] = foldersForScan;
+						//Variants above don't work correctly
+						emtpyFoldersList.push(foldersForScan.find((el) => el.name == currentFolder));
+					}
+					if(Object.keys(newPicsSettings).length) { newAllPicsSettings[currentFolder] = newPicsSettings; } // Prevents adding empty folder
+					if(Object.keys(foldersForScan).length)
+					{ // There subfolders scan request
+						if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // isFirstScan there prevents scans subfolders in subfolders. However this blah blah blah I already said this
+						let needSkip;
+						//////console.log(currentFolder, Object.keys(foldersForScan).length-1)
+						foldersForScan.some((folder, folderIndex) =>
+						{
+							if(currentFolder == folder.name && folderIndex < Object.keys(foldersForScan).length-1) // it is X < X, where X count of folders
+							{
+								funcs_.findPictures(foldersForScan[folderIndex+1].path, newAllPicsSettings, foldersForScan[folderIndex+1].name, foldersForScan, emtpyFoldersList);
+								return (needSkip = true);
+							}
+						});
+						if(needSkip) { return } // If funcs_.findPictures used inside itself then this method will end there
+					}
+					// DEBUG // console.log(folders, newAllPicsSettings, newPicsSettings, isFirstScan);
+					emtpyFoldersList.forEach((emtpyFolder) =>
+					{
+						newAllPicsSettings[folderListName].splice(newAllPicsSettings[folderListName].findIndex((folder) => folder.name == emtpyFolder.name && folder.path == emtpyFolder.path), 1);
+					});
+					funcs_.saveSettings(newAllPicsSettings); // Apply new settings
+				});
 			}
 			funcs_.moveToPicturesPanel = async (elem = null) =>
 			{
@@ -281,7 +330,7 @@ module.exports = (() =>
 				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
 				if(!emojisPanel) { return }
 				scaningReady = false; // Spaghetti fix long loading files
-				funcs_.scanFolderPictures(command);
+				funcs_.scanDirectory(command);
 				(function waitingScan()
 				{
 					if(!scaningReady) { return setTimeout(()=> { waitingScan(); }, 10); }
@@ -293,58 +342,68 @@ module.exports = (() =>
 					let folderSection = document.createElement('div');
 					elementList.setAttribute('class', elementNames.elementList);
 					folderSection.setAttribute('class', elementNames.folderSection);
-					folderSection.append(document.createElement('text').innerText = 'Main folder'); // Set name to section
 					let elementRow = document.createElement('ul');
 					let rowIndex = 1;
 					let colIndex = 1;
-					funcs_.loadSettings().forEach((file)=>
+					let currentSection;
+					function setCurrentSection(folder)
+					{ // Sets name to section with uses variables above
+						currentSection = folder.name;
+						folderSection.append(document.createElement('text').innerText = currentSection);
+					}
+					let allPicsSettings = funcs_.loadSettings();
+					// DEBUG // console.log(allPicsSettings);
+					allPicsSettings[folderListName].forEach((folder, indexFolder) =>
 					{
-						/* // DEPRECATED //
-						if(colIndex > 13)
-						{ // is count of Discord emojis in UI
-							rowIndex++;
-							colIndex = 1;
-							folderSection.append(elementRow); // Add emojis to special section
-							elementRow = document.createElement('ul');
-						}
-						*/
-						elementRow.setAttribute('class', elementNames.elementRow);
-						elementRow.setAttribute('role', 'row');
-						elementRow.setAttribute('aria-rowindex', rowIndex);
-
-						let elementCol = document.createElement('li');
-						elementCol.setAttribute('class', elementNames.elementCol);
-						elementCol.setAttribute('role', 'gridcell');
-						elementCol.setAttribute('aria-rowindex', rowIndex);
-						elementCol.setAttribute('aria-colindex', colIndex);
-						let newPicture = document.createElement('img');
-						newPicture.setAttribute('path', file.link);
-						try
+						allPicsSettings[folder.name].forEach((file, indexFile)=>
 						{
-							if(file.link.indexOf('file:///') != -1)
-							{ // Convert local file to base64 for preview
-								newPicture.setAttribute('src', `data:image/${path_.extname(file.link)};base64,${new Buffer(fs_.readFileSync(file.link.replace('file:///', ''))).toString('base64')}`);
+							if(indexFolder === 0 && indexFile === 0) { setCurrentSection(folder); } // Set first section for first element
+							if(currentSection != folder.name)
+							{
+								folderSection.append(elementRow); // Adds emojis to special section before section change
+								rowIndex++;
+								colIndex = 1;
+								setCurrentSection(folder);
+								elementRow = document.createElement('ul');
 							}
-							else { newPicture.setAttribute('src', file.link); }
-						} catch(err) { console.warn('There is problem with links:', err) }
-						newPicture.setAttribute('aria-label', file.name);
-						newPicture.setAttribute('alt', file.name);
-						newPicture.setAttribute('class', elementNames.newPicture);
-						newPicture.addEventListener('click', funcs_.send2ChatBox);
-						elementCol.append(newPicture); // Add IMG to "li"
-						elementRow.append(elementCol); // Add "li" to "ul"
-						colIndex++;
+							elementRow.setAttribute('class', elementNames.elementRow);
+							elementRow.setAttribute('role', 'row');
+							elementRow.setAttribute('aria-rowindex', rowIndex);
+
+							let elementCol = document.createElement('li');
+							elementCol.setAttribute('class', elementNames.elementCol);
+							elementCol.setAttribute('role', 'gridcell');
+							elementCol.setAttribute('aria-rowindex', rowIndex);
+							elementCol.setAttribute('aria-colindex', colIndex);
+							let newPicture = document.createElement('img');
+							newPicture.setAttribute('path', file.link);
+							try
+							{
+								if(file.link.indexOf('file:///') != -1)
+								{ // Convert local file to base64 for preview
+									newPicture.setAttribute('src', `data:image/${path_.extname(file.link)};base64,${new Buffer(fs_.readFileSync(file.link.replace('file:///', ''))).toString('base64')}`);
+								}
+								else { newPicture.setAttribute('src', file.link); }
+							} catch(err) { console.warn('There is problem with links:', err) }
+							newPicture.setAttribute('aria-label', file.name);
+							newPicture.setAttribute('alt', file.name);
+							newPicture.setAttribute('class', elementNames.newPicture);
+							newPicture.addEventListener('click', funcs_.send2ChatBox);
+							elementCol.append(newPicture); // Adds IMG to "li"
+							elementRow.append(elementCol); // Adds "li" to "ul"
+							colIndex++;
+						});
+						folderSection.append(elementRow); // Adds emojis to special section
+						elementList.append(folderSection); // Adds all sections to list
 					});
-					folderSection.append(elementRow); // Add emojis to special section
-					elementList.append(folderSection); // Add all sections to list
-					emojisPanel.append(elementList); // Add list to panel 
+					emojisPanel.append(elementList); // Adds list to panel 
 
 					let buttonRefresh = document.createElement('div'); // Refresh button
 					buttonRefresh.setAttribute('class', elementNames.buttonRefresh);
 					buttonRefresh.setAttribute('command', 'refresh');
 					buttonRefresh.innerText = 'Refresh';
 					buttonRefresh.addEventListener('click', funcs_.moveToPicturesPanel);
-					emojisPanel.insertBefore(buttonRefresh, emojisPanel.firstChild); // Add button to panel
+					emojisPanel.insertBefore(buttonRefresh, emojisPanel.firstChild); // Adds button to panel
 				})();
 			}
 			funcs_.addPicturesPanelButton = async (emojisGUI) =>
@@ -384,7 +443,7 @@ module.exports = (() =>
 				if(Configuration.PostLinksImmediately.Value) { } // Not ready yet
 				BDFDB.LibraryModules.DispatchUtils.ComponentDispatch.dispatchToLastSubscribed(BDFDB.DiscordConstants.ComponentActions.INSERT_TEXT, {
 					content: `${link}`
-				}); // Add text to user's textbox
+				}); // Adds text to user's textbox
 				*/
 				DiscordAPI.currentChannel.sendMessage(link);
 			}
@@ -418,7 +477,7 @@ module.exports = (() =>
 						funcs_.setStyles();
 						console.log(config.info.name, 'loaded');
 
-						funcs_.scanFolderPictures();
+						funcs_.scanDirectory();
 						funcs_.DiscordMenuObserver.observe(document.body, { childList: true, subtree: true });
 					} catch(err) { console.warn('There is error with starting plugin:', err); }
 				}
@@ -443,7 +502,7 @@ module.exports = (() =>
 					new Settings.SettingGroup(this.getName()+' Settings Menu', { shown:true }).appendTo(Panel)
 						.append(new Settings.Textbox('There is your folder for pictures:', `At the current update the folder can't be changing`, `${picturesPath}`, text =>
 						{
-							//console.log(text);
+							// DEBUG // console.log(text);
 						}))
 						.append(new Settings.Switch(Configuration.UseSentLinks.Title, Configuration.UseSentLinks.Description, Configuration.UseSentLinks.Value, checked =>
 						{

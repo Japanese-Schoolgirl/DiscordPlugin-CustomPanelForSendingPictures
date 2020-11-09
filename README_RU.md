@@ -10,6 +10,9 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 Файлы типа ".sent" в панели заменяют файл с идентичным названием и расширением файла. Файлы ".sent" будут автоматически генерироваться при отправке локальных файлов и использоваться, если включена соответствующая настройка.<br />
 ### Пример работы:
 ![Пример работы](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
+С версии 0.0.7 теперь этот плагин будет находить и сканировать подпапки, находящиеся в главной папке. Содержимое этих папок будет отображено секциями/группами в самой панели. Подпапки внутри подпапок сканироваться не будут. Также *не рекомендуется* хранить 300+ картинок с приличным весом, потому что это всё сказывается на скорость прогрузки панели.<br />
+### Выглядит это так:
+[!Выглядит это так:](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SubfoldersSupport.png)
 ### Меню настроек:
 ![Меню настроек](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings.png)
 
