@@ -24,17 +24,17 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.0.9",
-			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as section/groups).",
+			version: "0.1.0",
+			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
 		},
 		changelog:
 		[
 			{
-				title: "Fixed some bugs with subfolders and reorganize config files",
+				title: "Improved existing features",
 				type: "fixed",
-				items: ["Fixed some bugs with subfolders and reorganize config files + additional some small fixes."]
+				items: ["Better sections/groups name display and fixed refresh button for OnlyForcedUpdate option."]
 			}
 		]
 	};
@@ -114,6 +114,8 @@ module.exports = (() =>
 	margin-left: 18px;
 	font-size: 18px;
 	font-weight: 600;
+	/* color: var(--header-primary); */
+	text-shadow: 0px 0px 5px white, 0px 0px 10px white, 0px 0px 5px black, 0px 0px 10px black, 0px 0px 1px purple;
 }
 .CPFSP_ul {
 	/*
@@ -206,7 +208,7 @@ module.exports = (() =>
 				picsGlobalSettings[folderListName] = [ { name: mainFolderName, path: picturesPath } ];
 				picsGlobalSettings[mainFolderName] = picsSettings;
 				//funcs_.saveSettings(picsGlobalSettings);
-				scaningReady = true;
+				//scaningReady = true;
 				funcs_.saveSettings(picsGlobalSettings);
 				return picsGlobalSettings;
 			}
@@ -357,7 +359,7 @@ module.exports = (() =>
 				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
 				if(!emojisPanel) { return }
 				scaningReady = false; // Spaghetti fix long loading files
-				funcs_.scanDirectory(command);
+				funcs_.scanDirectory(command, once = null);
 				(function waitingScan()
 				{
 					if(!scaningReady) { return setTimeout(()=> { waitingScan(); }, 10); }
@@ -417,7 +419,7 @@ module.exports = (() =>
 									newPicture.setAttribute('src', `data:image/${path_.extname(file.link)};base64,${new Buffer(fs_.readFileSync(file.link.replace('file:///', ''))).toString('base64')}`);
 								}
 								else { newPicture.setAttribute('src', file.link); }
-							} catch(err) { console.warn('There is problem with links:', err) }
+							} catch(err) { /* console.warn('There is problem with links:', err); */ if(!once) { return funcs_.scanDirectory(command, 'once'); } }
 							newPicture.setAttribute('aria-label', file.name);
 							newPicture.setAttribute('alt', file.name);
 							newPicture.setAttribute('class', elementNames.newPicture);
