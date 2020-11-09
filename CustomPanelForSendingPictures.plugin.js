@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.0.8",
+			version: "0.0.9",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as section/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: "Fixed the buttons in emojis GUI",
+				title: "Fixed some bugs with subfolders and reorganize config files",
 				type: "fixed",
-				items: ["Fixed display of selected button and bug with disappearing click on previous button."]
+				items: ["Fixed some bugs with subfolders and reorganize config files + additional some small fixes."]
 			}
 		]
 	};
@@ -76,7 +76,7 @@ module.exports = (() =>
 
 			const { Patcher, DiscordAPI, DiscordModules, Settings, PluginUtilities } = Api;
 	//-----------| Create Settings and Variables |-----------//
-			var picsSettings = [];
+			var picsGlobalSettings = {};
 			var pluginPath, settingsPath, configPath, picturesPath;
 			pluginPath = __dirname.indexOf('\\electron.asar\\') != -1 ? __dirname.split('app-')[0] : __dirname + '\\';
 			settingsPath = pluginPath + config.info.name + '.settings.json';
@@ -177,7 +177,8 @@ module.exports = (() =>
 			}
 			funcs_.saveSettings = (data) =>
 			{
-				if(!Object.keys(data).length) { return funcs_.loadDefaultSettings(); } // This happen when folder is empty
+				if(Object.keys(data).length < 2) { return funcs_.loadDefaultSettings(); } // This happen when folder is empty
+				//if(!Array.from(data).length) { return funcs_.loadDefaultSettings(); } // This happen when folder is empty
 				fs_.writeFile(settingsPath, JSON.stringify(data), function(err)
 				{
 					if(err)
@@ -190,22 +191,24 @@ module.exports = (() =>
 			}
 			funcs_.loadSettings = () =>
 			{
-				let newPicsSettings = {};
-				if(!fs_.existsSync(settingsPath)) { funcs_.loadDefaultSettings(); return picsSettings; } // This happen when settings file doesn't exist
-				try { newPicsSettings = JSON.parse(fs_.readFileSync(settingsPath)); }
-				catch(err) { console.warn('There has been an error parsing your settings JSON:', err.message); return picsSettings; }
-				if(!Object.keys(newPicsSettings).length) { funcs_.loadDefaultSettings(); return picsSettings; }  // This happen when settings file is empty
-				picsSettings = newPicsSettings;
-				return picsSettings;
+				let newPicsGlobalSettings = {};
+				if(!fs_.existsSync(settingsPath)) { return funcs_.loadDefaultSettings(); } // This happen when settings file doesn't exist
+				try { newPicsGlobalSettings = JSON.parse(fs_.readFileSync(settingsPath)); }
+				catch(err) { console.warn('There has been an error parsing your settings JSON:', err.message); return picsGlobalSettings; }
+				if(!Object.keys(newPicsGlobalSettings).length) { return funcs_.loadDefaultSettings(); }  // This happen when settings file is empty
+				picsGlobalSettings = newPicsGlobalSettings;
+				return picsGlobalSettings;
 			}
 			funcs_.loadDefaultSettings = () =>
 			{
-				allPicsSettings = {};
-				picsSettings = [ { name: 'Placeholder', link: 'https://loremipsum.png' } ]; // Placeholder
-				allPicsSettings[folderListName] = { name: mainFolderName, path: picturesPath };
-				allPicsSettings[mainFolderName] = picsSettings;
-				funcs_.saveSettings(allPicsSettings);
+				picsGlobalSettings = {};
+				picsSettings = [ { name: 'AnnoyingLisa', link: 'https://i.imgur.com/l5Jf0VP.png' }, { name: 'AngryLisaNoises', link: 'https://i.imgur.com/ntW5Vqt.png'} ]; // Placeholder
+				picsGlobalSettings[folderListName] = [ { name: mainFolderName, path: picturesPath } ];
+				picsGlobalSettings[mainFolderName] = picsSettings;
+				//funcs_.saveSettings(picsGlobalSettings);
 				scaningReady = true;
+				funcs_.saveSettings(picsGlobalSettings);
+				return picsGlobalSettings;
 			}
 			funcs_.loadConfiguration = () =>
 			{
@@ -214,15 +217,20 @@ module.exports = (() =>
 				try { newData = JSON.parse(fs_.readFileSync(configPath)); }
 				catch(err) { console.warn('There has been an error parsing your config JSON:', err.message); return }
 				if(!newData || !Object.keys(newData).length) { return }  // This happen when settings file is empty
-				if(!newData.UseSentLinks || !newData.OnlyForcedUpdate || !newData.sentType2srcType) { return }
-				Configuration.UseSentLinks.Value = newData.UseSentLinks.Value;
-				Configuration.OnlyForcedUpdate.Value = newData.OnlyForcedUpdate.Value;
-				Configuration.sentType2srcType.Value = newData.sentType2srcType.Value;
+				Object.keys(Configuration).forEach((key) =>
+				{
+					if(!newData[key]) { return };
+					Configuration[key].Value = newData[key];
+				});
 			}
 			funcs_.saveConfiguration = () =>
 			{
-				let exportData = JSON.stringify(Configuration);
-				fs_.writeFile(configPath, exportData, function(err)
+				let exportData = {};
+				Object.keys(Configuration).forEach((key) =>
+				{
+					exportData[key] = Configuration[key].Value;
+				});
+				fs_.writeFile(configPath, JSON.stringify(exportData), function(err)
 				{
 					if(err)
 					{
@@ -263,14 +271,15 @@ module.exports = (() =>
 					if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // Unnecessary reordering fix?
 					let currentFolder = isFirstScan ? mainFolderName : folderName; // Get name of current folder
 					let index = 0;
-					files.forEach((file) =>
+					files.forEach((file, absoluteIndex) =>
 					{
 						let isFolder = fs_.statSync(path_.join(scanPath, file)).isDirectory();
 						let fileTypesAllow = ['.jpg', '.jpeg', '.bmp', '.png', '.gif', srcType, sentType];
-						let fileType = path_.extname(file);
+						let fileType = path_.extname(file).toLowerCase();
 						let filePath = scanPath + file;
 						let webLink;
-						if(isFolder && isFirstScan) { foldersForScan.push({name: file, path: (path_.join(scanPath, file) + '\\') }); } // isFirstScan there prevents scans subfolders in subfolders. However this code not organize for subsubsubsubfolders scan yet
+						if(isFolder && isFirstScan) { foldersForScan.push({name: file, path: (path_.join(scanPath, file) + '\\') }); } // Add each folder only in this cycle due isFirstScan there prevents scans subfolders in subfolders. However this code not organize for subsubsubsubfolders scan yet
+						if(isFolder && isFirstScan && !absoluteIndex) { newPicsSettings[index] = { name: 'Placeholder', link: 'https://i.imgur.com/ntW5Vqt.png?AlwaysSendThisImageToNextUniverse/\\?????' }; } // Adds as placeholder only once due Main folder can't be "emtpy"
 						if(fileTypesAllow.indexOf(fileType) == -1) { return } // Check at filetype
 						if(fileType == sentType || fileType == srcType)
 						{
@@ -286,7 +295,7 @@ module.exports = (() =>
 						}
 
 						if(fileType == srcType) { newPicsSettings[index] = { name: file, link: webLink }; }
-						else { newPicsSettings[index] = { name: file, link: 'file:///' + filePath }; }
+						else if(fileTypesAllow.indexOf(fileType) != -1) { newPicsSettings[index] = { name: file, link: 'file:///' + filePath }; }
 						index++; // Index will increase ONLY if file is allowed
 					});
 					// DEBUG // console.log(newPicsSettings);
@@ -309,7 +318,6 @@ module.exports = (() =>
 					{ // There subfolders scan request
 						if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // isFirstScan there prevents scans subfolders in subfolders. However this blah blah blah I already said this
 						let needSkip;
-						//////console.log(currentFolder, Object.keys(foldersForScan).length-1)
 						foldersForScan.some((folder, folderIndex) =>
 						{
 							if(currentFolder == folder.name && folderIndex < Object.keys(foldersForScan).length-1) // it is X < X, where X count of folders
@@ -325,6 +333,18 @@ module.exports = (() =>
 					{
 						newAllPicsSettings[folderListName].splice(newAllPicsSettings[folderListName].findIndex((folder) => folder.name == emtpyFolder.name && folder.path == emtpyFolder.path), 1);
 					});
+					try
+					{ // Remove placeholder and delete Main folder from section. This happen if in Main folder only folders with pictures
+						if((1 < newAllPicsSettings[folderListName].length) && (newAllPicsSettings[mainFolderName].length < 2))
+						{
+							let placeholder = newAllPicsSettings[mainFolderName][0];
+							if((placeholder.name === 'Placeholder') && (placeholder.link === 'https://i.imgur.com/ntW5Vqt.png?AlwaysSendThisImageToNextUniverse/\\?????'))
+							{
+								newAllPicsSettings[folderListName].splice([newAllPicsSettings[folderListName].findIndex((el) => el.name == mainFolderName)], 1);
+								delete newAllPicsSettings[mainFolderName];
+							}
+						}
+					} catch(err) { console.warn(err); }
 					funcs_.saveSettings(newAllPicsSettings); // Apply new settings
 				});
 			}
@@ -535,7 +555,7 @@ module.exports = (() =>
 					const Panel = document.createElement('div');
 					Panel.setAttribute('class', 'form');
 					Panel.setAttribute('style', 'width:100%;');
-					new Settings.SettingGroup(this.getName()+' Settings Menu', { shown:true }).appendTo(Panel)
+					new Settings.SettingGroup(`${this.getName()} ${config.info.version} Settings Menu`, { shown:true }).appendTo(Panel)
 						.append(new Settings.Textbox('There is your folder for pictures:', `At the current update the folder can't be changing`, `${picturesPath}`, text =>
 						{
 							// DEBUG // console.log(text);

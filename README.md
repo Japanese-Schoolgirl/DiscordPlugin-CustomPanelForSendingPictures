@@ -39,7 +39,6 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 
 # TODO:
 - ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because file sending doesn't return an ID):<br />
-- Configuration parsing is a bit janky, I'd like to fix it ASAP;<br />
 - Code should be reorganized, sometimes it reacts weirdly to multiple reloads and it has plenty of room for optimization;<br />
 - Option for auto-closing the panel after clicking a picture on the panel without holding shift;<br />
 - Adjusting size of pictures to send via settings (only for web links files);<br />
