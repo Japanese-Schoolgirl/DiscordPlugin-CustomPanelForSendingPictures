@@ -35,7 +35,7 @@ https://donate.qiwi.com/payin/Schoolgirl<br />
 https://www.donationalerts.com/r/JapaneseSchoolgirl<br />
 
 # Communication:
-I don't accept unknown friend requests, so if you want to DM me in Discord there is a huge chance I won't notice you. It's better to use GitHub or [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) to contact me (its not necessary to add me, I have open comment section). I also have [Discord Server](https://discord.gg/nZMbKkw), but it has a manual approval of every user before they are allowed to write or read most of conversation channels.<br />
+I don't accept unknown friend requests, so if you want to DM me in Discord there is a huge chance I won't notice you. It's better to use GitHub or [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) to contact me (its not necessary to add me, I have open comment section). I also have [Discord Server](https://discord.gg/nZMbKkw), but it has a manual approval of every user before they are allowed to write or read most of conversation channels. You can also try to write me on [Twitch](https://www.twitch.tv/EternalSchoolgirl), but it's not the most convenient way.<br />
 
 # TODO:
 - ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because file sending doesn't return an ID):<br />

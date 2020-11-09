@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.0.7",
+			version: "0.0.8",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as section/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: "Adds subfolders support",
+				title: "Fixed the buttons in emojis GUI",
 				type: "fixed",
-				items: ["From now on subfolders will be displayed as sections/groups in the panel."]
+				items: ["Fixed display of selected button and bug with disappearing click on previous button."]
 			}
 		]
 	};
@@ -142,18 +142,25 @@ module.exports = (() =>
 	text-align: center;
 	min-width: 48px;
 }
+#CPFSP_Button {
+	
+}
+.CPFSP_activeButton {
+	background-color: var(--background-accent);
+	color: #fff;
+}
 			`
 			var elementNames = {
-				id: 				'CPFSP_StyleSheet',
-				CPFSP_panelID: 		'CPFSP_Panel',
-				CPFSP_buttonID: 	'CPFSP_Button',
-				elementList: 		'CPFSP_List',
-				folderSection:		'CPFSP_Section',
-				elementRow: 		'CPFSP_ul',
-				elementCol: 		'CPFSP_li',
-				newPicture: 		'CPFSP_IMG',
-				buttonRefresh: 		'CPFSP_btnRefresh'
-				
+				id: 					'CPFSP_StyleSheet',
+				CPFSP_panelID: 			'CPFSP_Panel',
+				CPFSP_buttonID: 		'CPFSP_Button',
+				CPFSP_activeButton: 	'CPFSP_activeButton',
+				elementList: 			'CPFSP_List',
+				folderSection:			'CPFSP_Section',
+				elementRow: 			'CPFSP_ul',
+				elementCol: 			'CPFSP_li',
+				newPicture: 			'CPFSP_IMG',
+				buttonRefresh: 			'CPFSP_btnRefresh'
 			}
 			var funcs_ = {}; // Object for store all custom functions
 	//-----------|  End of Styles section |-----------//
@@ -337,6 +344,12 @@ module.exports = (() =>
 					if(document.getElementById(elementNames.CPFSP_panelID) && command != 'refresh') { return } // Will repeat if command == refresh
 					emojisPanel.innerHTML = ''; // Clear panel
 					emojisPanel.setAttribute('id', elementNames.CPFSP_panelID); // Change panel ID
+					buttonCPFSP.classList.add(elementNames.CPFSP_activeButton); // Add CSS for select
+					let previousButton = document.getElementById(buttonCPFSP.getAttribute('from'));
+					try
+					{ // Unselecting previous button
+						previousButton.querySelector('button').classList.value = previousButton.querySelector('button').classList.value.replace('ButtonActive', 'Button');
+					} catch(err) { console.warn(err); }
 
 					let elementList = document.createElement('div');
 					let folderSection = document.createElement('div');
@@ -408,16 +421,39 @@ module.exports = (() =>
 			}
 			funcs_.addPicturesPanelButton = async (emojisGUI) =>
 			{
-				if(!emojisGUI) { return }
+				if(!emojisGUI) { return } // I know that in Discord there is no "s"
 				// let emojiButton = document.querySelector('button[class*="emojiButton"]'); // Emojis button in chat
 				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
 				if(!emojisMenu) { return }
+				// Previous button click fix: START
+				let previousButton = emojisMenu.querySelector('div[aria-selected*="true"]');
+				let previousButtonID = previousButton ? previousButton.id : null;
+				if(previousButtonID)
+				{
+					function previousButtonFix(event)
+					{
+						let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
+						let from = buttonCPFSP.getAttribute('from');
+						let emojiTabID = 'emoji-picker-tab';
+						let gifTabID = 'gif-picker-tab';
+						let fix = (from == emojiTabID) ? gifTabID : emojiTabID;
+						// Select other button and after this select previous button again
+						document.getElementById(fix).querySelector('button').click();
+						document.getElementById(from).querySelector('button').click();
+						buttonCPFSP.classList.remove(elementNames.CPFSP_activeButton);
+						// DEBUG // console.log('Fixed', event);
+					}
+					previousButton.addEventListener("click", previousButtonFix, { once: true } );
+				}
+				// Previous button click fix: END
 				if(document.getElementById(elementNames.CPFSP_buttonID)) { return }
 				let buttonCPFSP = document.createElement('button');
 				buttonCPFSP.innerText = 'Pictures';
 				buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonID);
+				buttonCPFSP.setAttribute('from', previousButtonID); // Necessary for fixing previous button
 				let buttonClass = emojisMenu.querySelector('button').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
 				buttonCPFSP.setAttribute('class', buttonClass);
+				//buttonCPFSP.setAttribute('onclick', 'this.classList.add("TimeToPicturesPanel");');
 				buttonCPFSP.removeEventListener('click', funcs_.moveToPicturesPanel); // Insurance
 				buttonCPFSP.addEventListener('click', funcs_.moveToPicturesPanel);
 				emojisMenu.append(buttonCPFSP);
