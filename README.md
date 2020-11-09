@@ -10,9 +10,9 @@ After the scan panel will show previews of all your files in the folder. After c
 Files of ".sent" type will replace files with identical name and extension. ".sent" files will automatically generate after sending local files and will be used if you have enabled corresponding setting.<br />
 ### Work Example:
 ![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
-Starting from version 0.0.7 this plugin will search for and scan subfolders placed in the main folder. Content of these folders will be displayed as sections/groups in the panel itself. Subfolders inside subfolders will not be scanned. It is also *not recommended* to store 300+ images of large size as it will affect speed of panel loading.<br />
+Starting from version 0.0.7 this **plugin will search for and scan subfolders placed in the main folder. Content of these folders will be displayed as sections/groups in the panel itself**. Subfolders inside subfolders will not be scanned. It is also *not recommended* to store 300+ images of large size as it will affect speed of panel loading.<br />
 ### It looks like this:
-[!It looks like this](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SubfoldersSupport.png)
+![It looks like this](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SubfoldersSupport.png)
 ### Configuration menu:
 ![Configuration menu](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings.png)
 
@@ -26,7 +26,7 @@ Plugin also uses [Zere's Plugin Library](https://rauenzi.github.io/BDPluginLibra
 2) Place [Zere's Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) file into your plugin folder;<br />
 3) Place plugin's ".js" file into your plugin folder;<br />
 4) After enabling the plugin, it will create a new folder in your plugin folder, in which you need to move images that you want to use.<br />
-P.S. Plugin will save all information about folder's contents in CustomPanelForSendingPictures.settings.json file, and your plugin settings in CustomPanelForSendingPictures.config.json (you can also delete those files to reset all settings).<br />
+<br />P.S. Plugin will save all information about folder's contents in CustomPanelForSendingPictures.settings.json file, and your plugin settings in CustomPanelForSendingPictures.config.json (you can also delete those files to reset all settings).<br />
 
 # Support:
 If you'd want to help me with this janky project, check the [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#todo), where I've listed problems that I'm trying to solve at the moment. You can check [Communication](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#communication) section for ways of contacting me.<br />
@@ -41,4 +41,8 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 - ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because file sending doesn't return an ID):<br />
 - Configuration parsing is a bit janky, I'd like to fix it ASAP;<br />
 - Code should be reorganized, sometimes it reacts weirdly to multiple reloads and it has plenty of room for optimization;<br />
-- Add support of subfolders, that will be shown as sections/groups in emoji panel.<br />
+- Option for auto-closing the panel after clicking a picture on the panel without holding shift;<br />
+- Adjusting size of pictures to send via settings (only for web links files);<br />
+- Displaying name of selected picture;<br />
+- Option for hotkey to repeat sending last file/link to current channel;<br />
+- Adjusting the cooldown for clicking on pictures on the panel via settings.<br />
