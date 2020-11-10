@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.3",
+			version: "0.1.4",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Added settings for color selection and sending text before the file`,
+				title: `Fixed issue with clicking between menu buttons.`,
 				type: "fixed",
-				items: [`Added settings for color selection of section's name and settings for sending text before the file.`]
+				items: [`Fixed issue with clicking between gif and emojis button after picture button +other small changes.`]
 			}
 		]
 	};
@@ -82,15 +82,22 @@ module.exports = (() =>
 			settingsPath = pluginPath + config.info.name + '.settings.json';
 			configPath = pluginPath + config.info.name + '.configuration.json';
 			picturesPath = pluginPath + config.info.name + '\\';
+			let scanningState;
 			let sentType = '.sent';
 			let srcType = '.src';
-			let mainFolderName = 'Main folder';
+			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
 			let folderListName = `?/\\!FolderList!/\\?`;
 			var Configuration = {
 				UseSentLinks:			{ Value: true, 					Title: `Use Sent Links`, 								Description: `To create and use .sent files that are replacing file sending by sending links.` },
 				SendTextWithFile:		{ Value: false, 				Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending web or local file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
 				OnlyForcedUpdate:		{ Value: false, 				Title: `Only Forced Update`, 							Description: `Doesn't allow plugin to automatically update settings with used files without user interaction.` },
 				sentType2srcType:		{ Value: false, 				Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
+				RepeatLastSent:			{ Value: false, 				Title: `Repeat Last Sent`, 								Description: `To use Alt+V for repeat sending your last sent file or link (without text) to current channel.` },
+				AutoClosePanel:			{ Value: false, 				Title: `Auto Close Panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
+				SendingFileCooldown:	{ Value: 0, 					Title: `Sending File Cooldown`, 						Description: `To set cooldown before you can send another file. Set 0 in this setting to turn this off.` },
+				SetFileSize:			{ Value: '?width=45&height=45', Title: `Set web file size`, 							Description: `To automatically add custom width and height parameter for sending links.` },
+				mainFolderPath:			{ Value: picturesPath, 			Title: `Set your Main folder for pictures`, 			Description: `Set folder which will be scanned for pictures and subfolders. Please try to avoid using folders of very big size (50mb).` },
+				mainFolderNameDisplay:	{ Value: 'Main folder', 		Title: `Set displayed section name for Main folder`, 	Description: `Set this section name to Main folder:` },
 				SectionTextColor:		{ Value: 'color: #000000bb', 	Title: `Section's name color`, 							Description: `Your current color is:` }
 			};
 	//-----------|  Start of Styles section |-----------//
@@ -163,7 +170,9 @@ module.exports = (() =>
 				elementRow: 			'CPFSP_ul',
 				elementCol: 			'CPFSP_li',
 				newPicture: 			'CPFSP_IMG',
-				buttonRefresh: 			'CPFSP_btnRefresh'
+				buttonRefresh: 			'CPFSP_btnRefresh',
+				emojiTabID:				'emoji-picker-tab',
+				gifTabID: 				'gif-picker-tab'
 			}
 			var funcs_ = {}; // Object for store all custom functions
 	//-----------|  End of Styles section |-----------//
@@ -200,7 +209,7 @@ module.exports = (() =>
 					if(waitPLS.state() != 'resolved') { setTimeout(()=> { return funcs_.loadSettings(waitPLS); }, 100) }
 					//waitPLS.promise().always(()=>{console.log('well')});
 				}*/
-				if(waitPLS) { return waitPLS.state(); } // Sorry, I couldn't find a better way to make the waiting while file saving and loading
+				//if(waitPLS) { return waitPLS } // Sorry, I couldn't find a better way to make the waiting while file saving and loading
 				let newPicsGlobalSettings = {};
 				if(!fs_.existsSync(settingsPath)) { return funcs_.loadDefaultSettings(); } // This happen when settings file doesn't exist
 				try { newPicsGlobalSettings = JSON.parse(fs_.readFileSync(settingsPath)); }
@@ -260,7 +269,7 @@ module.exports = (() =>
 				if(fs_.existsSync(picturesPath))
 				{ // Exist
 					let waitPLS = jQuery.Deferred(); // First time when I uses this
-					waitPLS.promise();
+					scanningState = waitPLS.promise();
 					funcs_.findPictures(picturesPath, waitPLS);
 					return funcs_.loadSettings(waitPLS); // funcs_.findPictures will store data in picsGlobalSettings, so with state it possible to decide when new data is received
 				}
@@ -368,13 +377,45 @@ module.exports = (() =>
 			}
 			funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 			{ // once for funcs_.scanDirectory and waitingScan check
-				let command = elem == 'refresh' ? 'refresh' : elem ? elem.target.getAttribute('command') : null;
+				let command = (elem == 'refresh') ? 'refresh' : elem ? elem.target.getAttribute('command') : null;
 				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
 				if(!buttonCPFSP) { return }
 				let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
 				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
 				if(!emojisPanel) { return }
-				let allPicsSettings;
+				let allPicsSettings = funcs_.loadSettings();
+				// Previous button click fix: START
+				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
+				let previousButton = emojisMenu.querySelector('div[aria-selected*="true"]');
+				let previousButtonID = previousButton ? previousButton.id : null;
+				let additionalButton = (previousButtonID == elementNames.emojiTabID) ? document.getElementById(elementNames.gifTabID) : document.getElementById(elementNames.emojiTabID);
+				if(previousButtonID)
+				{
+					buttonCPFSP.setAttribute('from', previousButtonID); // Necessary for fixing previous button
+					function previousButtonFix(event)
+					{
+						let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
+						let from = buttonCPFSP.getAttribute('from');
+						let fix = (from == elementNames.emojiTabID) ? elementNames.gifTabID : elementNames.emojiTabID;
+						// Select other button and after this select previous button again
+						document.getElementById(fix).querySelector('button').click();
+						document.getElementById(from).querySelector('button').click();
+						buttonCPFSP.classList.remove(elementNames.CPFSP_activeButton);
+						// DEBUG // console.log('Fixed', event);
+					}
+					function additionalButtonFix(event)
+					{
+						document.getElementById(elementNames.CPFSP_buttonID).classList.remove(elementNames.CPFSP_activeButton);
+					}
+					try
+					{ // Unselecting previous button
+						previousButton.addEventListener("click", previousButtonFix, { once: true } );
+						additionalButton.addEventListener("click", additionalButtonFix, { once: true } );
+						previousButton.querySelector('button').classList.value = previousButton.querySelector('button').classList.value.replace('ButtonActive', 'Button');
+						additionalButton.querySelector('button').classList.value = previousButton.querySelector('button').classList.value.replace('ButtonActive', 'Button');
+					} catch(err) { console.warn(err); }
+				}
+				// Previous button click fix: END
 				function creatingPanel()
 				{
 					allPicsSettings = funcs_.loadSettings();
@@ -383,10 +424,10 @@ module.exports = (() =>
 					emojisPanel.setAttribute('id', elementNames.CPFSP_panelID); // Change panel ID
 					buttonCPFSP.classList.add(elementNames.CPFSP_activeButton); // Add CSS for select
 					let previousButton = document.getElementById(buttonCPFSP.getAttribute('from'));
-					try
+					/*try
 					{ // Unselecting previous button
 						previousButton.querySelector('button').classList.value = previousButton.querySelector('button').classList.value.replace('ButtonActive', 'Button');
-					} catch(err) { console.warn(err); }
+					} catch(err) { console.warn(err); }*/
 
 					let elementList = document.createElement('div');
 					let folderSection = document.createElement('div');
@@ -399,6 +440,7 @@ module.exports = (() =>
 					function setCurrentSection(folder)
 					{ // Sets name to section with uses variables above
 						currentSection = folder.name;
+						if(currentSection === mainFolderName) { currentSection = Configuration.mainFolderNameDisplay.Value; }
 						folderSection.append(document.createElement('text').innerText = currentSection);
 					}
 					// DEBUG // console.log(allPicsSettings);
@@ -407,7 +449,7 @@ module.exports = (() =>
 						allPicsSettings[folder.name].forEach((file, indexFile)=>
 						{
 							if(indexFolder === 0 && indexFile === 0) { setCurrentSection(folder); } // Set first section for first element
-							if(currentSection != folder.name)
+							if(currentSection != folder.name && folder.name != mainFolderName)
 							{
 								folderSection.append(elementRow); // Adds emojis to special section before section change
 								rowIndex++;
@@ -458,10 +500,10 @@ module.exports = (() =>
 				}
 				$.when($.ajax(allPicsSettings = funcs_.scanDirectory(command))).then(function()
 				{
-					// console.log(allPicsSettings == 'pending') not stable
 					allPicsSettings = funcs_.loadSettings();
+					// console.log(allPicsSettings.state() == 'pending') not stable
 					creatingPanel();
-					if(!once) { setTimeout(()=> { funcs_.moveToPicturesPanel('refresh', true); }, 300); } // Sorry for such a bad solution
+					if(!once) { scanningState.done(setTimeout(()=> { funcs_.moveToPicturesPanel('refresh', true) }, 400)); } // Sorry for such a bad solution
 				});
 			}
 			funcs_.addPicturesPanelButton = async (emojisGUI) =>
@@ -470,32 +512,10 @@ module.exports = (() =>
 				// let emojiButton = document.querySelector('button[class*="emojiButton"]'); // Emojis button in chat
 				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
 				if(!emojisMenu) { return }
-				// Previous button click fix: START
-				let previousButton = emojisMenu.querySelector('div[aria-selected*="true"]');
-				let previousButtonID = previousButton ? previousButton.id : null;
-				if(previousButtonID)
-				{
-					function previousButtonFix(event)
-					{
-						let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
-						let from = buttonCPFSP.getAttribute('from');
-						let emojiTabID = 'emoji-picker-tab';
-						let gifTabID = 'gif-picker-tab';
-						let fix = (from == emojiTabID) ? gifTabID : emojiTabID;
-						// Select other button and after this select previous button again
-						document.getElementById(fix).querySelector('button').click();
-						document.getElementById(from).querySelector('button').click();
-						buttonCPFSP.classList.remove(elementNames.CPFSP_activeButton);
-						// DEBUG // console.log('Fixed', event);
-					}
-					previousButton.addEventListener("click", previousButtonFix, { once: true } );
-				}
-				// Previous button click fix: END
 				if(document.getElementById(elementNames.CPFSP_buttonID)) { return }
 				let buttonCPFSP = document.createElement('button');
 				buttonCPFSP.innerText = 'Pictures';
 				buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonID);
-				buttonCPFSP.setAttribute('from', previousButtonID); // Necessary for fixing previous button
 				let buttonClass = emojisMenu.querySelector('button').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
 				buttonCPFSP.setAttribute('class', buttonClass);
 				//buttonCPFSP.setAttribute('onclick', 'this.classList.add("TimeToPicturesPanel");');
