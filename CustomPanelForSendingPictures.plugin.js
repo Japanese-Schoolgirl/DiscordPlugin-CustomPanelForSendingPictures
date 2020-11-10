@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.0",
+			version: "0.1.1",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: "Improved existing features",
+				title: "Janky fix for scanning system",
 				type: "fixed",
-				items: ["Better sections/groups name display and fixed refresh button for OnlyForcedUpdate option."]
+				items: ["It should fix issue with scanning system which sometimes happens."]
 			}
 		]
 	};
@@ -86,7 +86,6 @@ module.exports = (() =>
 			let srcType = '.src';
 			let mainFolderName = 'Main folder';
 			let folderListName = `?/\\!FolderList!/\\?`;
-			let scaningReady = true;
 			var Configuration = {
 				UseSentLinks:		{ Value: true, 	Title: `Use Sent Links`, 	Description: `To create and use .sent files that are replacing file sending by sending links.` },
 				OnlyForcedUpdate:		{ Value: false, 	Title: `Only Forced Update`, 	Description: `Doesn't allow plugin to automatically update settings with used files without user interaction.` },
@@ -177,7 +176,7 @@ module.exports = (() =>
 				pluginStyles.innerHTML = CPFSP_Styles;
 				return document.body.append(pluginStyles);
 			}
-			funcs_.saveSettings = (data) =>
+			funcs_.saveSettings = (data, once = null) =>
 			{
 				if(Object.keys(data).length < 2) { return funcs_.loadDefaultSettings(); } // This happen when folder is empty
 				//if(!Array.from(data).length) { return funcs_.loadDefaultSettings(); } // This happen when folder is empty
@@ -185,20 +184,33 @@ module.exports = (() =>
 				{
 					if(err)
 					{
-						return console.warn('There has been an error saving your settings data:', err.message);
+						console.warn('There has been an error saving your settings data:', err.message);
 					}
 				});
-				scaningReady = true;
+				if(once) { return picsGlobalSettings; } // to avoid endless engine
+				return funcs_.loadSettings();
 				// DEBUG // console.log('Path: ', __dirname);
 			}
-			funcs_.loadSettings = () =>
+			funcs_.loadSettings = (waitPLS = null, anotherTry = null) =>
 			{
+				/*if(waitPLS)
+				{ // DEPRECATED //
+					if(waitPLS.state() != 'resolved') { setTimeout(()=> { return funcs_.loadSettings(waitPLS); }, 100) }
+					//waitPLS.promise().always(()=>{console.log('well')});
+				}*/
+				if(waitPLS) { return waitPLS.state(); } // Sorry, I couldn't find a better way to make the waiting while file saving and loading
 				let newPicsGlobalSettings = {};
 				if(!fs_.existsSync(settingsPath)) { return funcs_.loadDefaultSettings(); } // This happen when settings file doesn't exist
 				try { newPicsGlobalSettings = JSON.parse(fs_.readFileSync(settingsPath)); }
-				catch(err) { console.warn('There has been an error parsing your settings JSON:', err.message); return picsGlobalSettings; }
+				catch(err)
+				{
+					console.warn('There has been an error parsing your settings JSON:', err.message);
+					if(!anotherTry) { return funcs_.loadSettings(null, true) }
+					return picsGlobalSettings;
+				}
 				if(!Object.keys(newPicsGlobalSettings).length) { return funcs_.loadDefaultSettings(); }  // This happen when settings file is empty
 				picsGlobalSettings = newPicsGlobalSettings;
+				window.q = newPicsGlobalSettings;
 				return picsGlobalSettings;
 			}
 			funcs_.loadDefaultSettings = () =>
@@ -208,8 +220,7 @@ module.exports = (() =>
 				picsGlobalSettings[folderListName] = [ { name: mainFolderName, path: picturesPath } ];
 				picsGlobalSettings[mainFolderName] = picsSettings;
 				//funcs_.saveSettings(picsGlobalSettings);
-				//scaningReady = true;
-				funcs_.saveSettings(picsGlobalSettings);
+				funcs_.saveSettings(picsGlobalSettings, true);
 				return picsGlobalSettings;
 			}
 			funcs_.loadConfiguration = () =>
@@ -241,33 +252,35 @@ module.exports = (() =>
 				});
 				funcs_.loadConfiguration();
 			}
-			funcs_.scanDirectory = (forced = null) =>
+			funcs_.scanDirectory = (forced = null, repeat = null) =>
 			{ // Scanning plugin folder
-				if(Configuration.OnlyForcedUpdate.Value && !forced) { scaningReady = true; return true }
+				if((Configuration.OnlyForcedUpdate.Value && !forced) && !repeat) { return funcs_.loadSettings(); }
 				if(fs_.existsSync(picturesPath))
 				{ // Exist
-					funcs_.findPictures(picturesPath);
-					return true
+					let waitPLS = jQuery.Deferred(); // First time when I uses this
+					waitPLS.promise();
+					funcs_.findPictures(picturesPath, waitPLS);
+					return funcs_.loadSettings(waitPLS); // funcs_.findPictures will store data in picsGlobalSettings, so with state it possible to decide when new data is received
 				}
 				else
 				{ // Not Exist
 					try { fs_.mkdirSync(picturesPath); } // Create folder
 					catch (err) { console.warn(err.code); }
-					scaningReady = true;
-					return true
+					if(!repeat) { funcs_.scanDirectory(forced, true); } // Fixed issue with necessary double scan when user delete folder
+					return false
 				}
 			}
-			funcs_.findPictures = (scanPath, newAllPicsSettings = {}, folderName = null, foldersForScan = [], emtpyFoldersList = []) =>
+			funcs_.findPictures = (scanPath, readyState = null, newAllPicsSettings = {}, folderName = null, foldersForScan = [], emtpyFoldersList = []) =>
 			{ // Scanning for pictures in select folder, "foldersForScan" store folders from plugin directory
 				let newPicsSettings = [];
 				let isFirstScan = !folderName; // !(Object.keys(newAllPicsSettings).length);
-				if(!scanPath) { return }
-				if(!fs_.existsSync(scanPath)) { return }
+				if(!scanPath) { return funcs_.loadSettings(); }
+				if(!fs_.existsSync(scanPath)) { return funcs_.loadSettings(); }
 				if(!folderName) { folderName = mainFolderName; }
 				// function getDirs(scanPath) { return fs_.readdirSync(scanPath).filter(file => fs_.statSync(path_.join(scanPath, file)).isDirectory()); }
 				fs_.readdir(scanPath, function(err, files)
 				{
-					if(err) { return console.warn('Unable to scan directory:' + err); }
+					if(err) { console.warn('Unable to scan directory:' + err); return funcs_.loadSettings(); }
 					let alreadySentFiles = [];
 					if(isFirstScan) { foldersForScan.push({ name: mainFolderName, path: picturesPath }); } // Adds necessary information about main folder
 					if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // Unnecessary reordering fix?
@@ -293,7 +306,7 @@ module.exports = (() =>
 						{
 							if(!Configuration.UseSentLinks.Value) { return } // Doesn't uses this files type if user don't turn on it
 							alreadySentFiles.push({ name: file, link: webLink });
-							return;
+							return
 						}
 
 						if(fileType == srcType) { newPicsSettings[index] = { name: file, link: webLink }; }
@@ -324,11 +337,11 @@ module.exports = (() =>
 						{
 							if(currentFolder == folder.name && folderIndex < Object.keys(foldersForScan).length-1) // it is X < X, where X count of folders
 							{
-								funcs_.findPictures(foldersForScan[folderIndex+1].path, newAllPicsSettings, foldersForScan[folderIndex+1].name, foldersForScan, emtpyFoldersList);
+								funcs_.findPictures(foldersForScan[folderIndex+1].path, readyState, newAllPicsSettings, foldersForScan[folderIndex+1].name, foldersForScan, emtpyFoldersList);
 								return (needSkip = true);
 							}
 						});
-						if(needSkip) { return } // If funcs_.findPictures used inside itself then this method will end there
+						if(needSkip) { return false } // If funcs_.findPictures used inside itself then this method will end there
 					}
 					// DEBUG // console.log(folders, newAllPicsSettings, newPicsSettings, isFirstScan);
 					emtpyFoldersList.forEach((emtpyFolder) =>
@@ -347,23 +360,23 @@ module.exports = (() =>
 							}
 						}
 					} catch(err) { console.warn(err); }
-					funcs_.saveSettings(newAllPicsSettings); // Apply new settings
+					readyState.resolve();
+					return funcs_.saveSettings(newAllPicsSettings); // Apply new settings
 				});
 			}
-			funcs_.moveToPicturesPanel = async (elem = null) =>
-			{
-				let command = elem ? elem.target.getAttribute('command') : null;
+			funcs_.moveToPicturesPanel = (elem = null, once = null) =>
+			{ // once for funcs_.scanDirectory and waitingScan check
+				let command = elem == 'refresh' ? 'refresh' : elem ? elem.target.getAttribute('command') : null;
 				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
 				if(!buttonCPFSP) { return }
 				let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
 				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
 				if(!emojisPanel) { return }
-				scaningReady = false; // Spaghetti fix long loading files
-				funcs_.scanDirectory(command, once = null);
-				(function waitingScan()
+				let allPicsSettings;
+				function creatingPanel()
 				{
-					if(!scaningReady) { return setTimeout(()=> { waitingScan(); }, 10); }
-					if(document.getElementById(elementNames.CPFSP_panelID) && command != 'refresh') { return } // Will repeat if command == refresh
+					allPicsSettings = funcs_.loadSettings();
+					if((document.getElementById(elementNames.CPFSP_panelID) && command != 'refresh')) { return } // Will repeat if command == refresh
 					emojisPanel.innerHTML = ''; // Clear panel
 					emojisPanel.setAttribute('id', elementNames.CPFSP_panelID); // Change panel ID
 					buttonCPFSP.classList.add(elementNames.CPFSP_activeButton); // Add CSS for select
@@ -386,7 +399,6 @@ module.exports = (() =>
 						currentSection = folder.name;
 						folderSection.append(document.createElement('text').innerText = currentSection);
 					}
-					let allPicsSettings = funcs_.loadSettings();
 					// DEBUG // console.log(allPicsSettings);
 					allPicsSettings[folderListName].forEach((folder, indexFolder) =>
 					{
@@ -419,7 +431,8 @@ module.exports = (() =>
 									newPicture.setAttribute('src', `data:image/${path_.extname(file.link)};base64,${new Buffer(fs_.readFileSync(file.link.replace('file:///', ''))).toString('base64')}`);
 								}
 								else { newPicture.setAttribute('src', file.link); }
-							} catch(err) { /* console.warn('There is problem with links:', err); */ if(!once) { return funcs_.scanDirectory(command, 'once'); } }
+							} catch(err)
+							{ /* console.warn('There is problem with links:', err); */ }
 							newPicture.setAttribute('aria-label', file.name);
 							newPicture.setAttribute('alt', file.name);
 							newPicture.setAttribute('class', elementNames.newPicture);
@@ -437,9 +450,17 @@ module.exports = (() =>
 					buttonRefresh.setAttribute('class', elementNames.buttonRefresh);
 					buttonRefresh.setAttribute('command', 'refresh');
 					buttonRefresh.innerText = 'Refresh';
+					buttonRefresh.removeEventListener('click', funcs_.moveToPicturesPanel); // Insurance
 					buttonRefresh.addEventListener('click', funcs_.moveToPicturesPanel);
 					emojisPanel.insertBefore(buttonRefresh, emojisPanel.firstChild); // Adds button to panel
-				})();
+				}
+				$.when($.ajax(allPicsSettings = funcs_.scanDirectory(command))).then(function()
+				{
+					// console.log(allPicsSettings == 'pending') not stable
+					allPicsSettings = funcs_.loadSettings();
+					creatingPanel();
+					if(!once) { setTimeout(()=> { funcs_.moveToPicturesPanel('refresh', true); }, 300); } // Sorry for such a bad solution
+				});
 			}
 			funcs_.addPicturesPanelButton = async (emojisGUI) =>
 			{
@@ -531,7 +552,7 @@ module.exports = (() =>
 					{
 						if(!funcs_) { return console.warn('There is error with functions declaration'); }
 						funcs_.loadConfiguration();
-						funcs_.loadSettings();
+						funcs_.loadSettings(); // despite the fact that the same method is called in the directory scan - the plugin has an option to turn off automatic scan, so doesn't remove this
 						funcs_.setStyles();
 						console.log(config.info.name, 'loaded');
 
