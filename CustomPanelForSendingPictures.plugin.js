@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.1",
+			version: "0.1.2",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: "Janky fix for scanning system",
+				title: "BetterDiscord ruined plugin's config file",
 				type: "fixed",
-				items: ["It should fix issue with scanning system which sometimes happens."]
+				items: ['From now on instead of "config" for configuration file using "configuration" in the name.']
 			}
 		]
 	};
@@ -80,7 +80,7 @@ module.exports = (() =>
 			var pluginPath, settingsPath, configPath, picturesPath;
 			pluginPath = __dirname.indexOf('\\electron.asar\\') != -1 ? __dirname.split('app-')[0] : __dirname + '\\';
 			settingsPath = pluginPath + config.info.name + '.settings.json';
-			configPath = pluginPath + config.info.name + '.config.json';
+			configPath = pluginPath + config.info.name + '.configuration.json';
 			picturesPath = pluginPath + config.info.name + '\\';
 			let sentType = '.sent';
 			let srcType = '.src';
