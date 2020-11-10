@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.2",
+			version: "0.1.3",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: "BetterDiscord ruined plugin's config file",
+				title: `Added settings for color selection and sending text before the file`,
 				type: "fixed",
-				items: ['From now on instead of "config" for configuration file using "configuration" in the name.']
+				items: [`Added settings for color selection of section's name and settings for sending text before the file.`]
 			}
 		]
 	};
@@ -87,12 +87,14 @@ module.exports = (() =>
 			let mainFolderName = 'Main folder';
 			let folderListName = `?/\\!FolderList!/\\?`;
 			var Configuration = {
-				UseSentLinks:		{ Value: true, 	Title: `Use Sent Links`, 	Description: `To create and use .sent files that are replacing file sending by sending links.` },
-				OnlyForcedUpdate:		{ Value: false, 	Title: `Only Forced Update`, 	Description: `Doesn't allow plugin to automatically update settings with used files without user interaction.` },
-				sentType2srcType:		{ Value: false, 	Title: `Treat ${sentType} as ${srcType}`, 	Description: `To use ${sentType} as ${srcType}.` }
+				UseSentLinks:			{ Value: true, 					Title: `Use Sent Links`, 								Description: `To create and use .sent files that are replacing file sending by sending links.` },
+				SendTextWithFile:		{ Value: false, 				Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending web or local file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
+				OnlyForcedUpdate:		{ Value: false, 				Title: `Only Forced Update`, 							Description: `Doesn't allow plugin to automatically update settings with used files without user interaction.` },
+				sentType2srcType:		{ Value: false, 				Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
+				SectionTextColor:		{ Value: 'color: #000000bb', 	Title: `Section's name color`, 							Description: `Your current color is:` }
 			};
 	//-----------|  Start of Styles section |-----------//
-			var CPFSP_Styles = ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
+			var CPFSP_Styles = () => { return ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
 #CPFSP_Panel {
 	grid-row: 2/2;
 	overflow: hidden;
@@ -113,7 +115,7 @@ module.exports = (() =>
 	margin-left: 18px;
 	font-size: 18px;
 	font-weight: 600;
-	/* color: var(--header-primary); */
+	color: ${Configuration.SectionTextColor.Value}; /* color: var(--header-primary); */
 	text-shadow: 0px 0px 5px white, 0px 0px 10px white, 0px 0px 5px black, 0px 0px 10px black, 0px 0px 1px purple;
 }
 .CPFSP_ul {
@@ -150,7 +152,7 @@ module.exports = (() =>
 	background-color: var(--background-accent);
 	color: #fff;
 }
-			`
+			`};
 			var elementNames = {
 				id: 					'CPFSP_StyleSheet',
 				CPFSP_panelID: 			'CPFSP_Panel',
@@ -173,7 +175,7 @@ module.exports = (() =>
 				if(document.getElementById(elementNames.id)) { return }
 				let pluginStyles = document.createElement('style');
 				pluginStyles.setAttribute('id', elementNames.id);
-				pluginStyles.innerHTML = CPFSP_Styles;
+				pluginStyles.innerHTML = CPFSP_Styles();
 				return document.body.append(pluginStyles);
 			}
 			funcs_.saveSettings = (data, once = null) =>
@@ -511,6 +513,14 @@ module.exports = (() =>
 				let ChatBox = document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]'); // User's textbox
 				let ChatBoxText = ChatBox ? Array.from(ChatBox.querySelectorAll('span')).pop() : null;
 				if(!ChatBoxText) { return } // Stop method if user doesn't have access to chat
+				if(Configuration.SendTextWithFile.Value)
+				{ // Send text from textbox before send file
+					if(ChatBoxText.innerText.length < 2002)
+					{
+						DiscordAPI.currentChannel.sendMessage(ChatBoxText.innerText);
+					} // 2001 is limit for text length
+					else  { BdApi.showConfirmationModal(`For you:`, `Baka, your text wasn't sent with message because your text is over 2000 symbols!`); return }
+				}
 				if(link.indexOf(';base64,') != -1)
 				{
 					path = decodeURI(path.replace('file:///', '')); // I know this stupid, but file:/// I need for features, maybe :/
@@ -588,15 +598,27 @@ module.exports = (() =>
 							Configuration.UseSentLinks.Value = checked;
 							funcs_.saveConfiguration();
 						}))
-						.append(new Settings.Switch(Configuration.OnlyForcedUpdate.Title, Configuration.OnlyForcedUpdate.Description, Configuration.OnlyForcedUpdate.Value, checked =>
+						.append(new Settings.Switch(Configuration.SendTextWithFile.Title, Configuration.SendTextWithFile.Description, Configuration.SendTextWithFile.Value, checked =>
 						{
-							Configuration.OnlyForcedUpdate.Value = checked;
+							Configuration.SendTextWithFile.Value = checked;
 							funcs_.saveConfiguration();
+						}))
+						.append(new Settings.Switch(Configuration.OnlyForcedUpdate.Title, Configuration.OnlyForcedUpdate.Description, Configuration.OnlyForcedUpdate.Value, checked =>
+							{
+								Configuration.OnlyForcedUpdate.Value = checked;
+								funcs_.saveConfiguration();
 						}))
 						.append(new Settings.Switch(Configuration.sentType2srcType.Title, Configuration.OnlyForcedUpdate.Description, Configuration.sentType2srcType.Value, checked =>
 						{
 							Configuration.sentType2srcType.Value = checked;
 							funcs_.saveConfiguration();
+						}))
+						.append(new Settings.ColorPicker(Configuration.SectionTextColor.Title, Configuration.SectionTextColor.Description, Configuration.SectionTextColor.Value, color =>
+							{
+								Configuration.SectionTextColor.Value = color;
+								funcs_.saveConfiguration();
+								funcs_.setStyles('delete');
+								funcs_.setStyles();
 						}));
 					return Panel;
 				}
