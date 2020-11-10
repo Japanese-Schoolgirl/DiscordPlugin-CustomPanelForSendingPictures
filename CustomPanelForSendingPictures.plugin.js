@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.4",
+			version: "0.1.5",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed issue with clicking between menu buttons.`,
+				title: `Fixed issue with sending empty message`,
 				type: "fixed",
-				items: [`Fixed issue with clicking between gif and emojis button after picture button +other small changes.`]
+				items: [`Discord have very weird checks for messages, so it was necessary to add other checks.`]
 			}
 		]
 	};
@@ -531,15 +531,16 @@ module.exports = (() =>
 				let name = from.target.getAttribute('alt');
 				let channelID = DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
 				let ChatBox = document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]'); // User's textbox
-				let ChatBoxText = ChatBox ? Array.from(ChatBox.querySelectorAll('span')).pop() : null;
-				if(!ChatBoxText) { return } // Stop method if user doesn't have access to chat
+				//let ChatBoxText = ChatBox ? Array.from(ChatBox.querySelectorAll('span')).pop() : null;
+				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
 				if(Configuration.SendTextWithFile.Value)
 				{ // Send text from textbox before send file
-					if(ChatBoxText.innerText.length < 2002)
+					if(ChatBox.innerText.length < 2002)
 					{
-						DiscordAPI.currentChannel.sendMessage(ChatBoxText.innerText);
+						if(ChatBox.innerText.replace(/\s/g, '').length > 0) { DiscordAPI.currentChannel.sendMessage(ChatBox.innerText); } // For don't send empty message
 					} // 2001 is limit for text length
-					else  { BdApi.showConfirmationModal(`For you:`, `Baka, your text wasn't sent with message because your text is over 2000 symbols!`); return }
+					else { BdApi.showConfirmationModal(`For you:`, `Baka, your text wasn't sent with message because your text is over 2000 symbols!`); return }
+					
 				}
 				if(link.indexOf(';base64,') != -1)
 				{
@@ -548,7 +549,7 @@ module.exports = (() =>
 					return
 				}
 				/* // DEPRECATED (c)0.0.1 version //
-				link = (escape(ChatBoxText.innerText) == "%uFEFF%0A") ? link : `\n${link}`; // "%uFEFF%0A" is empty chat value for Discord
+				link = (escape(ChatBox.innerText) == "%uFEFF%0A") ? link : `\n${link}`; // "%uFEFF%0A" is empty chat value for Discord
 				if(Configuration.PostLinksImmediately.Value) { } // Not ready yet
 				BDFDB.LibraryModules.DispatchUtils.ComponentDispatch.dispatchToLastSubscribed(BDFDB.DiscordConstants.ComponentActions.INSERT_TEXT, {
 					content: `${link}`
