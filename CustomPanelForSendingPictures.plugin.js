@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.5",
+			version: "0.1.6",
 			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed issue with sending empty message`,
+				title: `Big update (fixed empty subfolder bug and added many options)`,
 				type: "fixed",
-				items: [`Discord have very weird checks for messages, so it was necessary to add other checks.`]
+				items: [`Fixed emtpy folder in subfolder bug and added following options: ability to Repeat last sent, Auto close panel, Sending file cooldown, to change Main folder path and Main folder display name.`]
 			}
 		]
 	};
@@ -82,23 +82,25 @@ module.exports = (() =>
 			settingsPath = pluginPath + config.info.name + '.settings.json';
 			configPath = pluginPath + config.info.name + '.configuration.json';
 			picturesPath = pluginPath + config.info.name + '\\';
+			var lastSent = {};
+			let sendingCooldown = {time: 0, duration: 0};
 			let scanningState;
 			let sentType = '.sent';
 			let srcType = '.src';
 			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
 			let folderListName = `?/\\!FolderList!/\\?`;
-			var Configuration = {
-				UseSentLinks:			{ Value: true, 					Title: `Use Sent Links`, 								Description: `To create and use .sent files that are replacing file sending by sending links.` },
-				SendTextWithFile:		{ Value: false, 				Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending web or local file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
-				OnlyForcedUpdate:		{ Value: false, 				Title: `Only Forced Update`, 							Description: `Doesn't allow plugin to automatically update settings with used files without user interaction.` },
-				sentType2srcType:		{ Value: false, 				Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
-				RepeatLastSent:			{ Value: false, 				Title: `Repeat Last Sent`, 								Description: `To use Alt+V for repeat sending your last sent file or link (without text) to current channel.` },
-				AutoClosePanel:			{ Value: false, 				Title: `Auto Close Panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
-				SendingFileCooldown:	{ Value: 0, 					Title: `Sending File Cooldown`, 						Description: `To set cooldown before you can send another file. Set 0 in this setting to turn this off.` },
-				SetFileSize:			{ Value: '?width=45&height=45', Title: `Set web file size`, 							Description: `To automatically add custom width and height parameter for sending links.` },
-				mainFolderPath:			{ Value: picturesPath, 			Title: `Set your Main folder for pictures`, 			Description: `Set folder which will be scanned for pictures and subfolders. Please try to avoid using folders of very big size (50mb).` },
-				mainFolderNameDisplay:	{ Value: 'Main folder', 		Title: `Set displayed section name for Main folder`, 	Description: `Set this section name to Main folder:` },
-				SectionTextColor:		{ Value: 'color: #000000bb', 	Title: `Section's name color`, 							Description: `Your current color is:` }
+			var Configuration = { // Almost all Default values need only as placeholder
+				UseSentLinks:			{ Value: true, 					Default: true, 						Title: `Use Sent Links`, 								Description: `To create and use .sent files that are replacing file sending by sending links.` },
+				SendTextWithFile:		{ Value: false, 				Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending web or local file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
+				OnlyForcedUpdate:		{ Value: true, 					Default: true, 						Title: `Only Forced Update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
+				sentType2srcType:		{ Value: false, 				Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
+				RepeatLastSent:			{ Value: false, 				Default: false, 					Title: `Repeat Last Sent`, 								Description: `To use Alt+V for repeat sending your last sent file or link (without text) to current channel.` },
+				AutoClosePanel:			{ Value: false, 				Default: false, 					Title: `Auto Close Panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
+				SendingFileCooldown:	{ Value: 0, 					Default: '0', 						Title: `Sending File Cooldown`, 						Description: `To set cooldown in millisecond before you can send another file. Set 0 in this setting to turn this off. This option exists to prevent double/miss clicks so it doesn't apply to hotkey sending.` },
+				SetFileSize:			{ Value: '', 					Default: '?width=45&height=45', 	Title: `Set web file size (off by default)`, 			Description: `To automatically add custom width and height and others parameters for sending links. Remove value in this setting to turn this off.` },
+				mainFolderPath:			{ Value: picturesPath, 			Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders of very big size (50mb). Chosen directory should already exist.` },
+				mainFolderNameDisplay:	{ Value: 'Main folder', 		Default: 'Main folder', 			Title: `Displayed section name for Main folder`, 		Description: `You can set this section name to Main folder:` },
+				SectionTextColor:		{ Value: 'color: #000000bb', 	Default: 'color: #000000bb', 		Title: `Section's name color`, 							Description: `Your current color is:` }
 			};
 	//-----------|  Start of Styles section |-----------//
 			var CPFSP_Styles = () => { return ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
@@ -221,14 +223,13 @@ module.exports = (() =>
 				}
 				if(!Object.keys(newPicsGlobalSettings).length) { return funcs_.loadDefaultSettings(); }  // This happen when settings file is empty
 				picsGlobalSettings = newPicsGlobalSettings;
-				window.q = newPicsGlobalSettings;
 				return picsGlobalSettings;
 			}
 			funcs_.loadDefaultSettings = () =>
 			{
 				picsGlobalSettings = {};
 				picsSettings = [ { name: 'AnnoyingLisa', link: 'https://i.imgur.com/l5Jf0VP.png' }, { name: 'AngryLisaNoises', link: 'https://i.imgur.com/ntW5Vqt.png'} ]; // Placeholder
-				picsGlobalSettings[folderListName] = [ { name: mainFolderName, path: picturesPath } ];
+				picsGlobalSettings[folderListName] = [ { name: mainFolderName, path: Configuration.mainFolderPath.Value } ];
 				picsGlobalSettings[mainFolderName] = picsSettings;
 				//funcs_.saveSettings(picsGlobalSettings);
 				funcs_.saveSettings(picsGlobalSettings, true);
@@ -246,6 +247,11 @@ module.exports = (() =>
 					if(!newData[key]) { return };
 					Configuration[key].Value = newData[key];
 				});
+				if(Configuration.RepeatLastSent.Value)
+				{
+					document.body.removeEventListener('keydown', funcs_.RepeatLastSentFunc);
+					document.body.addEventListener('keydown', funcs_.RepeatLastSentFunc);
+				}
 			}
 			funcs_.saveConfiguration = () =>
 			{
@@ -266,16 +272,17 @@ module.exports = (() =>
 			funcs_.scanDirectory = (forced = null, repeat = null) =>
 			{ // Scanning plugin folder
 				if((Configuration.OnlyForcedUpdate.Value && !forced) && !repeat) { return funcs_.loadSettings(); }
-				if(fs_.existsSync(picturesPath))
+				if(fs_.existsSync(Configuration.mainFolderPath.Value))
 				{ // Exist
 					let waitPLS = jQuery.Deferred(); // First time when I uses this
 					scanningState = waitPLS.promise();
-					funcs_.findPictures(picturesPath, waitPLS);
+					funcs_.findPictures(Configuration.mainFolderPath.Value, waitPLS);
 					return funcs_.loadSettings(waitPLS); // funcs_.findPictures will store data in picsGlobalSettings, so with state it possible to decide when new data is received
 				}
 				else
 				{ // Not Exist
-					try { fs_.mkdirSync(picturesPath); } // Create folder
+					if(Configuration.mainFolderPath.Value.length < 2) { Configuration.mainFolderPath.Value = Configuration.mainFolderPath.Default; } // Protection against shoot on foots
+					try { fs_.mkdirSync(Configuration.mainFolderPath.Value); } // Try create folder
 					catch (err) { console.warn(err.code); }
 					if(!repeat) { funcs_.scanDirectory(forced, true); } // Fixed issue with necessary double scan when user delete folder
 					return false
@@ -293,7 +300,7 @@ module.exports = (() =>
 				{
 					if(err) { console.warn('Unable to scan directory:' + err); return funcs_.loadSettings(); }
 					let alreadySentFiles = [];
-					if(isFirstScan) { foldersForScan.push({ name: mainFolderName, path: picturesPath }); } // Adds necessary information about main folder
+					if(isFirstScan) { foldersForScan.push({ name: mainFolderName, path: Configuration.mainFolderPath.Value }); } // Adds necessary information about main folder
 					if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // Unnecessary reordering fix?
 					let currentFolder = isFirstScan ? mainFolderName : folderName; // Get name of current folder
 					let index = 0;
@@ -331,8 +338,8 @@ module.exports = (() =>
 						let found = newPicsSettings.find(el => el.name == file.name.slice(0, -sentType.length));
 						if(found) { found.link = file.link; }
 					});
-					if(!Object.keys(files).length)
-					{ // Delete empty folder from list and refresh list
+					if(!Object.keys(files).length || !Object.keys(newPicsSettings).length)
+					{ // Detect and adds emtpy folder to list for delete
 						//foldersForScan.splice(foldersForScan.findIndex((el) => el.name == currentFolder), 1); // Didn't work properly
 						//foldersForScan.find((el) => el.name == currentFolder).name = 'undefined';
 						//newAllPicsSettings[folderListName] = foldersForScan;
@@ -503,7 +510,7 @@ module.exports = (() =>
 					allPicsSettings = funcs_.loadSettings();
 					// console.log(allPicsSettings.state() == 'pending') not stable
 					creatingPanel();
-					if(!once) { scanningState.done(setTimeout(()=> { funcs_.moveToPicturesPanel('refresh', true) }, 400)); } // Sorry for such a bad solution
+					if(!once && scanningState) { scanningState.done(setTimeout(()=> { funcs_.moveToPicturesPanel('refresh', true) }, 400)); } // Sorry for such a bad solution
 				});
 			}
 			funcs_.addPicturesPanelButton = async (emojisGUI) =>
@@ -523,16 +530,44 @@ module.exports = (() =>
 				buttonCPFSP.addEventListener('click', funcs_.moveToPicturesPanel);
 				emojisMenu.append(buttonCPFSP);
 			}
-			funcs_.send2ChatBox = async (from) =>
+			funcs_.send2ChatBox = async (from) => // from is event
 			{
 				if(!from) { return }
-				let link = from.target.getAttribute('src'); // Only for events from clicking at imgs
+				if(!!Configuration.SendingFileCooldown.Value && !isNaN(Configuration.SendingFileCooldown.Value))
+				{ // Cooldown
+					if(!sendingCooldown.time)
+					{
+						sendingCooldown.time = Configuration.SendingFileCooldown.Value;
+						sendingCooldown.duration = (setTimeout(()=> { sendingCooldown.time = 0 }, Configuration.SendingFileCooldown.Value));
+					}
+					else if(sendingCooldown.time != Configuration.SendingFileCooldown.Value)
+					{
+						clearTimeout(sendingCooldown.duration);
+						sendingCooldown.time = Configuration.SendingFileCooldown.Value;
+						sendingCooldown.duration = (setTimeout(()=> { sendingCooldown.time = 0 }, Configuration.SendingFileCooldown.Value));
+					}
+					else { console.log(config.info.name, 'message: default cooldown time is', sendingCooldown.time); return }
+				} else if(sendingCooldown.time) { sendingCooldown.time = 0; }
+
+				let link = Configuration.SetFileSize.Value.length ? from.target.getAttribute('src')+Configuration.SetFileSize.Value: from.target.getAttribute('src'); // Only for events from clicking at imgs
 				let path = from.target.getAttribute('path');
 				let name = from.target.getAttribute('alt');
 				let channelID = DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
 				let ChatBox = document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]'); // User's textbox
 				//let ChatBoxText = ChatBox ? Array.from(ChatBox.querySelectorAll('span')).pop() : null;
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
+
+				if(Configuration.AutoClosePanel.Value)
+				{
+					if(document.getElementById(elementNames.CPFSP_buttonID) && !from.shiftKey)
+					{ // Below code will run if panel is displayed && click without shift key
+						let clickEvent = ChatBox.ownerDocument.createEvent('MouseEvents');
+						clickEvent.initMouseEvent("mousedown", true, true, ChatBox.ownerDocument.defaultView, 0, 0, 0, 0, 0, false, false, false, false, 0, null); // Thanks stackoverflow.com ;)
+						ChatBox.dispatchEvent(clickEvent);
+					}
+				}
+
+				// Sending
 				if(Configuration.SendTextWithFile.Value)
 				{ // Send text from textbox before send file
 					if(ChatBox.innerText.length < 2002)
@@ -545,7 +580,8 @@ module.exports = (() =>
 				if(link.indexOf(';base64,') != -1)
 				{
 					path = decodeURI(path.replace('file:///', '')); // I know this stupid, but file:/// I need for features, maybe :/
-					uploadModule.upload(channelID, new File([fs_.readFileSync(path)], name));
+					uploadModule.upload(channelID, file = new File([fs_.readFileSync(path)], name));
+					lastSent = { file: file, link: null };
 					return
 				}
 				/* // DEPRECATED (c)0.0.1 version //
@@ -555,7 +591,24 @@ module.exports = (() =>
 					content: `${link}`
 				}); // Adds text to user's textbox
 				*/
-				DiscordAPI.currentChannel.sendMessage(link);
+				lastSent = { file: null, link: link};
+				return DiscordAPI.currentChannel.sendMessage(link);
+			}
+			funcs_.RepeatLastSentFunc = (event) =>
+			{
+				if(!Configuration.RepeatLastSent.Value) { return }
+				if(!event.altKey || event.which != 86) { return } // 86 is V key, 18 is Alt
+				if(!lastSent) { return }
+				if(!lastSent.file && !lastSent.link) { return }
+				if(lastSent.file)
+				{
+					let channelID = DiscordAPI.currentChannel.id;
+					uploadModule.upload(channelID, lastSent.file);
+				}
+				else if(lastSent.link)
+				{
+					DiscordAPI.currentChannel.sendMessage(lastSent.link);
+				}
 			}
 			funcs_.DiscordMenuObserver = new MutationObserver((mutations) =>
 			{
@@ -598,6 +651,7 @@ module.exports = (() =>
 					{
 						funcs_.DiscordMenuObserver.disconnect();
 						funcs_.setStyles('delete');
+						document.body.removeEventListener('keydown', funcs_.RepeatLastSentFunc);
 						funcs_ = null;
 						console.log(config.info.name, 'stopped');
 						Patcher.unpatchAll();
@@ -607,33 +661,75 @@ module.exports = (() =>
 				getSettingsPanel()
 				{
 					const Panel = document.createElement('div');
+					var PanelElements = {};
 					Panel.setAttribute('class', 'form');
 					Panel.setAttribute('style', 'width:100%;');
 					new Settings.SettingGroup(`${this.getName()} ${config.info.version} Settings Menu`, { shown:true }).appendTo(Panel)
-						.append(new Settings.Textbox('There is your folder for pictures:', `At the current update the folder can't be changing`, `${picturesPath}`, text =>
-						{
-							// DEBUG // console.log(text);
-						}))
+						// Use Sent Links
 						.append(new Settings.Switch(Configuration.UseSentLinks.Title, Configuration.UseSentLinks.Description, Configuration.UseSentLinks.Value, checked =>
 						{
 							Configuration.UseSentLinks.Value = checked;
 							funcs_.saveConfiguration();
 						}))
+						// Send Text With File
 						.append(new Settings.Switch(Configuration.SendTextWithFile.Title, Configuration.SendTextWithFile.Description, Configuration.SendTextWithFile.Value, checked =>
 						{
 							Configuration.SendTextWithFile.Value = checked;
 							funcs_.saveConfiguration();
 						}))
+						// Only Forced Update
 						.append(new Settings.Switch(Configuration.OnlyForcedUpdate.Title, Configuration.OnlyForcedUpdate.Description, Configuration.OnlyForcedUpdate.Value, checked =>
 							{
 								Configuration.OnlyForcedUpdate.Value = checked;
 								funcs_.saveConfiguration();
 						}))
-						.append(new Settings.Switch(Configuration.sentType2srcType.Title, Configuration.OnlyForcedUpdate.Description, Configuration.sentType2srcType.Value, checked =>
+						// sentType to srcType
+						.append(new Settings.Switch(Configuration.sentType2srcType.Title, Configuration.sentType2srcType.Description, Configuration.sentType2srcType.Value, checked =>
 						{
 							Configuration.sentType2srcType.Value = checked;
 							funcs_.saveConfiguration();
 						}))
+						// Repeat Last Sent
+						.append(new Settings.Switch(Configuration.RepeatLastSent.Title, Configuration.RepeatLastSent.Description, Configuration.RepeatLastSent.Value, checked =>
+						{
+							Configuration.RepeatLastSent.Value = checked;
+							funcs_.saveConfiguration();
+						}))
+						// Auto Close Panel
+						.append(new Settings.Switch(Configuration.AutoClosePanel.Title, Configuration.AutoClosePanel.Description, Configuration.AutoClosePanel.Value, checked =>
+						{
+							Configuration.AutoClosePanel.Value = checked;
+							funcs_.saveConfiguration();
+						}))
+						// Sending File Cooldown
+						.append(new Settings.Textbox(Configuration.SendingFileCooldown.Title, Configuration.SendingFileCooldown.Description, Configuration.SendingFileCooldown.Value, text =>
+						{
+							if(isNaN(text)) { return }
+							Configuration.SendingFileCooldown.Value = text;
+							funcs_.saveConfiguration();
+						}, { placeholder: Configuration.SendingFileCooldown.Default }))
+						// Set File Size
+						.append(new Settings.Textbox(Configuration.SetFileSize.Title, Configuration.SetFileSize.Description, Configuration.SetFileSize.Value, text =>
+						{
+							Configuration.SetFileSize.Value = text;
+							funcs_.saveConfiguration();
+						}, { placeholder: Configuration.SetFileSize.Default }))
+						// Main Folder Path
+						.append(new Settings.Textbox(Configuration.mainFolderPath.Title, Configuration.mainFolderPath.Description, Configuration.mainFolderPath.Value, text =>
+						{
+							if(!text.length) { return }
+							if(!fs_.existsSync(text)) { return Configuration.mainFolderPath.Value = Configuration.mainFolderPath.Default; }
+							Configuration.mainFolderPath.Value = text;
+							funcs_.saveConfiguration();
+						}, { placeholder: Configuration.mainFolderPath.Default }))
+						// Main Folder Name Display
+						.append(new Settings.Textbox(Configuration.mainFolderNameDisplay.Title, Configuration.mainFolderNameDisplay.Description, Configuration.mainFolderNameDisplay.Value, text =>
+						{
+							if(!text.length) { return }
+							Configuration.mainFolderNameDisplay.Value = text;
+							funcs_.saveConfiguration();
+						}, { placeholder: Configuration.mainFolderNameDisplay.Default }))
+						// Section Text Color
 						.append(new Settings.ColorPicker(Configuration.SectionTextColor.Title, Configuration.SectionTextColor.Description, Configuration.SectionTextColor.Value, color =>
 							{
 								Configuration.SectionTextColor.Value = color;
