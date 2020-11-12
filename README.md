@@ -11,10 +11,8 @@ Files of ".sent" type will replace files with identical name and extension. ".se
 ### Work Example:
 ![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 Starting from version 0.0.7 this **plugin will search for and scan subfolders placed in the main folder. Content of these folders will be displayed as sections/groups in the panel itself**. Subfolders inside subfolders will not be scanned. It is also *not recommended* to store 300+ images of large size as it will affect speed of panel loading.<br />
-### It looks like this:
-![It looks like this](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SubfoldersSupport.png)
 ### Configuration menu:
-![Configuration menu](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings.png)
+![Configuration menu](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings_EN.png)
 
 
 # Compatability:
@@ -40,8 +38,3 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 # TODO:
 - ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because file sending doesn't return an ID):<br />
 - Code should be reorganized, sometimes it reacts weirdly to multiple reloads and it has plenty of room for optimization;<br />
-- Option for auto-closing the panel after clicking a picture on the panel without holding shift;<br />
-- Adjusting size of pictures to send via settings (only for web links files);<br />
-- Displaying name of selected picture;<br />
-- Option for hotkey to repeat sending last file/link to current channel;<br />
-- Adjusting the cooldown for clicking on pictures on the panel via settings.<br />

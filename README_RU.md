@@ -11,10 +11,8 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 ### Пример работы:
 ![Пример работы](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 С версии 0.0.7 теперь этот **плагин будет находить и сканировать подпапки, находящиеся в главной папке. Содержимое этих папок будет отображено секциями/группами в самой панели**. Подпапки внутри подпапок сканироваться не будут. Также *не рекомендуется* хранить 300+ картинок с приличным весом, потому что это всё сказывается на скорость прогрузки панели.<br />
-### Выглядит это так:
-![Выглядит это так:](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SubfoldersSupport.png)
 ### Меню настроек:
-![Меню настроек](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings.png)
+![Меню настроек](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings_RU.png)
 
 # Совместимость:
 Я пользуюсь [EnhancedDiscord](https://github.com/joe27g/EnhancedDiscord) и могу отслеживать проблемы возникающие только на нём. Тем не менее плагин у пользователей BetterDiscord должен работать исправно, потому что он сделан как плагин для [BetterDiscord](https://github.com/rauenzi/BetterDiscordApp).<br />
@@ -39,8 +37,3 @@ https://www.donationalerts.com/r/JapaneseSchoolgirl<br />
 # TODO:
 - ".sent" файлы не генерируются автоматически, это связано с проблемой получения ссылки из ID отправленного файла (потому что отправка файлов не возвращает ID);<br />
 - Код стоит немного реорганизовать, он иногда странно реагирует на многократными перезагрузки и его много где можно оптимизировать;<br />
-- Опция на автозакрытие панели после клика без шифта на картинку с панели;<br />
-- Регулирование через настройки размера картинок (только для версии с ссылками);<br />
-- Отображение названий выбираемых картинок;<br />
-- Опция на хоткей для повторения прошлой отправки файла/ссылки в активный канал;<br />
-- Регулирование кулдауна на нажатие в настройках.<br />

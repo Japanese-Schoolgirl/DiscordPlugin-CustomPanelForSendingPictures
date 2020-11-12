@@ -24,17 +24,17 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.6",
-			description: "Adds panel which load pictures by links from settings and allow you to repost pictures via clicking to their preview. Links are automatically created on scanning the plugin folder (supports subfolders and will show them as sections/groups).",
+			version: "0.1.7",
+			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
 		},
 		changelog:
 		[
 			{
-				title: `Big update (fixed empty subfolder bug and added many options)`,
+				title: `Added RU localization and picture's name displaying on hover`,
 				type: "fixed",
-				items: [`Fixed emtpy folder in subfolder bug and added following options: ability to Repeat last sent, Auto close panel, Sending file cooldown, to change Main folder path and Main folder display name.`]
+				items: [`Added RU localization for everything expect changelogs. Also from now on picture's name will be displayed when mouse is over its preview.`]
 			}
 		]
 	};
@@ -90,15 +90,15 @@ module.exports = (() =>
 			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
 			let folderListName = `?/\\!FolderList!/\\?`;
 			var Configuration = { // Almost all Default values need only as placeholder
-				UseSentLinks:			{ Value: true, 					Default: true, 						Title: `Use Sent Links`, 								Description: `To create and use .sent files that are replacing file sending by sending links.` },
-				SendTextWithFile:		{ Value: false, 				Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending web or local file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
-				OnlyForcedUpdate:		{ Value: true, 					Default: true, 						Title: `Only Forced Update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
+				UseSentLinks:			{ Value: true, 					Default: true, 						Title: `Use "Sent Links"`, 								Description: `To create and use ${sentType} files that are replacing file sending by sending links.` },
+				SendTextWithFile:		{ Value: false, 				Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
+				OnlyForcedUpdate:		{ Value: true, 					Default: true, 						Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
 				sentType2srcType:		{ Value: false, 				Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
-				RepeatLastSent:			{ Value: false, 				Default: false, 					Title: `Repeat Last Sent`, 								Description: `To use Alt+V for repeat sending your last sent file or link (without text) to current channel.` },
-				AutoClosePanel:			{ Value: false, 				Default: false, 					Title: `Auto Close Panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
-				SendingFileCooldown:	{ Value: 0, 					Default: '0', 						Title: `Sending File Cooldown`, 						Description: `To set cooldown in millisecond before you can send another file. Set 0 in this setting to turn this off. This option exists to prevent double/miss clicks so it doesn't apply to hotkey sending.` },
+				RepeatLastSent:			{ Value: false, 				Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
+				AutoClosePanel:			{ Value: false, 				Default: false, 					Title: `Auto close panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
+				SendingFileCooldown:	{ Value: 0, 					Default: '0', 						Title: `Sending file cooldown`, 						Description: `To set cooldown in millisecond before you can send another file. Set 0 in this setting to turn this off. This option exists to prevent double/miss clicks so it doesn't apply to hotkey sending.` },
 				SetFileSize:			{ Value: '', 					Default: '?width=45&height=45', 	Title: `Set web file size (off by default)`, 			Description: `To automatically add custom width and height and others parameters for sending links. Remove value in this setting to turn this off.` },
-				mainFolderPath:			{ Value: picturesPath, 			Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders of very big size (50mb). Chosen directory should already exist.` },
+				mainFolderPath:			{ Value: picturesPath, 			Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders of very big size (50+ mb). Chosen directory should already exist.` },
 				mainFolderNameDisplay:	{ Value: 'Main folder', 		Default: 'Main folder', 			Title: `Displayed section name for Main folder`, 		Description: `You can set this section name to Main folder:` },
 				SectionTextColor:		{ Value: 'color: #000000bb', 	Default: 'color: #000000bb', 		Title: `Section's name color`, 							Description: `Your current color is:` }
 			};
@@ -176,6 +176,10 @@ module.exports = (() =>
 				emojiTabID:				'emoji-picker-tab',
 				gifTabID: 				'gif-picker-tab'
 			}
+			var labelsNames = {
+				Pictures: 			'Pictures',
+				configMenu: 		'Configuration Menu'
+			}
 			var funcs_ = {}; // Object for store all custom functions
 	//-----------|  End of Styles section |-----------//
 
@@ -188,6 +192,41 @@ module.exports = (() =>
 				pluginStyles.setAttribute('id', elementNames.id);
 				pluginStyles.innerHTML = CPFSP_Styles();
 				return document.body.append(pluginStyles);
+			}
+			funcs_.setLanguage = () =>
+			{ // Janky localization
+				switch(ZLibrary.DiscordAPI.UserSettings.locale)
+				{
+					case 'ru':
+						config.info.description = 'Добавляет панель, которая подгружает картинки через файл настроек с используемыми файлами и ссылками, позволяя отправлять картинки с текстом или без текста нажатием по превью картинок на панели. Файл настроек автоматически создаётся при сканировании выбранной папки или папки плагина (поддерживает подпапки и будет отображать их как секции/группы).'; // Only config constanta, not keys inside
+						labelsNames.Pictures = `Картинки`;
+						labelsNames.configMenu = `Меню Конфигурации`;
+						Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
+						Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
+						Configuration.SendTextWithFile.Title = `Отправлять текст из чата перед отправкой файла`;
+						Configuration.SendTextWithFile.Description = `Включает отправку текста из чата перед отправкой локального или веб файла. Не удаляет текст из чата. Не отправляет сообщения превышающие 2000 символов.`;
+						Configuration.OnlyForcedUpdate.Title = `Только принудительное обновление`;
+						Configuration.OnlyForcedUpdate.Description = `Не позволяет плагину автоматически обновлять настройки через сканирование с используемыми файлами без участия пользователя.`;
+						Configuration.sentType2srcType.Title = `Рассматривать ${sentType} как ${srcType}`;
+						Configuration.sentType2srcType.Description = `Для использования ${sentType} в качестве ${srcType}.`;
+						Configuration.RepeatLastSent.Title = `Повторение последний отправки`;
+						Configuration.RepeatLastSent.Description = `Включает использование сочетания клавиш Alt+V для повторения отправки последнего отправленного файла или ссылки (без текста) в текущий канал.`;
+						Configuration.AutoClosePanel.Title = `Автоматическое закрытие панели`;
+						Configuration.AutoClosePanel.Description = `Для автоматического закрытия панели с картинками после отправки любого файла по нажатию, если не зажата клавиша Shift.`;
+						Configuration.SendingFileCooldown.Title = `Минимальная задержка перед отправкой`;
+						Configuration.SendingFileCooldown.Description = `Присваивает минимальную задержку в миллисекундах перед отправкой следующего файла. При присвоении значения 0 опция будет отключена. Эта опция существует для предотвращения удвоенных/случайных нажатий мышкой и поэтому не применяется на отправку по быстрой клавише.`;
+						Configuration.SetFileSize.Title = `Присваивать размер веб файлу (выключено по умолчанию)`;
+						Configuration.SetFileSize.Description = `Включает автоматическое добавление выбранный ширины и высоты и других параметров для отправляемой ссылки. Удаление значения в этой настройке выключает её.`;
+						Configuration.mainFolderPath.Title = `Здесь располагается папка под картинки:`;
+						Configuration.mainFolderPath.Description = `Позволяет указать Главную папку, которая будет сканироваться на картинки и подпапки. Пожалуйста, постарайтесь избежать использования папок с большим размером (50+ мб). Выбранная директория должна быть созданной.`;
+						Configuration.mainFolderNameDisplay.Title = `Отображаемое имя секции для Главной папки`;
+						Configuration.mainFolderNameDisplay.Description = `Присваивает выбранное название для секции с Главной папкой:`;
+						Configuration.SectionTextColor.Title = `Цвет имени секций`;
+						Configuration.SectionTextColor.Description = `Текущий цвет это:`;
+						break
+					default: // is "en-US"
+						break
+				}
 			}
 			funcs_.saveSettings = (data, once = null) =>
 			{
@@ -252,6 +291,7 @@ module.exports = (() =>
 					document.body.removeEventListener('keydown', funcs_.RepeatLastSentFunc);
 					document.body.addEventListener('keydown', funcs_.RepeatLastSentFunc);
 				}
+				funcs_.setLanguage();
 			}
 			funcs_.saveConfiguration = () =>
 			{
@@ -486,6 +526,7 @@ module.exports = (() =>
 							{ /* console.warn('There is problem with links:', err); */ }
 							newPicture.setAttribute('aria-label', file.name);
 							newPicture.setAttribute('alt', file.name);
+							newPicture.setAttribute('title', file.name); // For displaying pictures name
 							newPicture.setAttribute('class', elementNames.newPicture);
 							newPicture.addEventListener('click', funcs_.send2ChatBox);
 							elementCol.append(newPicture); // Adds IMG to "li"
@@ -521,7 +562,7 @@ module.exports = (() =>
 				if(!emojisMenu) { return }
 				if(document.getElementById(elementNames.CPFSP_buttonID)) { return }
 				let buttonCPFSP = document.createElement('button');
-				buttonCPFSP.innerText = 'Pictures';
+				buttonCPFSP.innerText = labelsNames.Pictures;
 				buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonID);
 				let buttonClass = emojisMenu.querySelector('button').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
 				buttonCPFSP.setAttribute('class', buttonClass);
@@ -664,7 +705,7 @@ module.exports = (() =>
 					var PanelElements = {};
 					Panel.setAttribute('class', 'form');
 					Panel.setAttribute('style', 'width:100%;');
-					new Settings.SettingGroup(`${this.getName()} ${config.info.version} Settings Menu`, { shown:true }).appendTo(Panel)
+					new Settings.SettingGroup(`${this.getName()} (${this.getVersion()}) ${labelsNames.configMenu}`, { shown:true }).appendTo(Panel)
 						// Use Sent Links
 						.append(new Settings.Switch(Configuration.UseSentLinks.Title, Configuration.UseSentLinks.Description, Configuration.UseSentLinks.Value, checked =>
 						{
