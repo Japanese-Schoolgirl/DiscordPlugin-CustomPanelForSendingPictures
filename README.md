@@ -37,7 +37,7 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 
 # Utilities:
 - To resize pictures and compress them to a smaller size in selected folder (to optimize your pictures list more), you can use [FastStone Photo Resizer](https://www.faststone.org/FSResizerDownload.htm) (better to not compress gifs with this program) or similar;<br />
-- There is an [archive](https://yadi.sk/d/uCV9ajPOmcLXHA) with some of previously global emojis saved, if you need to add more pictures.<br />
+- There is an [archive](https://mega.nz/folder/c3YSmJYb#vF9iswDuT0YqOreDA9KL-g) with some of previously global emojis saved, if you need to add more pictures.<br />
 
 # TODO:
 - ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because file sending doesn't return an ID):<br />
