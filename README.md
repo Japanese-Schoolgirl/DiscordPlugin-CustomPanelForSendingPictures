@@ -35,6 +35,9 @@ https://www.donationalerts.com/r/JapaneseSchoolgirl<br />
 # Communication:
 I don't accept unknown friend requests, so if you want to DM me in Discord there is a huge chance I won't notice you. It's better to use GitHub or [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) to contact me (its not necessary to add me, I have open comment section). I also have [Discord Server](https://discord.gg/nZMbKkw), but it has a manual approval of every user before they are allowed to write or read most of conversation channels. You can also try to write me on [Twitch](https://www.twitch.tv/EternalSchoolgirl), but it's not the most convenient way.<br />
 
+# Utilities:
+- To resize pictures and compress them to a smaller size in selected folder (to optimize your pictures list more), you can use [FastStone Photo Resizer](https://www.faststone.org/FSResizerDownload.htm) (better to not compress gifs with this program) or similar;<br />
+- There is an [archive](https://yadi.sk/d/uCV9ajPOmcLXHA) with some of previously global emojis saved, if you need to add more pictures.<br />
+
 # TODO:
 - ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because file sending doesn't return an ID):<br />
-- Code should be reorganized, sometimes it reacts weirdly to multiple reloads and it has plenty of room for optimization;<br />

@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.7",
+			version: "0.1.8",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Added RU localization and picture's name displaying on hover`,
+				title: `Replaced janky fix with better fix`,
 				type: "fixed",
-				items: [`Added RU localization for everything expect changelogs. Also from now on picture's name will be displayed when mouse is over its preview.`]
+				items: [`Removed unnecessary pieces of code, and scan function is working better now than before.`]
 			}
 		]
 	};
@@ -84,7 +84,6 @@ module.exports = (() =>
 			picturesPath = pluginPath + config.info.name + '\\';
 			var lastSent = {};
 			let sendingCooldown = {time: 0, duration: 0};
-			let scanningState;
 			let sentType = '.sent';
 			let srcType = '.src';
 			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
@@ -231,33 +230,21 @@ module.exports = (() =>
 			funcs_.saveSettings = (data, once = null) =>
 			{
 				if(Object.keys(data).length < 2) { return funcs_.loadDefaultSettings(); } // This happen when folder is empty
-				//if(!Array.from(data).length) { return funcs_.loadDefaultSettings(); } // This happen when folder is empty
-				fs_.writeFile(settingsPath, JSON.stringify(data), function(err)
-				{
-					if(err)
-					{
-						console.warn('There has been an error saving your settings data:', err.message);
-					}
-				});
+				try { fs_.writeFileSync(settingsPath, JSON.stringify(data)); }
+				catch(err) { console.warn('There has been an error saving your setting data:', err.message); }
 				if(once) { return picsGlobalSettings; } // to avoid endless engine
 				return funcs_.loadSettings();
 				// DEBUG // console.log('Path: ', __dirname);
 			}
-			funcs_.loadSettings = (waitPLS = null, anotherTry = null) =>
+			funcs_.loadSettings = (anotherTry = null) =>
 			{
-				/*if(waitPLS)
-				{ // DEPRECATED //
-					if(waitPLS.state() != 'resolved') { setTimeout(()=> { return funcs_.loadSettings(waitPLS); }, 100) }
-					//waitPLS.promise().always(()=>{console.log('well')});
-				}*/
-				//if(waitPLS) { return waitPLS } // Sorry, I couldn't find a better way to make the waiting while file saving and loading
 				let newPicsGlobalSettings = {};
 				if(!fs_.existsSync(settingsPath)) { return funcs_.loadDefaultSettings(); } // This happen when settings file doesn't exist
 				try { newPicsGlobalSettings = JSON.parse(fs_.readFileSync(settingsPath)); }
 				catch(err)
 				{
 					console.warn('There has been an error parsing your settings JSON:', err.message);
-					if(!anotherTry) { return funcs_.loadSettings(null, true) }
+					if(!anotherTry) { return funcs_.loadSettings(true) }
 					return picsGlobalSettings;
 				}
 				if(!Object.keys(newPicsGlobalSettings).length) { return funcs_.loadDefaultSettings(); }  // This happen when settings file is empty
@@ -283,7 +270,7 @@ module.exports = (() =>
 				if(!newData || !Object.keys(newData).length) { return }  // This happen when settings file is empty
 				Object.keys(Configuration).forEach((key) =>
 				{
-					if(!newData[key]) { return };
+					if(newData[key] == undefined) { return }; // I hope that I will not forget that not to do !newData[key] here :0
 					Configuration[key].Value = newData[key];
 				});
 				if(Configuration.RepeatLastSent.Value)
@@ -300,13 +287,8 @@ module.exports = (() =>
 				{
 					exportData[key] = Configuration[key].Value;
 				});
-				fs_.writeFile(configPath, JSON.stringify(exportData), function(err)
-				{
-					if(err)
-					{
-						return console.warn('There has been an error saving your config data:', err.message);
-					}
-				});
+				try { fs_.writeFileSync(configPath, JSON.stringify(exportData)); }
+				catch(err) { console.warn('There has been an error saving your config data:', err.message); }
 				funcs_.loadConfiguration();
 			}
 			funcs_.scanDirectory = (forced = null, repeat = null) =>
@@ -314,10 +296,8 @@ module.exports = (() =>
 				if((Configuration.OnlyForcedUpdate.Value && !forced) && !repeat) { return funcs_.loadSettings(); }
 				if(fs_.existsSync(Configuration.mainFolderPath.Value))
 				{ // Exist
-					let waitPLS = jQuery.Deferred(); // First time when I uses this
-					scanningState = waitPLS.promise();
-					funcs_.findPictures(Configuration.mainFolderPath.Value, waitPLS);
-					return funcs_.loadSettings(waitPLS); // funcs_.findPictures will store data in picsGlobalSettings, so with state it possible to decide when new data is received
+					funcs_.findPictures(Configuration.mainFolderPath.Value);
+					return funcs_.loadSettings(); // funcs_.findPictures will store data in picsGlobalSettings, so with state it possible to decide when new data is received
 				}
 				else
 				{ // Not Exist
@@ -325,102 +305,102 @@ module.exports = (() =>
 					try { fs_.mkdirSync(Configuration.mainFolderPath.Value); } // Try create folder
 					catch (err) { console.warn(err.code); }
 					if(!repeat) { funcs_.scanDirectory(forced, true); } // Fixed issue with necessary double scan when user delete folder
-					return false
+					return picsGlobalSettings;
 				}
 			}
-			funcs_.findPictures = (scanPath, readyState = null, newAllPicsSettings = {}, folderName = null, foldersForScan = [], emtpyFoldersList = []) =>
+			funcs_.findPictures = (scanPath, newAllPicsSettings = {}, folderName = null, foldersForScan = [], emtpyFoldersList = []) =>
 			{ // Scanning for pictures in select folder, "foldersForScan" store folders from plugin directory
 				let newPicsSettings = [];
+				let files;
 				let isFirstScan = !folderName; // !(Object.keys(newAllPicsSettings).length);
 				if(!scanPath) { return funcs_.loadSettings(); }
 				if(!fs_.existsSync(scanPath)) { return funcs_.loadSettings(); }
 				if(!folderName) { folderName = mainFolderName; }
 				// function getDirs(scanPath) { return fs_.readdirSync(scanPath).filter(file => fs_.statSync(path_.join(scanPath, file)).isDirectory()); }
-				fs_.readdir(scanPath, function(err, files)
-				{
-					if(err) { console.warn('Unable to scan directory:' + err); return funcs_.loadSettings(); }
-					let alreadySentFiles = [];
-					if(isFirstScan) { foldersForScan.push({ name: mainFolderName, path: Configuration.mainFolderPath.Value }); } // Adds necessary information about main folder
-					if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // Unnecessary reordering fix?
-					let currentFolder = isFirstScan ? mainFolderName : folderName; // Get name of current folder
-					let index = 0;
-					files.forEach((file, absoluteIndex) =>
-					{
-						let isFolder = fs_.statSync(path_.join(scanPath, file)).isDirectory();
-						let fileTypesAllow = ['.jpg', '.jpeg', '.bmp', '.png', '.gif', srcType, sentType];
-						let fileType = path_.extname(file).toLowerCase();
-						let filePath = scanPath + file;
-						let webLink;
-						if(isFolder && isFirstScan) { foldersForScan.push({name: file, path: (path_.join(scanPath, file) + '\\') }); } // Add each folder only in this cycle due isFirstScan there prevents scans subfolders in subfolders. However this code not organize for subsubsubsubfolders scan yet
-						if(isFolder && isFirstScan && !absoluteIndex) { newPicsSettings[index] = { name: 'Placeholder', link: 'https://i.imgur.com/ntW5Vqt.png?AlwaysSendThisImageToNextUniverse/\\?????' }; } // Adds as placeholder only once due Main folder can't be "emtpy"
-						if(fileTypesAllow.indexOf(fileType) == -1) { return } // Check at filetype
-						if(fileType == sentType || fileType == srcType)
-						{
-							try { webLink = JSON.parse(fs_.readFileSync(filePath)); }
-							catch(err) { console.warn(`There has been an error parsing ${sentType} file:`, err.message); return }
-							if(Configuration.sentType2srcType.Value) { fileType = srcType; }
-						}
-						if(fileType == sentType)
-						{
-							if(!Configuration.UseSentLinks.Value) { return } // Doesn't uses this files type if user don't turn on it
-							alreadySentFiles.push({ name: file, link: webLink });
-							return
-						}
+				try { files = fs_.readdirSync(scanPath); }
+				catch(err) { console.warn('Unable to scan directory:' + err); return funcs_.loadSettings(); }
+				let alreadySentFiles = [];
+				if(isFirstScan) { foldersForScan.push({ name: mainFolderName, path: Configuration.mainFolderPath.Value }); } // Adds necessary information about main folder
+				if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // Unnecessary reordering fix?
+				let currentFolder = isFirstScan ? mainFolderName : folderName; // Get name of current folder
+				let index = 0;
 
-						if(fileType == srcType) { newPicsSettings[index] = { name: file, link: webLink }; }
-						else if(fileTypesAllow.indexOf(fileType) != -1) { newPicsSettings[index] = { name: file, link: 'file:///' + filePath }; }
-						index++; // Index will increase ONLY if file is allowed
-					});
-					// DEBUG // console.log(newPicsSettings);
-					// DEBUG // console.log(alreadySentFiles);
-					alreadySentFiles.forEach((file) =>
-					{ // Replace all local links with web links
-						let found = newPicsSettings.find(el => el.name == file.name.slice(0, -sentType.length));
-						if(found) { found.link = file.link; }
-					});
-					if(!Object.keys(files).length || !Object.keys(newPicsSettings).length)
-					{ // Detect and adds emtpy folder to list for delete
-						//foldersForScan.splice(foldersForScan.findIndex((el) => el.name == currentFolder), 1); // Didn't work properly
-						//foldersForScan.find((el) => el.name == currentFolder).name = 'undefined';
-						//newAllPicsSettings[folderListName] = foldersForScan;
-						//Variants above don't work correctly
-						emtpyFoldersList.push(foldersForScan.find((el) => el.name == currentFolder));
-					}
-					if(Object.keys(newPicsSettings).length) { newAllPicsSettings[currentFolder] = newPicsSettings; } // Prevents adding empty folder
-					if(Object.keys(foldersForScan).length)
-					{ // There subfolders scan request
-						if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // isFirstScan there prevents scans subfolders in subfolders. However this blah blah blah I already said this
-						let needSkip;
-						foldersForScan.some((folder, folderIndex) =>
-						{
-							if(currentFolder == folder.name && folderIndex < Object.keys(foldersForScan).length-1) // it is X < X, where X count of folders
-							{
-								funcs_.findPictures(foldersForScan[folderIndex+1].path, readyState, newAllPicsSettings, foldersForScan[folderIndex+1].name, foldersForScan, emtpyFoldersList);
-								return (needSkip = true);
-							}
-						});
-						if(needSkip) { return false } // If funcs_.findPictures used inside itself then this method will end there
-					}
-					// DEBUG // console.log(folders, newAllPicsSettings, newPicsSettings, isFirstScan);
-					emtpyFoldersList.forEach((emtpyFolder) =>
+				files.forEach((file, absoluteIndex) =>
+				{
+					let isFolder = fs_.statSync(path_.join(scanPath, file)).isDirectory();
+					let fileTypesAllow = ['.jpg', '.jpeg', '.bmp', '.png', '.gif', srcType, sentType];
+					let fileType = path_.extname(file).toLowerCase();
+					let filePath = scanPath + file;
+					let webLink;
+					if(isFolder && isFirstScan) { foldersForScan.push({name: file, path: (path_.join(scanPath, file) + '\\') }); } // Add each folder only in this cycle due isFirstScan there prevents scans subfolders in subfolders. However this code not organize for subsubsubsubfolders scan yet
+					if(isFolder && isFirstScan && !absoluteIndex) { newPicsSettings[index] = { name: 'Placeholder', link: 'https://i.imgur.com/ntW5Vqt.png?AlwaysSendThisImageToNextUniverse/\\?????' }; } // Adds as placeholder only once due Main folder can't be "emtpy"
+					if(fileTypesAllow.indexOf(fileType) == -1) { return } // Check at filetype
+					if(fileType == sentType || fileType == srcType)
 					{
-						newAllPicsSettings[folderListName].splice(newAllPicsSettings[folderListName].findIndex((folder) => folder.name == emtpyFolder.name && folder.path == emtpyFolder.path), 1);
-					});
-					try
-					{ // Remove placeholder and delete Main folder from section. This happen if in Main folder only folders with pictures
-						if((1 < newAllPicsSettings[folderListName].length) && (newAllPicsSettings[mainFolderName].length < 2))
-						{
-							let placeholder = newAllPicsSettings[mainFolderName][0];
-							if((placeholder.name === 'Placeholder') && (placeholder.link === 'https://i.imgur.com/ntW5Vqt.png?AlwaysSendThisImageToNextUniverse/\\?????'))
-							{
-								newAllPicsSettings[folderListName].splice([newAllPicsSettings[folderListName].findIndex((el) => el.name == mainFolderName)], 1);
-								delete newAllPicsSettings[mainFolderName];
-							}
-						}
-					} catch(err) { console.warn(err); }
-					readyState.resolve();
-					return funcs_.saveSettings(newAllPicsSettings); // Apply new settings
+						try { webLink = JSON.parse(fs_.readFileSync(filePath)); }
+						catch(err) { console.warn(`There has been an error parsing ${sentType} file:`, err.message); return }
+						if(Configuration.sentType2srcType.Value) { fileType = srcType; }
+					}
+					if(fileType == sentType)
+					{
+						if(!Configuration.UseSentLinks.Value) { return } // Doesn't uses this files type if user don't turn on it
+						alreadySentFiles.push({ name: file, link: webLink });
+						return
+					}
+
+					if(fileType == srcType) { newPicsSettings[index] = { name: file, link: webLink }; }
+					else if(fileTypesAllow.indexOf(fileType) != -1) { newPicsSettings[index] = { name: file, link: 'file:///' + filePath }; }
+					index++; // Index will increase ONLY if file is allowed
 				});
+				// DEBUG // console.log(newPicsSettings);
+				// DEBUG // console.log(alreadySentFiles);
+				alreadySentFiles.forEach((file) =>
+				{ // Replace all local links with web links
+					let found = newPicsSettings.find(el => el.name == file.name.slice(0, -sentType.length));
+					if(found) { found.link = file.link; }
+				});
+				if(!Object.keys(files).length || !Object.keys(newPicsSettings).length)
+				{ // Detect and adds emtpy folder to list for delete
+					//foldersForScan.splice(foldersForScan.findIndex((el) => el.name == currentFolder), 1); // Didn't work properly
+					//foldersForScan.find((el) => el.name == currentFolder).name = 'undefined';
+					//newAllPicsSettings[folderListName] = foldersForScan;
+					//Variants above don't work correctly
+					emtpyFoldersList.push(foldersForScan.find((el) => el.name == currentFolder));
+				}
+				if(Object.keys(newPicsSettings).length) { newAllPicsSettings[currentFolder] = newPicsSettings; } // Prevents adding empty folder
+				if(Object.keys(foldersForScan).length)
+				{ // There subfolders scan request
+					if(isFirstScan) { newAllPicsSettings[folderListName] = foldersForScan; } // isFirstScan there prevents scans subfolders in subfolders. However this blah blah blah I already said this
+					let needSkip;
+					foldersForScan.some((folder, folderIndex) =>
+					{
+						if(currentFolder == folder.name && folderIndex < Object.keys(foldersForScan).length-1) // it is X < X, where X count of folders
+						{
+							funcs_.findPictures(foldersForScan[folderIndex+1].path, newAllPicsSettings, foldersForScan[folderIndex+1].name, foldersForScan, emtpyFoldersList);
+							return (needSkip = true);
+						}
+					});
+					if(needSkip) { return false } // If funcs_.findPictures used inside itself then this method will end there
+				}
+					// DEBUG // console.log(folders, newAllPicsSettings, newPicsSettings, isFirstScan);
+				emtpyFoldersList.forEach((emtpyFolder) =>
+				{
+					newAllPicsSettings[folderListName].splice(newAllPicsSettings[folderListName].findIndex((folder) => folder.name == emtpyFolder.name && folder.path == emtpyFolder.path), 1);
+				});
+				try
+				{ // Remove placeholder and delete Main folder from section. This happen if in Main folder only folders with pictures
+					if((1 < newAllPicsSettings[folderListName].length) && (newAllPicsSettings[mainFolderName].length < 2))
+					{
+						let placeholder = newAllPicsSettings[mainFolderName][0];
+						if((placeholder.name === 'Placeholder') && (placeholder.link === 'https://i.imgur.com/ntW5Vqt.png?AlwaysSendThisImageToNextUniverse/\\?????'))
+						{
+							newAllPicsSettings[folderListName].splice([newAllPicsSettings[folderListName].findIndex((el) => el.name == mainFolderName)], 1);
+							delete newAllPicsSettings[mainFolderName];
+						}
+					}
+				} catch(err) { console.warn(err); }
+
+				return funcs_.saveSettings(newAllPicsSettings); // Apply new settings
 			}
 			funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 			{ // once for funcs_.scanDirectory and waitingScan check
@@ -430,7 +410,7 @@ module.exports = (() =>
 				let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
 				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
 				if(!emojisPanel) { return }
-				let allPicsSettings = funcs_.loadSettings();
+				let allPicsSettings;
 				// Previous button click fix: START
 				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
 				let previousButton = emojisMenu.querySelector('div[aria-selected*="true"]');
@@ -465,7 +445,7 @@ module.exports = (() =>
 				// Previous button click fix: END
 				function creatingPanel()
 				{
-					allPicsSettings = funcs_.loadSettings();
+					allPicsSettings = funcs_.scanDirectory(command);
 					if((document.getElementById(elementNames.CPFSP_panelID) && command != 'refresh')) { return } // Will repeat if command == refresh
 					emojisPanel.innerHTML = ''; // Clear panel
 					emojisPanel.setAttribute('id', elementNames.CPFSP_panelID); // Change panel ID
@@ -546,15 +526,9 @@ module.exports = (() =>
 					buttonRefresh.addEventListener('click', funcs_.moveToPicturesPanel);
 					emojisPanel.insertBefore(buttonRefresh, emojisPanel.firstChild); // Adds button to panel
 				}
-				$.when($.ajax(allPicsSettings = funcs_.scanDirectory(command))).then(function()
-				{
-					allPicsSettings = funcs_.loadSettings();
-					// console.log(allPicsSettings.state() == 'pending') not stable
-					creatingPanel();
-					if(!once && scanningState) { scanningState.done(setTimeout(()=> { funcs_.moveToPicturesPanel('refresh', true) }, 400)); } // Sorry for such a bad solution
-				});
+				creatingPanel();
 			}
-			funcs_.addPicturesPanelButton = async (emojisGUI) =>
+			funcs_.addPicturesPanelButton = (emojisGUI) =>
 			{
 				if(!emojisGUI) { return } // I know that in Discord there is no "s"
 				// let emojiButton = document.querySelector('button[class*="emojiButton"]'); // Emojis button in chat
@@ -571,7 +545,7 @@ module.exports = (() =>
 				buttonCPFSP.addEventListener('click', funcs_.moveToPicturesPanel);
 				emojisMenu.append(buttonCPFSP);
 			}
-			funcs_.send2ChatBox = async (from) => // from is event
+			funcs_.send2ChatBox = (from) => // from is event
 			{
 				if(!from) { return }
 				if(!!Configuration.SendingFileCooldown.Value && !isNaN(Configuration.SendingFileCooldown.Value))
@@ -657,7 +631,7 @@ module.exports = (() =>
 				{
 					if(!mutation.target.parentNode) { return }
 					if(mutation.target.parentNode.getAttribute('role') != 'tabpanel') { return } // Find "emoji-picker-tab-panel" and "gif-picker-tab-panel"
-					funcs_.addPicturesPanelButton(mutation.target.parentNode.parentNode);
+					funcs_.addPicturesPanelButton(mutation.target.parentNode.parentNode); // contentWrapper
 				});
 			})
 
@@ -671,7 +645,7 @@ module.exports = (() =>
 				getDescription() { return config.info.description; }
 
 	//-----------| Default Methods |-----------//
-				async onStart()
+				onStart()
 				{
 					try
 					{
@@ -720,9 +694,9 @@ module.exports = (() =>
 						}))
 						// Only Forced Update
 						.append(new Settings.Switch(Configuration.OnlyForcedUpdate.Title, Configuration.OnlyForcedUpdate.Description, Configuration.OnlyForcedUpdate.Value, checked =>
-							{
-								Configuration.OnlyForcedUpdate.Value = checked;
-								funcs_.saveConfiguration();
+						{
+							Configuration.OnlyForcedUpdate.Value = checked;
+							funcs_.saveConfiguration();
 						}))
 						// sentType to srcType
 						.append(new Settings.Switch(Configuration.sentType2srcType.Title, Configuration.sentType2srcType.Description, Configuration.sentType2srcType.Value, checked =>
