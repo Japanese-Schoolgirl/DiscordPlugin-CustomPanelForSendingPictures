@@ -40,4 +40,5 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 - There is an [archive](https://mega.nz/folder/c3YSmJYb#vF9iswDuT0YqOreDA9KL-g) with some of previously global emojis saved, if you need to add more pictures.<br />
 
 # TODO:
-- ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because file sending doesn't return an ID):<br />
+- ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because Dispatch only returns ID of the channel but not ID of the message, and of course it doesn't contain a link in its properties):<br />
+- Fix the option for message sending before file sending, which sends messages omitting the markdown.<br />

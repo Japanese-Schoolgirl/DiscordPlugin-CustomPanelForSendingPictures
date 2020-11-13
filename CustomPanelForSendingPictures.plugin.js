@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.8",
+			version: "0.1.9",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,16 +32,18 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Replaced janky fix with better fix`,
+				title: `Adds a couple of adjustments to existing functions`,
 				type: "fixed",
-				items: [`Removed unnecessary pieces of code, and scan function is working better now than before.`]
+				items: [`Made more reliable use of libraries and corrected code a little.`]
 			}
 		]
 	};
 /*========================| Modules |========================*/
 	const fs_ = window.require('fs');
 	const path_ = window.require('path');
-	const uploadModule = window.BdApi.findModule(m => m.upload && typeof m.upload === 'function'); // Module from BdApi for uploading files, can be replaced
+	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert('PLUGIN API NOT FOUND');
+	const uploadModule = PluginApi_.findModule(m => m.upload && typeof m.upload === 'function'); // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === 'function') or others
+	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === 'object').ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
 
 /*========================| Core |========================*/
 	//-----------| Check at ZeresPlugin Library |-----------//
@@ -55,13 +57,13 @@ module.exports = (() =>
 
 		load()
 		{
-			BdApi.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
+			PluginApi_.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
 				confirmText: "Download Now",
 				cancelText: "Cancel",
 				onConfirm: () => {
 					require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (err, res, body) => {
 						if (err) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
-						await new Promise(r => fs_.writeFile(path_.join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
+						await new Promise(r => fs_.writeFile(path_.join(PluginApi_.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
 					});
 				}
 			});
@@ -74,7 +76,7 @@ module.exports = (() =>
 		const plugin = (Plugin, Api) =>
 		{
 
-			const { Patcher, DiscordAPI, DiscordModules, Settings, PluginUtilities } = Api;
+			const { Patcher, DiscordAPI, Modals, DiscordModules, Settings, PluginUtilities } = Api;
 	//-----------| Create Settings and Variables |-----------//
 			var picsGlobalSettings = {};
 			var pluginPath, settingsPath, configPath, picturesPath;
@@ -194,7 +196,7 @@ module.exports = (() =>
 			}
 			funcs_.setLanguage = () =>
 			{ // Janky localization
-				switch(ZLibrary.DiscordAPI.UserSettings.locale)
+				switch(DiscordAPI.UserSettings.locale)
 				{
 					case 'ru':
 						config.info.description = 'Добавляет панель, которая подгружает картинки через файл настроек с используемыми файлами и ссылками, позволяя отправлять картинки с текстом или без текста нажатием по превью картинок на панели. Файл настроек автоматически создаётся при сканировании выбранной папки или папки плагина (поддерживает подпапки и будет отображать их как секции/группы).'; // Only config constanta, not keys inside
@@ -203,7 +205,7 @@ module.exports = (() =>
 						Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
 						Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
 						Configuration.SendTextWithFile.Title = `Отправлять текст из чата перед отправкой файла`;
-						Configuration.SendTextWithFile.Description = `Включает отправку текста из чата перед отправкой локального или веб файла. Не удаляет текст из чата. Не отправляет сообщения превышающие 2000 символов.`;
+						Configuration.SendTextWithFile.Description = `Включает отправку текста из чата перед отправкой локального или веб файла. Не удаляет текст из чата. Не отправляет сообщение превышающее 2000 символов.`;
 						Configuration.OnlyForcedUpdate.Title = `Только принудительное обновление`;
 						Configuration.OnlyForcedUpdate.Description = `Не позволяет плагину автоматически обновлять настройки через сканирование с используемыми файлами без участия пользователя.`;
 						Configuration.sentType2srcType.Title = `Рассматривать ${sentType} как ${srcType}`;
@@ -568,7 +570,7 @@ module.exports = (() =>
 				let path = from.target.getAttribute('path');
 				let name = from.target.getAttribute('alt');
 				let channelID = DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
-				let ChatBox = document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]'); // User's textbox
+				let ChatBox = document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]'); // User's textbox, ZLibrary way: document.querySelector(DiscordSelectors.Textarea.channelTextArea.value).querySelector(DiscordSelectors.Textarea.textArea.value).childNodes[1]
 				//let ChatBoxText = ChatBox ? Array.from(ChatBox.querySelectorAll('span')).pop() : null;
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
 
@@ -589,20 +591,18 @@ module.exports = (() =>
 					{
 						if(ChatBox.innerText.replace(/\s/g, '').length > 0) { DiscordAPI.currentChannel.sendMessage(ChatBox.innerText); } // For don't send empty message
 					} // 2001 is limit for text length
-					else { BdApi.showConfirmationModal(`For you:`, `Baka, your text wasn't sent with message because your text is over 2000 symbols!`); return }
-					
+					else { Modals.showAlertModal(`For you:`, `B-baka, your text wasn't sent with message because your text is over 2000 symbols!`); return } // or BdApi.showConfirmationModal
 				}
 				if(link.indexOf(';base64,') != -1)
 				{
 					path = decodeURI(path.replace('file:///', '')); // I know this stupid, but file:/// I need for features, maybe :/
-					uploadModule.upload(channelID, file = new File([fs_.readFileSync(path)], name));
+					uploadModule.upload(channelID, file = new File([fs_.readFileSync(path)], name)); // add ", {content:'new with file'}" for adding text
 					lastSent = { file: file, link: null };
 					return
 				}
 				/* // DEPRECATED (c)0.0.1 version //
 				link = (escape(ChatBox.innerText) == "%uFEFF%0A") ? link : `\n${link}`; // "%uFEFF%0A" is empty chat value for Discord
-				if(Configuration.PostLinksImmediately.Value) { } // Not ready yet
-				BDFDB.LibraryModules.DispatchUtils.ComponentDispatch.dispatchToLastSubscribed(BDFDB.DiscordConstants.ComponentActions.INSERT_TEXT, {
+				ComponentDispatchModule.dispatchToLastSubscribed(DiscordModules.DiscordConstants.ComponentActions.INSERT_TEXT, {
 					content: `${link}`
 				}); // Adds text to user's textbox
 				*/
@@ -624,6 +624,13 @@ module.exports = (() =>
 				{
 					DiscordAPI.currentChannel.sendMessage(lastSent.link);
 				}
+			}
+			funcs_.createSentFiles = (event) =>
+			{
+				console.log(event.file)
+				/* let filePath, fileData;
+				try { fs_.writeFileSync(filePath, JSON.stringify(fileData)); }
+				catch(err) { console.warn(`There has been an error saving your ${sentType} file:`, err.message); }*/
 			}
 			funcs_.DiscordMenuObserver = new MutationObserver((mutations) =>
 			{
@@ -657,6 +664,7 @@ module.exports = (() =>
 
 						funcs_.scanDirectory();
 						funcs_.DiscordMenuObserver.observe(document.body, { childList: true, subtree: true });
+						//DiscordModules.Dispatcher.subscribe(DiscordModules.DiscordConstants.ActionTypes.UPLOAD_COMPLETE, createSentFiles);
 					} catch(err) { console.warn('There is error with starting plugin:', err); }
 				}
 
@@ -665,6 +673,7 @@ module.exports = (() =>
 					try
 					{
 						funcs_.DiscordMenuObserver.disconnect();
+						//DiscordModules.Dispatcher.unsubscribe(DiscordModules.DiscordConstants.ActionTypes.UPLOAD_COMPLETE, createSentFiles);
 						funcs_.setStyles('delete');
 						document.body.removeEventListener('keydown', funcs_.RepeatLastSentFunc);
 						funcs_ = null;
@@ -676,7 +685,7 @@ module.exports = (() =>
 				getSettingsPanel()
 				{
 					const Panel = document.createElement('div');
-					var PanelElements = {};
+					//var PanelElements = {};
 					Panel.setAttribute('class', 'form');
 					Panel.setAttribute('style', 'width:100%;');
 					new Settings.SettingGroup(`${this.getName()} (${this.getVersion()}) ${labelsNames.configMenu}`, { shown:true }).appendTo(Panel)
