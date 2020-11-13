@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.1.9",
+			version: "0.2.0",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Adds a couple of adjustments to existing functions`,
+				title: `Adds a webp support`,
 				type: "fixed",
-				items: [`Made more reliable use of libraries and corrected code a little.`]
+				items: [`Now webp filetype is allowed to be scanned too.`]
 			}
 		]
 	};
@@ -330,7 +330,7 @@ module.exports = (() =>
 				files.forEach((file, absoluteIndex) =>
 				{
 					let isFolder = fs_.statSync(path_.join(scanPath, file)).isDirectory();
-					let fileTypesAllow = ['.jpg', '.jpeg', '.bmp', '.png', '.gif', srcType, sentType];
+					let fileTypesAllow = ['.jpg', '.jpeg', '.bmp', '.png', '.webp', '.gif', srcType, sentType];
 					let fileType = path_.extname(file).toLowerCase();
 					let filePath = scanPath + file;
 					let webLink;
