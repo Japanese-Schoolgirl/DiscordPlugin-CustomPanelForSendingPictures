@@ -11,7 +11,7 @@ Files of ".sent" type will replace files with identical name and extension. ".se
 Starting from version 0.0.7 this **plugin will search for and scan subfolders placed in the main folder. Content of these folders will be displayed as sections/groups in the panel itself**. Subfolders inside subfolders will not be scanned. It is also *not recommended* to store 300+ images of large size as it will affect speed of panel loading.<br />
 ### Work Example:
 ![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
-Changes not displayed in gif above: improved buttons design, adds 1 new button with method for opening the Main folder on the pictures panel.<br />
+Changes not displayed in the gif above: improved buttons design, added 1 new button in the pictures panel that opens Main folder.<br />
 ### Configuration menu:
 ![Configuration menu](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings_EN.png)
 

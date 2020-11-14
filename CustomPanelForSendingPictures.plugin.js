@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.1",
+			version: "0.2.2",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Improves button design and adds 1 new button with method for opening the Main folder`,
+				title: `Correcting CSS with large font-size`,
 				type: "fixed",
-				items: [`Improves button design and adds 1 new button with method for opening the Main folder method on the picture panel.`]
+				items: [`Correcting buttons style with large font-size.`]
 			}
 		]
 	};
@@ -107,7 +107,7 @@ module.exports = (() =>
 	//-----------|  Start of Styles section |-----------//
 			var CPFSP_Styles = () => { return ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
 #CPFSP_Panel {
-	grid-row: 2/2;
+	/*grid-row: 2/2;*/
 	overflow: hidden;
 	position: relative;
 }
@@ -150,7 +150,10 @@ module.exports = (() =>
 #CPFSP_btnsPanel {
 	width: 100%;
 	display: grid;
-	grid-template-columns: 80% 20%;
+	grid-template-columns: auto 110px; /* or 75% 25%; */
+	font-size: 15px;
+	font-weight: 600;
+	/* column-gap: 5px; */
 }
 .CPFSP_btnDefault {
 	height: 27px; /* old is 30px */ 
@@ -191,7 +194,7 @@ module.exports = (() =>
 				buttonsPanel: 			'CPFSP_btnsPanel',
 				buttonDefault: 			'CPFSP_btnDefault',
 				buttonRefresh: 			'CPFSP_btnRefresh',
-				buttonOpenFolder: 		'CPFSP_btnRefresh',
+				buttonOpenFolder: 		'CPFSP_btnOpenFolder',
 				emojiTabID:				'emoji-picker-tab',
 				gifTabID: 				'gif-picker-tab'
 			}
