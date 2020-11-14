@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.0",
+			version: "0.2.1",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,15 +32,16 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Adds a webp support`,
+				title: `Improves button design and adds 1 new button with method for opening the Main folder`,
 				type: "fixed",
-				items: [`Now webp filetype is allowed to be scanned too.`]
+				items: [`Improves button design and adds 1 new button with method for opening the Main folder method on the picture panel.`]
 			}
 		]
 	};
 /*========================| Modules |========================*/
 	const fs_ = window.require('fs');
 	const path_ = window.require('path');
+	const child_process_ = window.require('child_process');
 	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert('PLUGIN API NOT FOUND');
 	const uploadModule = PluginApi_.findModule(m => m.upload && typeof m.upload === 'function'); // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === 'function') or others
 	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === 'object').ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
@@ -146,17 +147,31 @@ module.exports = (() =>
 	cursor: pointer;
 	background-size: 48px;
 }
-.CPFSP_btnRefresh {
-	height: 30px;
-	line-height: 32px;
+#CPFSP_btnsPanel {
+	width: 100%;
+	display: grid;
+	grid-template-columns: 80% 20%;
+}
+.CPFSP_btnDefault {
+	height: 27px; /* old is 30px */ 
+	line-height: 27px; /* old is 32px */
 	cursor: pointer;
-	color: var(--text-normal);
+	color: var(--channels-default);
 	background-color: var(--background-tertiary);
 	text-align: center;
 	min-width: 48px;
+	border-width: 1px 1px 1px 1px;
+	border-style: solid;
+	/*border-radius: 60px 60px 60px 60px;*/
 }
-#CPFSP_Button {
-	
+.CPFSP_btnDefault:hover {
+	color: var(--interactive-hover);
+}
+.CPFSP_btnDefault:active {
+	color: var(--interactive-active);
+}
+#CPFSP_ButtonGo {
+	/* ? */
 }
 .CPFSP_activeButton {
 	background-color: var(--background-accent);
@@ -166,19 +181,24 @@ module.exports = (() =>
 			var elementNames = {
 				id: 					'CPFSP_StyleSheet',
 				CPFSP_panelID: 			'CPFSP_Panel',
-				CPFSP_buttonID: 		'CPFSP_Button',
+				CPFSP_buttonGoID: 		'CPFSP_ButtonGo',
 				CPFSP_activeButton: 	'CPFSP_activeButton',
 				elementList: 			'CPFSP_List',
 				folderSection:			'CPFSP_Section',
 				elementRow: 			'CPFSP_ul',
 				elementCol: 			'CPFSP_li',
 				newPicture: 			'CPFSP_IMG',
+				buttonsPanel: 			'CPFSP_btnsPanel',
+				buttonDefault: 			'CPFSP_btnDefault',
 				buttonRefresh: 			'CPFSP_btnRefresh',
+				buttonOpenFolder: 		'CPFSP_btnRefresh',
 				emojiTabID:				'emoji-picker-tab',
 				gifTabID: 				'gif-picker-tab'
 			}
 			var labelsNames = {
 				Pictures: 			'Pictures',
+				btnRefresh: 		'Refresh',
+				btnOpenFolder: 		'Open folder',
 				configMenu: 		'Configuration Menu'
 			}
 			var funcs_ = {}; // Object for store all custom functions
@@ -201,6 +221,8 @@ module.exports = (() =>
 					case 'ru':
 						config.info.description = 'Добавляет панель, которая подгружает картинки через файл настроек с используемыми файлами и ссылками, позволяя отправлять картинки с текстом или без текста нажатием по превью картинок на панели. Файл настроек автоматически создаётся при сканировании выбранной папки или папки плагина (поддерживает подпапки и будет отображать их как секции/группы).'; // Only config constanta, not keys inside
 						labelsNames.Pictures = `Картинки`;
+						labelsNames.btnRefresh = `Обновить`;
+						labelsNames.btnOpenFolder = `Открыть папку`;
 						labelsNames.configMenu = `Меню Конфигурации`;
 						Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
 						Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
@@ -228,6 +250,11 @@ module.exports = (() =>
 					default: // is "en-US"
 						break
 				}
+			}
+			funcs_.openFolder = (event = null) =>
+			{
+				if(!fs_.existsSync(Configuration.mainFolderPath.Value)) { return }
+				child_process_.exec(`start "" "${Configuration.mainFolderPath.Value}"`); // Open Main folder in explorer
 			}
 			funcs_.saveSettings = (data, once = null) =>
 			{
@@ -407,7 +434,7 @@ module.exports = (() =>
 			funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 			{ // once for funcs_.scanDirectory and waitingScan check
 				let command = (elem == 'refresh') ? 'refresh' : elem ? elem.target.getAttribute('command') : null;
-				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
+				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonGoID);
 				if(!buttonCPFSP) { return }
 				let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
 				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
@@ -423,7 +450,7 @@ module.exports = (() =>
 					buttonCPFSP.setAttribute('from', previousButtonID); // Necessary for fixing previous button
 					function previousButtonFix(event)
 					{
-						let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonID);
+						let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonGoID);
 						let from = buttonCPFSP.getAttribute('from');
 						let fix = (from == elementNames.emojiTabID) ? elementNames.gifTabID : elementNames.emojiTabID;
 						// Select other button and after this select previous button again
@@ -434,7 +461,7 @@ module.exports = (() =>
 					}
 					function additionalButtonFix(event)
 					{
-						document.getElementById(elementNames.CPFSP_buttonID).classList.remove(elementNames.CPFSP_activeButton);
+						document.getElementById(elementNames.CPFSP_buttonGoID).classList.remove(elementNames.CPFSP_activeButton);
 					}
 					try
 					{ // Unselecting previous button
@@ -520,13 +547,22 @@ module.exports = (() =>
 					});
 					emojisPanel.append(elementList); // Adds list to panel 
 
+					let buttonsPanel = document.createElement('div'); // Panel for buttons
+					buttonsPanel.setAttribute('id', elementNames.buttonsPanel);
 					let buttonRefresh = document.createElement('div'); // Refresh button
-					buttonRefresh.setAttribute('class', elementNames.buttonRefresh);
+					buttonRefresh.setAttribute('class', elementNames.buttonDefault);
 					buttonRefresh.setAttribute('command', 'refresh');
-					buttonRefresh.innerText = 'Refresh';
+					buttonRefresh.innerText = labelsNames.btnRefresh;
 					buttonRefresh.removeEventListener('click', funcs_.moveToPicturesPanel); // Insurance
 					buttonRefresh.addEventListener('click', funcs_.moveToPicturesPanel);
-					emojisPanel.insertBefore(buttonRefresh, emojisPanel.firstChild); // Adds button to panel
+					buttonsPanel.append(buttonRefresh);
+					let buttonOpenFolder = document.createElement('div'); // Open folder button
+					buttonOpenFolder.setAttribute('class', elementNames.buttonDefault);
+					buttonOpenFolder.innerText = labelsNames.btnOpenFolder;
+					buttonOpenFolder.removeEventListener('click', funcs_.openFolder); // Insurance
+					buttonOpenFolder.addEventListener('click', funcs_.openFolder);
+					buttonsPanel.append(buttonOpenFolder);
+					emojisPanel.insertBefore(buttonsPanel, emojisPanel.firstChild); // Adds button to panel
 				}
 				creatingPanel();
 			}
@@ -536,10 +572,10 @@ module.exports = (() =>
 				// let emojiButton = document.querySelector('button[class*="emojiButton"]'); // Emojis button in chat
 				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
 				if(!emojisMenu) { return }
-				if(document.getElementById(elementNames.CPFSP_buttonID)) { return }
+				if(document.getElementById(elementNames.CPFSP_buttonGoID)) { return }
 				let buttonCPFSP = document.createElement('button');
 				buttonCPFSP.innerText = labelsNames.Pictures;
-				buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonID);
+				buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonGoID);
 				let buttonClass = emojisMenu.querySelector('button').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
 				buttonCPFSP.setAttribute('class', buttonClass);
 				//buttonCPFSP.setAttribute('onclick', 'this.classList.add("TimeToPicturesPanel");');
@@ -576,7 +612,7 @@ module.exports = (() =>
 
 				if(Configuration.AutoClosePanel.Value)
 				{
-					if(document.getElementById(elementNames.CPFSP_buttonID) && !from.shiftKey)
+					if(document.getElementById(elementNames.CPFSP_buttonGoID) && !from.shiftKey)
 					{ // Below code will run if panel is displayed && click without shift key
 						let clickEvent = ChatBox.ownerDocument.createEvent('MouseEvents');
 						clickEvent.initMouseEvent("mousedown", true, true, ChatBox.ownerDocument.defaultView, 0, 0, 0, 0, 0, false, false, false, false, 0, null); // Thanks stackoverflow.com ;)
