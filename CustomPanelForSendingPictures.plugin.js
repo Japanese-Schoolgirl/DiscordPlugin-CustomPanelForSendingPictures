@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.2",
+			version: "0.2.3",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,15 +32,16 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Correcting CSS with large font-size`,
+				title: `Previews are now loaded dynamically`,
 				type: "fixed",
-				items: [`Correcting buttons style with large font-size.`]
+				items: [`From now on file previews in the panel will be loaded asynchronously, which solves problem with visual freeze in case of large folders. However, still try to avoid using folders with big amount of pictures, see TODO for details.`]
 			}
 		]
 	};
 /*========================| Modules |========================*/
 	const fs_ = window.require('fs');
 	const path_ = window.require('path');
+	const util_ = window.require('util');
 	const child_process_ = window.require('child_process');
 	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert('PLUGIN API NOT FOUND');
 	const uploadModule = PluginApi_.findModule(m => m.upload && typeof m.upload === 'function'); // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === 'function') or others
@@ -89,6 +90,7 @@ module.exports = (() =>
 			let sendingCooldown = {time: 0, duration: 0};
 			let sentType = '.sent';
 			let srcType = '.src';
+			let imgPreviewSize = {W: '48px', H: '48px'};
 			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
 			let folderListName = `?/\\!FolderList!/\\?`;
 			var Configuration = { // Almost all Default values need only as placeholder
@@ -100,7 +102,7 @@ module.exports = (() =>
 				AutoClosePanel:			{ Value: false, 				Default: false, 					Title: `Auto close panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
 				SendingFileCooldown:	{ Value: 0, 					Default: '0', 						Title: `Sending file cooldown`, 						Description: `To set cooldown in millisecond before you can send another file. Set 0 in this setting to turn this off. This option exists to prevent double/miss clicks so it doesn't apply to hotkey sending.` },
 				SetFileSize:			{ Value: '', 					Default: '?width=45&height=45', 	Title: `Set web file size (off by default)`, 			Description: `To automatically add custom width and height and others parameters for sending links. Remove value in this setting to turn this off.` },
-				mainFolderPath:			{ Value: picturesPath, 			Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders of very big size (50+ mb). Chosen directory should already exist.` },
+				mainFolderPath:			{ Value: picturesPath, 			Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders with very big amount of files. Chosen directory should already exist.` },
 				mainFolderNameDisplay:	{ Value: 'Main folder', 		Default: 'Main folder', 			Title: `Displayed section name for Main folder`, 		Description: `You can set this section name to Main folder:` },
 				SectionTextColor:		{ Value: 'color: #000000bb', 	Default: 'color: #000000bb', 		Title: `Section's name color`, 							Description: `Your current color is:` }
 			};
@@ -142,8 +144,8 @@ module.exports = (() =>
 	margin: 5px 0px 0px 5px;
 }
 .CPFSP_IMG {
-	height: 48px;
-	width: 48px;
+	width: ${imgPreviewSize.W};
+	height: ${imgPreviewSize.H};
 	cursor: pointer;
 	background-size: 48px;
 }
@@ -244,7 +246,7 @@ module.exports = (() =>
 						Configuration.SetFileSize.Title = `Присваивать размер веб файлу (выключено по умолчанию)`;
 						Configuration.SetFileSize.Description = `Включает автоматическое добавление выбранный ширины и высоты и других параметров для отправляемой ссылки. Удаление значения в этой настройке выключает её.`;
 						Configuration.mainFolderPath.Title = `Здесь располагается папка под картинки:`;
-						Configuration.mainFolderPath.Description = `Позволяет указать Главную папку, которая будет сканироваться на картинки и подпапки. Пожалуйста, постарайтесь избежать использования папок с большим размером (50+ мб). Выбранная директория должна быть созданной.`;
+						Configuration.mainFolderPath.Description = `Позволяет указать Главную папку, которая будет сканироваться на картинки и подпапки. Пожалуйста, постарайтесь избежать использования папок с большим количеством файлов. Выбранная директория должна быть созданной.`;
 						Configuration.mainFolderNameDisplay.Title = `Отображаемое имя секции для Главной папки`;
 						Configuration.mainFolderNameDisplay.Description = `Присваивает выбранное название для секции с Главной папкой:`;
 						Configuration.SectionTextColor.Title = `Цвет имени секций`;
@@ -482,74 +484,13 @@ module.exports = (() =>
 					emojisPanel.innerHTML = ''; // Clear panel
 					emojisPanel.setAttribute('id', elementNames.CPFSP_panelID); // Change panel ID
 					buttonCPFSP.classList.add(elementNames.CPFSP_activeButton); // Add CSS for select
-					let previousButton = document.getElementById(buttonCPFSP.getAttribute('from'));
-					/*try
+					/*let previousButton = document.getElementById(buttonCPFSP.getAttribute('from'));
+					try
 					{ // Unselecting previous button
 						previousButton.querySelector('button').classList.value = previousButton.querySelector('button').classList.value.replace('ButtonActive', 'Button');
 					} catch(err) { console.warn(err); }*/
 
-					let elementList = document.createElement('div');
-					let folderSection = document.createElement('div');
-					elementList.setAttribute('class', elementNames.elementList);
-					folderSection.setAttribute('class', elementNames.folderSection);
-					let elementRow = document.createElement('ul');
-					let rowIndex = 1;
-					let colIndex = 1;
-					let currentSection;
-					function setCurrentSection(folder)
-					{ // Sets name to section with uses variables above
-						currentSection = folder.name;
-						if(currentSection === mainFolderName) { currentSection = Configuration.mainFolderNameDisplay.Value; }
-						folderSection.append(document.createElement('text').innerText = currentSection);
-					}
-					// DEBUG // console.log(allPicsSettings);
-					allPicsSettings[folderListName].forEach((folder, indexFolder) =>
-					{
-						allPicsSettings[folder.name].forEach((file, indexFile)=>
-						{
-							if(indexFolder === 0 && indexFile === 0) { setCurrentSection(folder); } // Set first section for first element
-							if(currentSection != folder.name && folder.name != mainFolderName)
-							{
-								folderSection.append(elementRow); // Adds emojis to special section before section change
-								rowIndex++;
-								colIndex = 1;
-								setCurrentSection(folder);
-								elementRow = document.createElement('ul');
-							}
-							elementRow.setAttribute('class', elementNames.elementRow);
-							elementRow.setAttribute('role', 'row');
-							elementRow.setAttribute('aria-rowindex', rowIndex);
-
-							let elementCol = document.createElement('li');
-							elementCol.setAttribute('class', elementNames.elementCol);
-							elementCol.setAttribute('role', 'gridcell');
-							elementCol.setAttribute('aria-rowindex', rowIndex);
-							elementCol.setAttribute('aria-colindex', colIndex);
-							let newPicture = document.createElement('img');
-							newPicture.setAttribute('path', file.link);
-							try
-							{
-								if(file.link.indexOf('file:///') != -1)
-								{ // Convert local file to base64 for preview
-									newPicture.setAttribute('src', `data:image/${path_.extname(file.link)};base64,${new Buffer(fs_.readFileSync(file.link.replace('file:///', ''))).toString('base64')}`);
-								}
-								else { newPicture.setAttribute('src', file.link); }
-							} catch(err)
-							{ /* console.warn('There is problem with links:', err); */ }
-							newPicture.setAttribute('aria-label', file.name);
-							newPicture.setAttribute('alt', file.name);
-							newPicture.setAttribute('title', file.name); // For displaying pictures name
-							newPicture.setAttribute('class', elementNames.newPicture);
-							newPicture.addEventListener('click', funcs_.send2ChatBox);
-							elementCol.append(newPicture); // Adds IMG to "li"
-							elementRow.append(elementCol); // Adds "li" to "ul"
-							colIndex++;
-						});
-						folderSection.append(elementRow); // Adds emojis to special section
-						elementList.append(folderSection); // Adds all sections to list
-					});
-					emojisPanel.append(elementList); // Adds list to panel 
-
+					// Adds buttons
 					let buttonsPanel = document.createElement('div'); // Panel for buttons
 					buttonsPanel.setAttribute('id', elementNames.buttonsPanel);
 					let buttonRefresh = document.createElement('div'); // Refresh button
@@ -566,6 +507,78 @@ module.exports = (() =>
 					buttonOpenFolder.addEventListener('click', funcs_.openFolder);
 					buttonsPanel.append(buttonOpenFolder);
 					emojisPanel.insertBefore(buttonsPanel, emojisPanel.firstChild); // Adds button to panel
+					// Adds imgs preview
+					let elementList = document.createElement('div');
+					let folderSection = document.createElement('div');
+					elementList.setAttribute('class', elementNames.elementList);
+					emojisPanel.append(elementList); // Adds list to panel
+					folderSection.setAttribute('class', elementNames.folderSection);
+					let elementRow = document.createElement('ul');
+					let rowIndex = 1;
+					let colIndex = 1;
+					let currentSection;
+					async function setCurrentSection(folder)
+					{ // Sets name to section with uses variables above
+						currentSection = folder.name;
+						if(currentSection === mainFolderName) { currentSection = Configuration.mainFolderNameDisplay.Value; }
+						folderSection.append(document.createElement('text').innerText = currentSection);
+					}
+					async function appendElements(folder, indexFolder, file, indexFile)
+					{
+						if(indexFolder === 0 && indexFile === 0) { setCurrentSection(folder); } // Set first section for first element
+						if(currentSection != folder.name && folder.name != mainFolderName)
+						{
+							folderSection.append(elementRow); // Adds emojis to special section before section change
+							rowIndex++;
+							colIndex = 1;
+							setCurrentSection(folder);
+							elementRow = document.createElement('ul');
+						}
+						elementRow.setAttribute('class', elementNames.elementRow);
+						elementRow.setAttribute('role', 'row');
+						elementRow.setAttribute('aria-rowindex', rowIndex);
+
+						let elementCol = document.createElement('li');
+						elementCol.setAttribute('class', elementNames.elementCol);
+						elementCol.setAttribute('role', 'gridcell');
+						elementCol.setAttribute('aria-rowindex', rowIndex);
+						elementCol.setAttribute('aria-colindex', colIndex);
+						let newPicture = document.createElement('img');
+						newPicture.setAttribute('width', imgPreviewSize.W); // for lazy loading
+						newPicture.setAttribute('height', imgPreviewSize.H); // for lazy loading
+						newPicture.setAttribute('loading', 'lazy'); // asynchronously img loading
+						newPicture.setAttribute('path', file.link);
+						try
+						{
+							if(file.link.indexOf('file:///') != -1)
+							{ // Convert local file to base64 for preview
+								(function()
+								{ // Async creating base64 data
+									return fs_.promises.readFile(file.link.replace('file:///', ''), function(err, _data) { if(err) { throw err; } });
+								})().then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link)};base64,${data.toString('base64')}`); })
+							}
+							else { newPicture.setAttribute('src', file.link); }
+						} catch(err) { console.warn('There is problem with links:', err); }
+						newPicture.setAttribute('aria-label', file.name);
+						newPicture.setAttribute('alt', file.name);
+						newPicture.setAttribute('title', file.name); // For displaying pictures name
+						newPicture.setAttribute('class', elementNames.newPicture);
+						newPicture.addEventListener('click', funcs_.send2ChatBox);
+						elementCol.append(newPicture); // Adds IMG to "li"
+						elementRow.append(elementCol); // Adds "li" to "ul"
+						colIndex++;
+					}
+					// DEBUG // console.log(allPicsSettings);
+					allPicsSettings[folderListName].some((_folder, _indexFolder) =>
+					{
+						allPicsSettings[_folder.name].some((_file, _indexFile) =>
+						{
+							if(!document.getElementById(elementNames.CPFSP_panelID)) { return true; }
+							appendElements(_folder, _indexFolder, _file, _indexFile);
+						});
+						folderSection.append(elementRow); // Adds emojis to special section
+						elementList.append(folderSection); // Adds all sections to list
+					});
 				}
 				creatingPanel();
 			}
