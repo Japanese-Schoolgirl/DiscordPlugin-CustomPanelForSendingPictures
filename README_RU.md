@@ -36,6 +36,7 @@ https://www.donationalerts.com/r/JapaneseSchoolgirl<br />
 Я не принимаю неизвестные мне заявки в друзья, поэтому если вы захотите написать мне в DM Дискорда, то велик шанс что я вас не замечу. Вместо этого лучше используйте как средство коммуникации со мной GitHub или [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) (вам необязательно добавляться ко мне, у меня открытая стена комментариев). У меня также есть [Discord сервер](https://discord.gg/nZMbKkw), но в нём ручная проверка каждого пользователя перед тем, как он получит разрешение на возможность писать и видеть большинство каналов для общения. Также вы можете попробовать написать мне на [Twitch](https://www.twitch.tv/EternalSchoolgirl), но это не самый удобный вариант.<br />
 
 # Полезности:
+- [Список изменений](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Changelog.md);<br />
 - Для изменения размера картинок и их сжатия для меньшего размера в выбранной папке (для более оптимизации вашего листа с картинками) можно использовать [FastStone Photo Resizer](https://www.faststone.org/FSResizerDownload.htm) (лучше гифки этой программой не сжимать) или ей подобную;<br />
 - Есть [архив](https://mega.nz/folder/c3YSmJYb#vF9iswDuT0YqOreDA9KL-g) с некоторыми сохранёнными в прошлом глобальными эмодзи, если вам нужно пополнить количество картинок.<br />
 

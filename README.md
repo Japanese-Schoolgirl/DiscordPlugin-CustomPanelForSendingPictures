@@ -37,6 +37,7 @@ https://www.donationalerts.com/r/JapaneseSchoolgirl<br />
 I don't accept unknown friend requests, so if you want to DM me in Discord there is a huge chance I won't notice you. It's better to use GitHub or [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) to contact me (its not necessary to add me, I have open comment section). I also have [Discord Server](https://discord.gg/nZMbKkw), but it has a manual approval of every user before they are allowed to write or read most of conversation channels. You can also try to write me on [Twitch](https://www.twitch.tv/EternalSchoolgirl), but it's not the most convenient way.<br />
 
 # Utilities:
+- [Changelog](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Changelog.md);<br />
 - To resize pictures and compress them to a smaller size in selected folder (to optimize your pictures list more), you can use [FastStone Photo Resizer](https://www.faststone.org/FSResizerDownload.htm) (better to not compress gifs with this program) or similar;<br />
 - There is an [archive](https://mega.nz/folder/c3YSmJYb#vF9iswDuT0YqOreDA9KL-g) with some of previously global emojis saved, if you need to add more pictures.<br />
 
