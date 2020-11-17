@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.3",
+			version: "0.2.4",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Previews are now loaded dynamically`,
+				title: `Added handler for loading pictures error and fixed background CSS`,
 				type: "fixed",
-				items: [`From now on file previews in the panel will be loaded asynchronously, which solves problem with visual freeze in case of large folders. However, still try to avoid using folders with big amount of pictures, see TODO for details.`]
+				items: [`Now failing to load local and web files will be displayed with error preview that will not be clickable. Also fixed background CSS.`]
 			}
 		]
 	};
@@ -90,6 +90,7 @@ module.exports = (() =>
 			let sendingCooldown = {time: 0, duration: 0};
 			let sentType = '.sent';
 			let srcType = '.src';
+			let NotFoundIMG = 'https://i.imgur.com/r0OCBLX.png'; // old is 'https://i.imgur.com/jz767Z6.png', src as base64 also ok;
 			let imgPreviewSize = {W: '48px', H: '48px'};
 			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
 			let folderListName = `?/\\!FolderList!/\\?`;
@@ -112,6 +113,7 @@ module.exports = (() =>
 	/*grid-row: 2/2;*/
 	overflow: hidden;
 	position: relative;
+	background-color: transparent;
 }
 .CPFSP_List {
 	top: 30px;
@@ -547,6 +549,7 @@ module.exports = (() =>
 						newPicture.setAttribute('width', imgPreviewSize.W); // for lazy loading
 						newPicture.setAttribute('height', imgPreviewSize.H); // for lazy loading
 						newPicture.setAttribute('loading', 'lazy'); // asynchronously img loading
+						newPicture.setAttribute('onerror', `this.removeAttribute('onerror'); this.setAttribute('src', '${NotFoundIMG}');`);
 						newPicture.setAttribute('path', file.link);
 						try
 						{
@@ -555,7 +558,9 @@ module.exports = (() =>
 								(function()
 								{ // Async creating base64 data
 									return fs_.promises.readFile(file.link.replace('file:///', ''), function(err, _data) { if(err) { throw err; } });
-								})().then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link)};base64,${data.toString('base64')}`); })
+								})()
+								.then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link)};base64,${data.toString('base64')}`); })
+								.catch(err => { newPicture.setAttribute('src', NotFoundIMG); });
 							}
 							else { newPicture.setAttribute('src', file.link); }
 						} catch(err) { console.warn('There is problem with links:', err); }
@@ -602,6 +607,7 @@ module.exports = (() =>
 			funcs_.send2ChatBox = (from) => // from is event
 			{
 				if(!from) { return }
+				if(from.target.getAttribute('src') === NotFoundIMG) { return } // For not found images
 				if(!!Configuration.SendingFileCooldown.Value && !isNaN(Configuration.SendingFileCooldown.Value))
 				{ // Cooldown
 					if(!sendingCooldown.time)
@@ -618,7 +624,7 @@ module.exports = (() =>
 					else { console.log(config.info.name, 'message: default cooldown time is', sendingCooldown.time); return }
 				} else if(sendingCooldown.time) { sendingCooldown.time = 0; }
 
-				let link = Configuration.SetFileSize.Value.length ? from.target.getAttribute('src')+Configuration.SetFileSize.Value: from.target.getAttribute('src'); // Only for events from clicking at imgs
+				let link = Configuration.SetFileSize.Value.length ? from.target.getAttribute('src')+Configuration.SetFileSize.Value : from.target.getAttribute('src'); // Only for events from clicking at imgs
 				let path = from.target.getAttribute('path');
 				let name = from.target.getAttribute('alt');
 				let channelID = DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
