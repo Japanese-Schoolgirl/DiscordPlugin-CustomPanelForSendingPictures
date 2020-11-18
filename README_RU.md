@@ -12,10 +12,14 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 ### Пример работы:
 ![Пример работы](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 Неотображённые в гифке выше изменения: улучшен дизайн кнопок, добавлена кнопка в панель картинок для открытия Главной папки, добавлена асинхронная подгрузка картинок на панель, отображение заглушки на превью картинки при проваленной загрузки локального или веб файла.<br />
+Также был добавлен поиск по картинкам и продемонстрирован на гифке ниже:<br />
+### Поисковая строка:
+![Поисковая строка](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SearchBar.gif)
 ### Меню настроек:
 ![Меню настроек](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings_RU.png)
 
 # Совместимость:
+С нативными и любыми пользовательскими темами плагин должен быть полностью совместим, потому что использует стандартные переменные цветов Дискорда.<br />
 Я пользуюсь [EnhancedDiscord](https://github.com/joe27g/EnhancedDiscord) и могу отслеживать проблемы возникающие только на нём. Тем не менее плагин у пользователей BetterDiscord должен работать исправно, потому что он сделан как плагин для [BetterDiscord](https://github.com/rauenzi/BetterDiscordApp).<br />
 Плагин также использует [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js).<br />
 

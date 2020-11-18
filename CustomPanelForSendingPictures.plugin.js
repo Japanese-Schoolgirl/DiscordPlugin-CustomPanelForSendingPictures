@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.4",
+			version: "0.2.5",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Added handler for loading pictures error and fixed background CSS`,
+				title: `Added search bar`,
 				type: "fixed",
-				items: [`Now failing to load local and web files will be displayed with error preview that will not be clickable. Also fixed background CSS.`]
+				items: [`Added search bar for pictures in the panel.`]
 			}
 		]
 	};
@@ -110,13 +110,12 @@ module.exports = (() =>
 	//-----------|  Start of Styles section |-----------//
 			var CPFSP_Styles = () => { return ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
 #CPFSP_Panel {
-	/*grid-row: 2/2;*/
 	overflow: hidden;
 	position: relative;
 	background-color: transparent;
 }
 .CPFSP_List {
-	top: 30px;
+	top: ${5+22+27}px; /* 5 + height from search bar + height from buttons panel */
 	right: 0px;
 	bottom: 8px;
 	left: 8px;
@@ -152,6 +151,8 @@ module.exports = (() =>
 	background-size: 48px;
 }
 #CPFSP_btnsPanel {
+	height: 27px; /* old is 30px */ 
+	line-height: 27px; /* old is 32px */
 	width: 100%;
 	display: grid;
 	grid-template-columns: auto 110px; /* or 75% 25%; */
@@ -160,8 +161,6 @@ module.exports = (() =>
 	/* column-gap: 5px; */
 }
 .CPFSP_btnDefault {
-	height: 27px; /* old is 30px */ 
-	line-height: 27px; /* old is 32px */
 	cursor: pointer;
 	color: var(--channels-default);
 	background-color: var(--background-tertiary);
@@ -184,9 +183,50 @@ module.exports = (() =>
 	background-color: var(--background-accent);
 	color: #fff;
 }
+.CPFSP_searchBar {
+	display: grid;
+	grid-template-columns: auto 150px;
+	width: 100%;
+	font-size: 16px;
+}
+#CPFSP_searchBarInput {
+	height: 26px;
+	line-height: 26px;
+	box-sizing: border-box;
+	color: var(--text-normal);
+	padding: 0 8px;
+	background-color: var(--background-tertiary);
+	border-color: var(--channels-default);
+	border: solid;
+	border-width: 1px 1px 0px 1px;
+	border-radius: 10px 10px 0px 0px;
+	overflow: hidden;
+	resize: none;
+}
+#CPFSP_searchBarOptions {
+	text-align-last: center;
+	border-radius: 80px 80px 80px 80px;
+	background-color: var(--background-tertiary);
+	color: var(--interactive-active);
+
+}
 			`};
+
+			var CPFSP_imgFilter = (value, options) => { return ` /* Adds filter that sets display none to all imgs that match with it */
+#CPFSP_Panel .CPFSP_List li.CPFSP_li:not([${options.lettercase}${options.match}="${value}"]) {
+	display: none !important;
+}
+.CPFSP_Section text {
+	display: none !important;
+}
+.CPFSP_ul {
+	display: inline !important;
+}
+			`};
+
 			var elementNames = {
 				id: 					'CPFSP_StyleSheet',
+				filter: 				'CPFSP_StyleFilter',
 				CPFSP_panelID: 			'CPFSP_Panel',
 				CPFSP_buttonGoID: 		'CPFSP_ButtonGo',
 				CPFSP_activeButton: 	'CPFSP_activeButton',
@@ -199,15 +239,25 @@ module.exports = (() =>
 				buttonDefault: 			'CPFSP_btnDefault',
 				buttonRefresh: 			'CPFSP_btnRefresh',
 				buttonOpenFolder: 		'CPFSP_btnOpenFolder',
+				searchBar: 				'CPFSP_searchBar',
+				searchBarInput: 		'CPFSP_searchBarInput',
+				searchBarOptions: 		'CPFSP_searchBarOptions',
 				emojiTabID:				'emoji-picker-tab',
 				gifTabID: 				'gif-picker-tab'
 			}
+
 			var labelsNames = {
-				Pictures: 			'Pictures',
-				btnRefresh: 		'Refresh',
-				btnOpenFolder: 		'Open folder',
-				configMenu: 		'Configuration Menu'
+				Pictures: 				'Pictures',
+				btnRefresh: 			'Refresh',
+				btnOpenFolder: 			'Open folder',
+				searchPicture: 			'Search picture',
+				filterAnyMatch: 		'Any match',
+				filterStrictMatch: 		'Strict match',
+				filterAnyLetterCase: 	'Case-insensitive',
+				filterInAnyPlace: 		'In any place',
+				configMenu: 			'Configuration Menu'
 			}
+
 			var funcs_ = {}; // Object for store all custom functions
 	//-----------|  End of Styles section |-----------//
 
@@ -221,6 +271,30 @@ module.exports = (() =>
 				pluginStyles.innerHTML = CPFSP_Styles();
 				return document.body.append(pluginStyles);
 			}
+			funcs_.setStyleFilter = (event = null, command = null) =>
+			{
+				let text = document.getElementById(elementNames.searchBarInput) ? document.getElementById(elementNames.searchBarInput).value : null;
+				if(text == '') { command = 'delete'; }
+				if(document.getElementById(elementNames.filter) && command == 'delete') { return document.getElementById(elementNames.filter).remove(); }
+				if(!event) { return }
+
+				let options = document.getElementById(elementNames.searchBarOptions) ? document.getElementById(elementNames.searchBarOptions).value : null;
+				switch(options)
+				{
+					case 'AnyMatch': options = { lettercase: 'lowerPicName', match: '*' }; break;
+					case 'StrictMatch': options = { lettercase: 'strictPicName', match: '^' }; break;
+					case 'AnyLetterCase': options = { lettercase: 'lowerPicName', match: '^' }; break;
+					case 'InAnyPlace': options = { lettercase: 'strictPicName', match: '*' }; break;
+					default: options = { lettercase: 'lowerPicName', match: '*' };
+				}
+				text = options.lettercase == 'lowerPicName' ? text.toLowerCase() : text;
+
+				if(document.getElementById(elementNames.filter)) { return document.getElementById(elementNames.filter).innerHTML = CPFSP_imgFilter(text, options); }
+				let pluginStyleFilter = document.createElement('style');
+				pluginStyleFilter.setAttribute('id', elementNames.filter);
+				pluginStyleFilter.innerHTML = CPFSP_imgFilter(text, options);
+				return document.body.append(pluginStyleFilter);
+			}
 			funcs_.setLanguage = () =>
 			{ // Janky localization
 				switch(DiscordAPI.UserSettings.locale)
@@ -230,6 +304,11 @@ module.exports = (() =>
 						labelsNames.Pictures = `Картинки`;
 						labelsNames.btnRefresh = `Обновить`;
 						labelsNames.btnOpenFolder = `Открыть папку`;
+						labelsNames.searchPicture = `Искать картинку`;
+						labelsNames.filterAnyMatch = 'Любое совпадение';
+						labelsNames.filterStrictMatch = 'Строгое совпадение';
+						labelsNames.filterAnyLetterCase = 'Любой регистр';
+						labelsNames.filterInAnyPlace = 'В любом месте';
 						labelsNames.configMenu = `Меню Конфигурации`;
 						Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
 						Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
@@ -486,6 +565,7 @@ module.exports = (() =>
 					emojisPanel.innerHTML = ''; // Clear panel
 					emojisPanel.setAttribute('id', elementNames.CPFSP_panelID); // Change panel ID
 					buttonCPFSP.classList.add(elementNames.CPFSP_activeButton); // Add CSS for select
+					funcs_.setStyleFilter(undefined, 'delete'); // Remove last filter
 					/*let previousButton = document.getElementById(buttonCPFSP.getAttribute('from'));
 					try
 					{ // Unselecting previous button
@@ -509,6 +589,25 @@ module.exports = (() =>
 					buttonOpenFolder.addEventListener('click', funcs_.openFolder);
 					buttonsPanel.append(buttonOpenFolder);
 					emojisPanel.insertBefore(buttonsPanel, emojisPanel.firstChild); // Adds button to panel
+					// Adds search bar
+					let SearchBarPanel = document.createElement('div'); // Panel for Search bar
+					SearchBarPanel.setAttribute('class', elementNames.searchBar);
+					let picturesSearch = document.createElement('input'); // Search in pictures with CSS filter
+					picturesSearch.setAttribute('id', elementNames.searchBarInput);
+					picturesSearch.setAttribute('placeholder', labelsNames.searchPicture);
+					picturesSearch.removeEventListener('input', funcs_.setStyleFilter); // Insurance
+					picturesSearch.addEventListener('input', funcs_.setStyleFilter);
+					SearchBarPanel.append(picturesSearch);
+					let picturesSearchOptions = document.createElement('select'); // Options select for Search bar
+					picturesSearchOptions.removeEventListener('change', funcs_.setStyleFilter); // Insurance
+					picturesSearchOptions.addEventListener('change', funcs_.setStyleFilter);
+					picturesSearchOptions.setAttribute('id', elementNames.searchBarOptions);
+					picturesSearchOptions.append(new Option(labelsNames.filterAnyMatch, 'AnyMatch',  true));
+					picturesSearchOptions.append(new Option(labelsNames.filterStrictMatch, 'StrictMatch',  true));
+					picturesSearchOptions.append(new Option(labelsNames.filterAnyLetterCase, 'AnyLetterCase',  true));
+					picturesSearchOptions.append(new Option(labelsNames.filterInAnyPlace, 'InAnyPlace',  true));
+					SearchBarPanel.append(picturesSearchOptions)
+					emojisPanel.insertBefore(SearchBarPanel, emojisPanel.firstChild);
 					// Adds imgs preview
 					let elementList = document.createElement('div');
 					let folderSection = document.createElement('div');
@@ -523,7 +622,9 @@ module.exports = (() =>
 					{ // Sets name to section with uses variables above
 						currentSection = folder.name;
 						if(currentSection === mainFolderName) { currentSection = Configuration.mainFolderNameDisplay.Value; }
-						folderSection.append(document.createElement('text').innerText = currentSection);
+						let textEl = document.createElement('text');
+						textEl.innerText = currentSection;
+						folderSection.append(textEl);
 					}
 					async function appendElements(folder, indexFolder, file, indexFile)
 					{
@@ -542,6 +643,8 @@ module.exports = (() =>
 
 						let elementCol = document.createElement('li');
 						elementCol.setAttribute('class', elementNames.elementCol);
+						elementCol.setAttribute('strictPicName', file.name); // This need for search bar
+						elementCol.setAttribute('lowerPicName', file.name.toLowerCase()); // This need for search bar
 						elementCol.setAttribute('role', 'gridcell');
 						elementCol.setAttribute('aria-rowindex', rowIndex);
 						elementCol.setAttribute('aria-colindex', colIndex);
@@ -733,6 +836,7 @@ module.exports = (() =>
 						funcs_.DiscordMenuObserver.disconnect();
 						//DiscordModules.Dispatcher.unsubscribe(DiscordModules.DiscordConstants.ActionTypes.UPLOAD_COMPLETE, createSentFiles);
 						funcs_.setStyles('delete');
+						funcs_.setStyleFilter(undefined, 'delete');
 						document.body.removeEventListener('keydown', funcs_.RepeatLastSentFunc);
 						funcs_ = null;
 						console.log(config.info.name, 'stopped');

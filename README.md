@@ -12,11 +12,14 @@ Starting from version 0.0.7 this **plugin will search for and scan subfolders pl
 ### Work Example:
 ![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 Changes not displayed in the gif above: improved buttons design, added 1 new button in the pictures panel that opens Main folder, added asynchronous pictures loading to the panel, displaying error handler when loading local or web files failed.<br />
+Also search through pictures was added and it is shown in the gif below:<br />
+### Search bar:
+![Search bar](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SearchBar.gif)
 ### Configuration menu:
 ![Configuration menu](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings_EN.png)
 
-
-# Compatability:
+# Compatibility:
+Plugin should be completely compatible with native and any of user themes, as it uses default Discord colour variables.<br />
 I use [EnhancedDiscord](https://github.com/joe27g/EnhancedDiscord) and can only track problems that appears there. Even though, the plugin should function correctly with BetterDiscord, since it was made as a [BetterDiscord](https://github.com/rauenzi/BetterDiscordApp) plugin.<br />
 Plugin also uses [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js).<br />
 

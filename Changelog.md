@@ -1,3 +1,6 @@
+# 0.2.5
+Added search bar for pictures in the panel.
+
 # 0.2.4
 Now failing to load local and web files will be displayed with error preview that will not be clickable. Also fixed background CSS.
 
