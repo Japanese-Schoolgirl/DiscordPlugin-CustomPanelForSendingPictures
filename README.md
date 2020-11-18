@@ -4,7 +4,7 @@ This plugin was written for my own use and for people I'm communicating with. Bu
 P.S. I rarely use GitHub, so it is my first time in dealing with such project. Don't be surprised with some weirdness regarding commits etc. Also my native language isn't English so there may be mistakes in wording.<br />
 
 # Plugin description
-This plugin adds special "Pictures" button to the right of Emojis selection button. Clicking that button will load a panel which contents are loaded from special folder that is created by this plugin. The folder is scanned for files of following types: ".jpg", ".jpeg", ".bmp", ".png", ".gif", ".src", ".sent".<br />
+This plugin adds special "Pictures" button to the right of Emojis selection button. Clicking that button will load a panel which contents are loaded from special folder that is created by this plugin. The folder is scanned for files of following types: ".jpg", ".jpeg", ".bmp", ".png", ".webp", ".gif", ".src", ".sent".<br />
 Files of ".src" and ".sent" types are JSON files and contain a link to the web file (content example: "https://i.imgur.com/l5Jf0VP.png").<br />
 After the scan panel will show previews of all your files in the folder. After clicking a file in this panel you'll immediately send picture file (or a link of picture in case of ".src" and ".sent") to currently opened Discord chat.<br />
 Files of ".sent" type will replace files with identical name and extension. ".sent" files will automatically generate after sending local files and will be used if you have enabled corresponding setting.<br />
