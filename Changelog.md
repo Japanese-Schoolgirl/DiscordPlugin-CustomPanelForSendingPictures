@@ -1,3 +1,6 @@
+# 0.2.6
+Added option for automatic proportional scaling of pictures from local or web files to set size. Animation pictures included with sub-option.
+
 # 0.2.5
 Added search bar for pictures in the panel.
 

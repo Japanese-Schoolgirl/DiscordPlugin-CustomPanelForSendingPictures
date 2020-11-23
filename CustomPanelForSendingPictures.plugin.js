@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.5",
+			version: "0.2.6",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,13 +32,15 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Added search bar`,
+				title: `Added option for picture scaling`,
 				type: "fixed",
-				items: [`Added search bar for pictures in the panel.`]
+				items: [`Added option for automatic proportional scaling of pictures from local or web files to set size. Animation pictures included with sub-option.`]
 			}
 		]
 	};
 /*========================| Modules |========================*/
+	const request_ = require("request");
+	const https_ = require('https');
 	const fs_ = window.require('fs');
 	const path_ = window.require('path');
 	const util_ = window.require('util');
@@ -59,12 +61,15 @@ module.exports = (() =>
 
 		load()
 		{
-			PluginApi_.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
+			PluginApi_.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click "Download Now" to install it.`,
+			{
 				confirmText: "Download Now",
 				cancelText: "Cancel",
-				onConfirm: () => {
-					require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (err, res, body) => {
-						if (err) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
+				onConfirm: () =>
+				{
+					request_.get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (err, res, body) =>
+					{
+						if(err) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
 						await new Promise(r => fs_.writeFile(path_.join(PluginApi_.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
 					});
 				}
@@ -80,6 +85,7 @@ module.exports = (() =>
 
 			const { Patcher, DiscordAPI, Modals, DiscordModules, Settings, PluginUtilities } = Api;
 	//-----------| Create Settings and Variables |-----------//
+			const resizePluginName = 'gifsicle';
 			var picsGlobalSettings = {};
 			var pluginPath, settingsPath, configPath, picturesPath;
 			pluginPath = __dirname.indexOf('\\electron.asar\\') != -1 ? __dirname.split('app-')[0] : __dirname + '\\';
@@ -95,17 +101,18 @@ module.exports = (() =>
 			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
 			let folderListName = `?/\\!FolderList!/\\?`;
 			var Configuration = { // Almost all Default values need only as placeholder
-				UseSentLinks:			{ Value: true, 					Default: true, 						Title: `Use "Sent Links"`, 								Description: `To create and use ${sentType} files that are replacing file sending by sending links.` },
-				SendTextWithFile:		{ Value: false, 				Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
-				OnlyForcedUpdate:		{ Value: true, 					Default: true, 						Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
-				sentType2srcType:		{ Value: false, 				Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
-				RepeatLastSent:			{ Value: false, 				Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
-				AutoClosePanel:			{ Value: false, 				Default: false, 					Title: `Auto close panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
-				SendingFileCooldown:	{ Value: 0, 					Default: '0', 						Title: `Sending file cooldown`, 						Description: `To set cooldown in millisecond before you can send another file. Set 0 in this setting to turn this off. This option exists to prevent double/miss clicks so it doesn't apply to hotkey sending.` },
-				SetFileSize:			{ Value: '', 					Default: '?width=45&height=45', 	Title: `Set web file size (off by default)`, 			Description: `To automatically add custom width and height and others parameters for sending links. Remove value in this setting to turn this off.` },
-				mainFolderPath:			{ Value: picturesPath, 			Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders with very big amount of files. Chosen directory should already exist.` },
-				mainFolderNameDisplay:	{ Value: 'Main folder', 		Default: 'Main folder', 			Title: `Displayed section name for Main folder`, 		Description: `You can set this section name to Main folder:` },
-				SectionTextColor:		{ Value: 'color: #000000bb', 	Default: 'color: #000000bb', 		Title: `Section's name color`, 							Description: `Your current color is:` }
+				UseSentLinks:			{ Value: true, 										Default: true, 						Title: `Use "Sent Links"`, 								Description: `To create and use ${sentType} files that are replacing file sending by sending links.` },
+				SendTextWithFile:		{ Value: false, 									Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
+				OnlyForcedUpdate:		{ Value: true, 										Default: true, 						Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
+				sentType2srcType:		{ Value: false, 									Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
+				RepeatLastSent:			{ Value: false, 									Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
+				AutoClosePanel:			{ Value: false, 									Default: false, 					Title: `Auto close panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
+				SendingFileCooldown:	{ Value: 0, 										Default: '0', 						Title: `Sending file cooldown`, 						Description: `To set cooldown in millisecond before you can send another file. Set 0 in this setting to turn this off. This option exists to prevent double/miss clicks so it doesn't apply to hotkey sending.` },
+				ScaleSizeForPictures:	{ Value: { type: 'width', num: '45', exp: false }, 	Default: '', 						Title: `Set size for scaling (on by default)`, 			Description: `For automatic proportional scaling of pictures from local or web files to set size. Value is set only either for width or height. Clicking while holding Ctrl key will ignore enabling of this option. Remove value in this setting to turn this off.` },
+				SetLinkParameters:		{ Value: '', 										Default: '?width=45&height=45', 	Title: `Set parameters for web file (off by default)`, 	Description: `To automatically add custom parameters for sending links. Remove value in this setting to turn this off.` },
+				mainFolderPath:			{ Value: picturesPath, 								Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders with very big amount of files. Chosen directory should already exist.` },
+				mainFolderNameDisplay:	{ Value: 'Main folder', 							Default: 'Main folder', 			Title: `Displayed section name for Main folder`, 		Description: `You can set this section name to Main folder:` },
+				SectionTextColor:		{ Value: 'color: #000000bb', 						Default: 'color: #000000bb', 		Title: `Section's name color`, 							Description: `Your current color is:` }
 			};
 	//-----------|  Start of Styles section |-----------//
 			var CPFSP_Styles = () => { return ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
@@ -208,7 +215,19 @@ module.exports = (() =>
 	border-radius: 80px 80px 80px 80px;
 	background-color: var(--background-tertiary);
 	color: var(--interactive-active);
-
+}
+#CPFSP_scaleType {
+	cursor: pointer;
+	color: var(--channels-default);
+	font-weight: 600;
+}
+#CPFSP_scaleExp {
+	color: var(--channels-default);
+	font-weight: 600;
+}
+#CPFSP_scaleExp input {
+	cursor: pointer;
+	margin: 5px 0px 0px 0px;
 }
 			`};
 
@@ -243,10 +262,18 @@ module.exports = (() =>
 				searchBarInput: 		'CPFSP_searchBarInput',
 				searchBarOptions: 		'CPFSP_searchBarOptions',
 				emojiTabID:				'emoji-picker-tab',
-				gifTabID: 				'gif-picker-tab'
+				gifTabID: 				'gif-picker-tab',
+				Config_scaleType: 		'CPFSP_scaleType',
+				Config_scaleExp: 		'CPFSP_scaleExp',
 			}
 
 			var labelsNames = {
+				Modal_OkDownload: 		'Download Now',
+				Modal_Cancel: 			'Cancel',
+				Modal_Missing: 			'Library Missing',
+				Modal_MissingLibs: 		`The library plugin needed for turned on options in plugin ${config.info.name} is missing. Please click "Download Now" to install it.`,
+				Yamete: 				'Yamete!',
+				tooBig: 				"It's too big!",
 				Pictures: 				'Pictures',
 				btnRefresh: 			'Refresh',
 				btnOpenFolder: 			'Open folder',
@@ -255,7 +282,11 @@ module.exports = (() =>
 				filterStrictMatch: 		'Strict match',
 				filterAnyLetterCase: 	'Case-insensitive',
 				filterInAnyPlace: 		'In any place',
-				configMenu: 			'Configuration Menu'
+				configMenu: 			'Configuration Menu',
+				width: 					'Width',
+				height: 				'Height',
+				intNumber: 				'Integer number',
+				scaleExperimental: 		'Experimental support for animations (additional library will be installed)'
 			}
 
 			var funcs_ = {}; // Object for store all custom functions
@@ -274,9 +305,10 @@ module.exports = (() =>
 			funcs_.setStyleFilter = (event = null, command = null) =>
 			{
 				let text = document.getElementById(elementNames.searchBarInput) ? document.getElementById(elementNames.searchBarInput).value : null;
-				if(text == '') { command = 'delete'; }
+				if(!text) { command = 'delete'; }
+				if(text) { if(!text.length) { command = 'delete'; } }
 				if(document.getElementById(elementNames.filter) && command == 'delete') { return document.getElementById(elementNames.filter).remove(); }
-				if(!event) { return }
+				if(!event || command == 'delete') { return }
 
 				let options = document.getElementById(elementNames.searchBarOptions) ? document.getElementById(elementNames.searchBarOptions).value : null;
 				switch(options)
@@ -301,6 +333,12 @@ module.exports = (() =>
 				{
 					case 'ru':
 						config.info.description = 'Добавляет панель, которая подгружает картинки через файл настроек с используемыми файлами и ссылками, позволяя отправлять картинки с текстом или без текста нажатием по превью картинок на панели. Файл настроек автоматически создаётся при сканировании выбранной папки или папки плагина (поддерживает подпапки и будет отображать их как секции/группы).'; // Only config constanta, not keys inside
+						labelsNames.Modal_OkDownload = 'Скачать сейчас',
+						labelsNames.Modal_Cancel = 'Отмена',
+						labelsNames.Modal_Missing = 'Отсутствует библиотека',
+						labelsNames.Modal_MissingLibs = `Отсутствует библиотека, необходимая для работы включённых опций в плагине ${config.info.name}. Пожалуйста, нажмите "${labelsNames.Modal_OkDownload}" для её установки.`,
+						labelsNames.Yamete = `Ямете!`;
+						labelsNames.tooBig = `Это слишком велико!`;
 						labelsNames.Pictures = `Картинки`;
 						labelsNames.btnRefresh = `Обновить`;
 						labelsNames.btnOpenFolder = `Открыть папку`;
@@ -310,6 +348,10 @@ module.exports = (() =>
 						labelsNames.filterAnyLetterCase = 'Любой регистр';
 						labelsNames.filterInAnyPlace = 'В любом месте';
 						labelsNames.configMenu = `Меню Конфигурации`;
+						labelsNames.width = `Ширина`;
+						labelsNames.height = `Высота`;
+						labelsNames.intNumber = `Целое число`;
+						labelsNames.scaleExperimental = `Экспериментальная поддержка анимаций (установится дополнительная библиотека)`;
 						Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
 						Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
 						Configuration.SendTextWithFile.Title = `Отправлять текст из чата перед отправкой файла`;
@@ -324,8 +366,10 @@ module.exports = (() =>
 						Configuration.AutoClosePanel.Description = `Для автоматического закрытия панели с картинками после отправки любого файла по нажатию, если не зажата клавиша Shift.`;
 						Configuration.SendingFileCooldown.Title = `Минимальная задержка перед отправкой`;
 						Configuration.SendingFileCooldown.Description = `Присваивает минимальную задержку в миллисекундах перед отправкой следующего файла. При присвоении значения 0 опция будет отключена. Эта опция существует для предотвращения удвоенных/случайных нажатий мышкой и поэтому не применяется на отправку по быстрой клавише.`;
-						Configuration.SetFileSize.Title = `Присваивать размер веб файлу (выключено по умолчанию)`;
-						Configuration.SetFileSize.Description = `Включает автоматическое добавление выбранный ширины и высоты и других параметров для отправляемой ссылки. Удаление значения в этой настройке выключает её.`;
+						Configuration.ScaleSizeForPictures.Title = `Присвоить размер для масштабирования (включено по умолчанию)`;
+						Configuration.ScaleSizeForPictures.Description = `Для автоматического пропорционального масштабирования размера картинок из локальных или веб файлов к заданному размеру. Значение указывается только для ширины или высоты. Клик с зажатой клавишей Ctrl игнорирует включение этой опции. Удаление значения в этой настройке выключает её.`;
+						Configuration.SetLinkParameters.Title = `Присваивать параметры веб файлу (выключено по умолчанию)`;
+						Configuration.SetLinkParameters.Description = `Включает автоматическое добавление параметров для отправляемой ссылки. Удаление значения в этой настройке выключает её.`;
 						Configuration.mainFolderPath.Title = `Здесь располагается папка под картинки:`;
 						Configuration.mainFolderPath.Description = `Позволяет указать Главную папку, которая будет сканироваться на картинки и подпапки. Пожалуйста, постарайтесь избежать использования папок с большим количеством файлов. Выбранная директория должна быть созданной.`;
 						Configuration.mainFolderNameDisplay.Title = `Отображаемое имя секции для Главной папки`;
@@ -341,6 +385,46 @@ module.exports = (() =>
 			{
 				if(!fs_.existsSync(Configuration.mainFolderPath.Value)) { return }
 				child_process_.exec(`start "" "${Configuration.mainFolderPath.Value}"`); // Open Main folder in explorer
+			}
+			funcs_.checkLibraries = () =>
+			{
+				if(!Configuration.ScaleSizeForPictures.Value.exp) { return }
+				if(fs_.existsSync(pluginPath + resizePluginName + '.exe')) { return }
+				Modals.showConfirmationModal(labelsNames.Modal_Missing, labelsNames.Modal_MissingLibs,
+				{
+					confirmText: labelsNames.Modal_OkDownload,
+					cancelText: labelsNames.Modal_Cancel,
+					onConfirm: () =>
+					{
+						https_.get("https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/ExtraMethods/gifsicle.exe", async (response) =>
+						{ // gifsicle.exe by https://www.lcdf.org/gifsicle/
+							await new Promise((e) => { response.pipe(fs_.createWriteStream( (path_.join(pluginPath, resizePluginName+'.exe')) )) });
+						});
+					}
+				});
+			}
+			funcs_.scaleTo = (oldWidth, oldHeight, knownType, knownValue) =>
+			{
+				if(!knownType || !knownValue || !oldWidth || !oldHeight) { return }
+				let newWidth = knownType == 'width' ? knownValue : null;
+				let newHeight = knownType == 'height' ? knownValue : null;
+				if(newWidth) { return Math.round(newHeight = (oldHeight / (oldWidth / newWidth))); }
+				if(newHeight) { return Math.round(newWidth = (oldWidth / (oldHeight / newHeight))); }
+			}
+			funcs_.resizeGif = (gifPath, newWidth, newHeight) =>
+			{
+				if(!gifPath || !newWidth || !newHeight) { return false }
+				if(!fs_.existsSync(pluginPath + resizePluginName + '.exe')) { console.warn(`${resizePluginName}.exe not found!`); return false }
+				let gifsiclePath = pluginPath + resizePluginName;
+				let gifsicleOutput = gifsiclePath + '.output';
+				try
+				{
+					child_process_.execSync(`"${gifsiclePath}" "${gifPath}" --resize ${newWidth}x${newHeight} -o "${gifsicleOutput}"`);
+				} catch(err) { console.log(err); }
+				if(!fs_.existsSync(gifsicleOutput)) { console.warn("Why output file doesn't exist?!"); return false }
+				let OutputData = fs_.readFileSync(gifsicleOutput);
+				fs_.unlinkSync(gifsicleOutput);
+				return OutputData;
 			}
 			funcs_.saveSettings = (data, once = null) =>
 			{
@@ -394,6 +478,17 @@ module.exports = (() =>
 					document.body.addEventListener('keydown', funcs_.RepeatLastSentFunc);
 				}
 				funcs_.setLanguage();
+				funcs_.checkLibraries();
+				Configuration.ScaleSizeForPictures.Default = labelsNames.intNumber; // Fix placeholder
+			}
+			funcs_.setConfigValue = (event, key, newValue = null, specialKey = null) =>
+			{
+				//console.log(event, key, newValue, specialKey);
+				if(!event || !key || newValue == null) { return false }
+				if(!specialKey) { Configuration[key].Value = newValue; }
+				else { Configuration[key].Value[specialKey] = newValue; }
+				funcs_.saveConfiguration();
+				return true
 			}
 			funcs_.saveConfiguration = () =>
 			{
@@ -579,13 +674,12 @@ module.exports = (() =>
 					buttonRefresh.setAttribute('class', elementNames.buttonDefault);
 					buttonRefresh.setAttribute('command', 'refresh');
 					buttonRefresh.innerText = labelsNames.btnRefresh;
-					buttonRefresh.removeEventListener('click', funcs_.moveToPicturesPanel); // Insurance
+					//buttonRefresh.removeEventListener('click', funcs_.moveToPicturesPanel); // Insurance
 					buttonRefresh.addEventListener('click', funcs_.moveToPicturesPanel);
 					buttonsPanel.append(buttonRefresh);
 					let buttonOpenFolder = document.createElement('div'); // Open folder button
 					buttonOpenFolder.setAttribute('class', elementNames.buttonDefault);
 					buttonOpenFolder.innerText = labelsNames.btnOpenFolder;
-					buttonOpenFolder.removeEventListener('click', funcs_.openFolder); // Insurance
 					buttonOpenFolder.addEventListener('click', funcs_.openFolder);
 					buttonsPanel.append(buttonOpenFolder);
 					emojisPanel.insertBefore(buttonsPanel, emojisPanel.firstChild); // Adds button to panel
@@ -595,17 +689,15 @@ module.exports = (() =>
 					let picturesSearch = document.createElement('input'); // Search in pictures with CSS filter
 					picturesSearch.setAttribute('id', elementNames.searchBarInput);
 					picturesSearch.setAttribute('placeholder', labelsNames.searchPicture);
-					picturesSearch.removeEventListener('input', funcs_.setStyleFilter); // Insurance
 					picturesSearch.addEventListener('input', funcs_.setStyleFilter);
 					SearchBarPanel.append(picturesSearch);
 					let picturesSearchOptions = document.createElement('select'); // Options select for Search bar
-					picturesSearchOptions.removeEventListener('change', funcs_.setStyleFilter); // Insurance
 					picturesSearchOptions.addEventListener('change', funcs_.setStyleFilter);
 					picturesSearchOptions.setAttribute('id', elementNames.searchBarOptions);
-					picturesSearchOptions.append(new Option(labelsNames.filterAnyMatch, 'AnyMatch',  true));
-					picturesSearchOptions.append(new Option(labelsNames.filterStrictMatch, 'StrictMatch',  true));
-					picturesSearchOptions.append(new Option(labelsNames.filterAnyLetterCase, 'AnyLetterCase',  true));
-					picturesSearchOptions.append(new Option(labelsNames.filterInAnyPlace, 'InAnyPlace',  true));
+					picturesSearchOptions.add(new Option(labelsNames.filterAnyMatch, 'AnyMatch', true, true));
+					picturesSearchOptions.add(new Option(labelsNames.filterStrictMatch, 'StrictMatch', false, false));
+					picturesSearchOptions.add(new Option(labelsNames.filterAnyLetterCase, 'AnyLetterCase', false, false));
+					picturesSearchOptions.add(new Option(labelsNames.filterInAnyPlace, 'InAnyPlace', false, false));
 					SearchBarPanel.append(picturesSearchOptions)
 					emojisPanel.insertBefore(SearchBarPanel, emojisPanel.firstChild);
 					// Adds imgs preview
@@ -662,7 +754,7 @@ module.exports = (() =>
 								{ // Async creating base64 data
 									return fs_.promises.readFile(file.link.replace('file:///', ''), function(err, _data) { if(err) { throw err; } });
 								})()
-								.then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link)};base64,${data.toString('base64')}`); })
+								.then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link).slice(1)};base64,${data.toString('base64')}`); })
 								.catch(err => { newPicture.setAttribute('src', NotFoundIMG); });
 							}
 							else { newPicture.setAttribute('src', file.link); }
@@ -711,7 +803,7 @@ module.exports = (() =>
 			{
 				if(!from) { return }
 				if(from.target.getAttribute('src') === NotFoundIMG) { return } // For not found images
-				if(!!Configuration.SendingFileCooldown.Value && !isNaN(Configuration.SendingFileCooldown.Value))
+				if(!!Configuration.SendingFileCooldown.Value && Number.isInteger(Configuration.SendingFileCooldown.Value) && Configuration.SendingFileCooldown.Value > 0)
 				{ // Cooldown
 					if(!sendingCooldown.time)
 					{
@@ -727,9 +819,12 @@ module.exports = (() =>
 					else { console.log(config.info.name, 'message: default cooldown time is', sendingCooldown.time); return }
 				} else if(sendingCooldown.time) { sendingCooldown.time = 0; }
 
-				let link = Configuration.SetFileSize.Value.length ? from.target.getAttribute('src')+Configuration.SetFileSize.Value : from.target.getAttribute('src'); // Only for events from clicking at imgs
-				let path = from.target.getAttribute('path');
-				let name = from.target.getAttribute('alt');
+				let _link = from.target.getAttribute('src'); // Only for events from clicking at imgs
+				let _path = decodeURI(from.target.getAttribute('path').replace('file:///', '')); // I know this stupid, but file:/// I need for features, maybe..? Well
+				let _name = from.target.getAttribute('alt');
+				let _bufferFile = null;
+				let isWebFile = _link.indexOf(';base64,') != -1 ? false : true;
+				let isLocalFile = !isWebFile;
 				let channelID = DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
 				let ChatBox = document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]'); // User's textbox, ZLibrary way: document.querySelector(DiscordSelectors.Textarea.channelTextArea.value).querySelector(DiscordSelectors.Textarea.textArea.value).childNodes[1]
 				//let ChatBoxText = ChatBox ? Array.from(ChatBox.querySelectorAll('span')).pop() : null;
@@ -745,7 +840,7 @@ module.exports = (() =>
 					}
 				}
 
-				// Sending
+				// Sending text
 				if(Configuration.SendTextWithFile.Value)
 				{ // Send text from textbox before send file
 					if(ChatBox.innerText.length < 2002)
@@ -754,21 +849,80 @@ module.exports = (() =>
 					} // 2001 is limit for text length
 					else { Modals.showAlertModal(`For you:`, `B-baka, your text wasn't sent with message because your text is over 2000 symbols!`); return } // or BdApi.showConfirmationModal
 				}
-				if(link.indexOf(';base64,') != -1)
-				{
-					path = decodeURI(path.replace('file:///', '')); // I know this stupid, but file:/// I need for features, maybe :/
-					uploadModule.upload(channelID, file = new File([fs_.readFileSync(path)], name)); // add ", {content:'new with file'}" for adding text
-					lastSent = { file: file, link: null };
+				if(Object.keys(Configuration.ScaleSizeForPictures.Value).length && !from.ctrlKey)
+				{ // Adds autoscaling parameters
+					let scaleSize = { type: Configuration.ScaleSizeForPictures.Value.type, value: Configuration.ScaleSizeForPictures.Value.num };
+					if(!(!scaleSize.type || !(0 < scaleSize.value) || !Number.isInteger(scaleSize.value)))
+					{
+						let naturalWidth = from.target.naturalWidth;
+						let naturalHeight = from.target.naturalHeight;
+						let newWidth, newHeight;
+						let foundValue = funcs_.scaleTo(naturalWidth, naturalHeight, scaleSize.type, scaleSize.value);
+						if(scaleSize.type.toLocaleLowerCase() == 'width') { newWidth = scaleSize.value; newHeight = foundValue; }
+						if(scaleSize.type.toLocaleLowerCase() == 'height') { newWidth = foundValue; newHeight = scaleSize.value; }
+
+						if(isWebFile && newWidth && newHeight)
+						{
+							_link = (_link+`?width=${newWidth}&height=${newHeight}`);
+						}
+						if(isLocalFile && newWidth && newHeight)
+						{ // Sending local picture with scaled size
+							let _dataType = _link.split(';base64,')[0].split('data:')[1];
+							let _fileType = _dataType.split('/')[1];
+							let _FileU8Array = Buffer.from(_link.split(';base64,')[1], 'base64');
+							let isAnimated; // Detect if png or webp can containt animation. Gif anyway cannot be resized with standard canvas method properly
+							if(_fileType == 'png') { isAnimated = (_FileU8Array.indexOf("acTL") != -1 && _FileU8Array.indexOf("IDAT") != -1) ? (_FileU8Array.indexOf("acTL") < _FileU8Array.indexOf("IDAT")) : null; }
+							if(_fileType == 'webp') { isAnimated = (_FileU8Array.indexOf("VP8X") != -1 && _FileU8Array.indexOf("ANMF") != -1) ? (_FileU8Array.indexOf("VP8X") < _FileU8Array.indexOf("ANMF")) : null; }
+							if(_fileType != 'gif' && !isAnimated)
+							{
+								let DisCanvas = document.createElement("canvas");
+								let DisIMG = new Image();
+								let DisBlob;
+								DisIMG.src = _link;
+								DisCanvas.width = newWidth;
+								DisCanvas.height = newHeight;
+								DisCanvas.getContext("2d").drawImage(DisIMG, 0, 0, newWidth, newHeight);
+								DisCanvas.toBlob((e) =>
+								{
+									Promise.resolve(DisBlob = e).then((e) =>
+									{
+										uploadModule.upload(channelID, _file = new File([DisBlob], _name));
+										lastSent = { file: _file, link: null };
+										DisCanvas = null, DisIMG = null, DisBlob = null;
+									})
+								}, _dataType, 1);
+								return // End method after sending resized picture
+							}
+							if(Configuration.ScaleSizeForPictures.Value.exp && _fileType == 'gif')
+							{ // Special support for format
+								// DisBlobResponse = await fetch(child_process_.execSync(`python ...`)); DisBlob = await DisBlobResponse.blob();
+								_bufferFile = funcs_.resizeGif(_path, newWidth, newHeight)
+								if(_bufferFile)
+								{
+									uploadModule.upload(channelID, _file = new File([_bufferFile], _name));
+									lastSent = { file: _file, link: null };
+									return
+								}
+							}
+						}
+					}
+				}
+				if(isLocalFile)
+				{ // Sending local picture
+					_bufferFile = _bufferFile ? _bufferFile : fs_.readFileSync(_path);
+					uploadModule.upload(channelID, _file = new File([_bufferFile], _name)); // add ", {content:'new with file'}" for adding text
+					lastSent = { file: _file, link: null };
 					return
 				}
 				/* // DEPRECATED (c)0.0.1 version //
-				link = (escape(ChatBox.innerText) == "%uFEFF%0A") ? link : `\n${link}`; // "%uFEFF%0A" is empty chat value for Discord
+				_link = (escape(ChatBox.innerText) == "%uFEFF%0A") ? _link : `\n${_link}`; // "%uFEFF%0A" is empty chat value for Discord
 				ComponentDispatchModule.dispatchToLastSubscribed(DiscordModules.DiscordConstants.ComponentActions.INSERT_TEXT, {
 					content: `${link}`
 				}); // Adds text to user's textbox
 				*/
-				lastSent = { file: null, link: link};
-				return DiscordAPI.currentChannel.sendMessage(link);
+				lastSent = { file: null, link: _link}; // For Last Sent option
+				if(Configuration.SetLinkParameters.Value.length) { _link = (_link+Configuration.SetLinkParameters.Value); } // Adds user additional parameters
+				return DiscordAPI.currentChannel.sendMessage(_link);  // Sending web picture
 			}
 			funcs_.RepeatLastSentFunc = (event) =>
 			{
@@ -790,7 +944,7 @@ module.exports = (() =>
 			{
 				console.log(event.file)
 				/* let filePath, fileData;
-				try { fs_.writeFileSync(filePath, JSON.stringify(fileData)); }
+				try { fs_.writeFileSync(filePath+sentType, JSON.stringify(fileData)); }
 				catch(err) { console.warn(`There has been an error saving your ${sentType} file:`, err.message); }*/
 			}
 			funcs_.DiscordMenuObserver = new MutationObserver((mutations) =>
@@ -847,10 +1001,36 @@ module.exports = (() =>
 				getSettingsPanel()
 				{
 					const Panel = document.createElement('div');
-					//var PanelElements = {};
+					var PanelElements = {};
+					function _ScaleSizeForPictures()
+					{
+						let inputField = PanelElements.ScaleSizeForPictures.getElement().querySelector('input');
+						if(!inputField || document.getElementById(elementNames.Config_scaleType)) { return }
+						// List with width or height setting
+						let selectList = document.createElement('select');
+						selectList.setAttribute('id', elementNames.Config_scaleType);
+						let isWidth = (Configuration.ScaleSizeForPictures.Value.type == 'width');
+						let isHeight = (Configuration.ScaleSizeForPictures.Value.type == 'height');
+						selectList.add(new Option(labelsNames.width, 'width', isWidth, isWidth));
+						selectList.add(new Option(labelsNames.height, 'height', isHeight, isHeight));
+						selectList.addEventListener('change', (e)=>funcs_.setConfigValue(e, 'ScaleSizeForPictures', document.getElementById(elementNames.Config_scaleType).value, 'type'));
+						inputField.parentNode.append(selectList);
+						// List with experimental setting
+						let specialOptionDiv = document.createElement('div');
+						specialOptionDiv.setAttribute('id', elementNames.Config_scaleExp);
+						let isChecked = Configuration.ScaleSizeForPictures.Value.exp ? 'checked' : '';
+						specialOptionDiv.innerHTML = `<text>${labelsNames.scaleExperimental}: </text><input type='checkbox' ${isChecked}>`;
+						specialOptionDiv.querySelector('input').addEventListener('change', (e)=>funcs_.setConfigValue(e, 'ScaleSizeForPictures', document.querySelector(`#${elementNames.Config_scaleExp} input`).checked, 'exp'));
+						inputField.parentNode.append(specialOptionDiv);
+					}
+					let detectCreation = new MutationObserver((mutationsList, observer) =>
+					{ // For activating  all additional functions after panel creation. God is not contributor
+						_ScaleSizeForPictures();
+						observer.disconnect(); // Disconnect observer after panel creating
+					});
 					Panel.setAttribute('class', 'form');
 					Panel.setAttribute('style', 'width:100%;');
-					new Settings.SettingGroup(`${this.getName()} (${this.getVersion()}) ${labelsNames.configMenu}`, { shown:true }).appendTo(Panel)
+					const PanelSG = new Settings.SettingGroup(`${this.getName()} (${this.getVersion()}) ${labelsNames.configMenu}`, { shown:true }).appendTo(Panel)
 						// Use Sent Links
 						.append(new Settings.Switch(Configuration.UseSentLinks.Title, Configuration.UseSentLinks.Description, Configuration.UseSentLinks.Value, checked =>
 						{
@@ -890,21 +1070,36 @@ module.exports = (() =>
 						// Sending File Cooldown
 						.append(new Settings.Textbox(Configuration.SendingFileCooldown.Title, Configuration.SendingFileCooldown.Description, Configuration.SendingFileCooldown.Value, text =>
 						{
-							if(isNaN(text)) { return }
+							text = Number(text);
+							if(!Number.isInteger(text)) { Configuration.SendingFileCooldown.Value = Configuration.SendingFileCooldown.Default; funcs_.saveConfiguration(); return }
 							Configuration.SendingFileCooldown.Value = text;
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.SendingFileCooldown.Default }))
-						// Set File Size
-						.append(new Settings.Textbox(Configuration.SetFileSize.Title, Configuration.SetFileSize.Description, Configuration.SetFileSize.Value, text =>
+						// Scale Size For Pictures
+						.append(PanelElements.ScaleSizeForPictures = new Settings.Textbox(Configuration.ScaleSizeForPictures.Title, Configuration.ScaleSizeForPictures.Description, Configuration.ScaleSizeForPictures.Value.num, text =>
 						{
-							Configuration.SetFileSize.Value = text;
+							text = Number(text);
+							if(9999 < text)
+							{ // Against freezes
+								text = 9999;
+								setTimeout(()=>{ PanelElements.ScaleSizeForPictures.getElement().querySelector('input').value = 9999}, 200 );
+								Modals.showAlertModal(labelsNames.Yamete, labelsNames.tooBig);
+							}
+							if(!Number.isInteger(text) || text <= 0) { Configuration.ScaleSizeForPictures.Value = ''; funcs_.saveConfiguration(); return }
+							Configuration.ScaleSizeForPictures.Value = { type: document.getElementById(elementNames.Config_scaleType).value, num: Math.abs(Math.round(text)), exp: document.querySelector(`#${elementNames.Config_scaleExp} input`).checked };
 							funcs_.saveConfiguration();
-						}, { placeholder: Configuration.SetFileSize.Default }))
+						}, { placeholder: Configuration.ScaleSizeForPictures.Default }))
+						// Set Link Parameters
+						.append(new Settings.Textbox(Configuration.SetLinkParameters.Title, Configuration.SetLinkParameters.Description, Configuration.SetLinkParameters.Value, text =>
+						{
+							Configuration.SetLinkParameters.Value = text;
+							funcs_.saveConfiguration();
+						}, { placeholder: Configuration.SetLinkParameters.Default }))
 						// Main Folder Path
 						.append(new Settings.Textbox(Configuration.mainFolderPath.Title, Configuration.mainFolderPath.Description, Configuration.mainFolderPath.Value, text =>
 						{
 							if(!text.length) { return }
-							if(!fs_.existsSync(text)) { return Configuration.mainFolderPath.Value = Configuration.mainFolderPath.Default; }
+							if(!fs_.existsSync(text)) { Configuration.mainFolderPath.Value = Configuration.mainFolderPath.Default; funcs_.saveConfiguration(); return }
 							Configuration.mainFolderPath.Value = text;
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.mainFolderPath.Default }))
@@ -923,6 +1118,7 @@ module.exports = (() =>
 								funcs_.setStyles('delete');
 								funcs_.setStyles();
 						}));
+					detectCreation.observe(PanelSG.getElement(), { childList: true, subtree: true }); // wait for creating panel
 					return Panel;
 				}
 

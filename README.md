@@ -11,7 +11,7 @@ Files of ".sent" type will replace files with identical name and extension. ".se
 Starting from version 0.0.7 this **plugin will search for and scan subfolders placed in the main folder. Content of these folders will be displayed as sections/groups in the panel itself**. Subfolders inside subfolders will not be scanned. It is also *not recommended* to store 300+ images as it will affect speed of panel loading (file size doesn't matter).<br />
 ### Work Example:
 ![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
-Changes not displayed in the gif above: improved buttons design, added 1 new button in the pictures panel that opens Main folder, added asynchronous pictures loading to the panel, displaying error handler when loading local or web files failed.<br />
+Changes not displayed in the gif above: improved buttons design, added 1 new button in the pictures panel that opens Main folder, added asynchronous pictures loading to the panel, added displaying error handler when loading local or web files failed, added option for automatic proportional scaling of pictures from local or web files to set size.<br />
 Also search through pictures was added and it is shown in the gif below:<br />
 ### Search bar:
 ![Search bar](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SearchBar.gif)
@@ -21,7 +21,8 @@ Also search through pictures was added and it is shown in the gif below:<br />
 # Compatibility:
 Plugin should be completely compatible with native and any of user themes, as it uses default Discord colour variables.<br />
 I use [EnhancedDiscord](https://github.com/joe27g/EnhancedDiscord) and can only track problems that appears there. Even though, the plugin should function correctly with BetterDiscord, since it was made as a [BetterDiscord](https://github.com/rauenzi/BetterDiscordApp) plugin.<br />
-Plugin also uses [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js).<br />
+Plugin also uses [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) and [gifsicle](http://www.lcdf.org/gifsicle/).<br />
+Performance on operating systems other than Windows was not tested, it is likely that some functionality may not works on different OS.<br />
 
 # Installation
 1) Install [EnhancedDiscord](https://enhanceddiscord.com/EnhancedDiscord.exe) or [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe);<br />
@@ -47,4 +48,5 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 # TODO:
 - ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because Dispatch only returns ID of the channel but not ID of the message, and of course it doesn't contain a link in its properties, and message itself doesn't match with event information like filesize and sometimes filename);<br />
 - Fix the option for message sending before file sending, which sends messages omitting the markdown;<br />
-- Even though the part with loading elements to the panel is done asynchronously, visual freeze still happens (and it's random, most often after restarting Discord). Attempt at locating the issue with Performance debug haven't brought any result yet. Apparently the problem is related exclusively to large amount of files. Also after ~5 minutes time of Discord's work, the problem with freeze disappears.<br />
+- Even though the part with loading elements to the panel is done asynchronously, visual freeze still happens (and it's random, most often after restarting Discord). Attempt at locating the issue with Performance debug haven't brought any result yet. Apparently the problem is related exclusively to large amount of files. Also after ~5 minutes time of Discord's work, the problem with freeze disappears;<br />
+- Add support for proportional scaling of **animated** files .png (.apng) and .webp (this task has low priority since Discord cannot properly display them at the moment).<br />
