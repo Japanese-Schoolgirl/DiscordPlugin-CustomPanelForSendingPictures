@@ -1,3 +1,6 @@
+# 0.2.7
+Code is improved a little. Also added temporary fix for ZeresPluginLibrary (checkboxes now displayed as sliders).
+
 # 0.2.6
 Added option for automatic proportional scaling of pictures from local or web files to set size. Animation pictures included with sub-option.
 

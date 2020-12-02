@@ -29,7 +29,7 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 2) Перенесите [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) файл в папку с вашими плагинами;<br />
 3) Перенесите ".js" файл плагина в папку с вашими плагинами;<br />
 4) После включения этого плагина, в папке с плагином появится папка, в которую вам нужно перенести картинки, которые вы хотите использовать.<br />
-<br />P.S. Плагин будет хранить информацию о содержимом в папке в файле CustomPanelForSendingPictures.settings.json, а вашу конфигурацию плагина в CustomPanelForSendingPictures.config.json (вы также можете удалить эти файлы, чтобы полностью сбросить все настройки).<br />
+<br />P.S. Плагин будет хранить информацию о содержимом в папке в файле CustomPanelForSendingPictures.settings.json, а вашу конфигурацию плагина в CustomPanelForSendingPictures.configuration.json (вы также можете удалить эти файлы, чтобы полностью сбросить все настройки).<br />
 
 # Поддержка:
 Если вы желаете помочь мне с этим кривоватым проектом, то обратите внимание на [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F), где указаны проблемы, которые я решаю на данный момент. Смотрите подробнее в разделе [Коммуникация](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F) о способах связи со мной.

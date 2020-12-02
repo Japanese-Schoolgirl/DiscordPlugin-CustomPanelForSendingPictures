@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.6",
+			version: "0.2.7",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Added option for picture scaling`,
-				type: "fixed",
-				items: [`Added option for automatic proportional scaling of pictures from local or web files to set size. Animation pictures included with sub-option.`]
+				title: `Code is improved a little`,
+				type: "fixed", // without type, fixed, improved, progress
+				items: [`Code is improved a little. Also added temporary fix for ZeresPluginLibrary (checkboxes now displayed as sliders).`]
 			}
 		]
 	};
@@ -750,15 +750,12 @@ module.exports = (() =>
 						{
 							if(file.link.indexOf('file:///') != -1)
 							{ // Convert local file to base64 for preview
-								(function()
-								{ // Async creating base64 data
-									return fs_.promises.readFile(file.link.replace('file:///', ''), function(err, _data) { if(err) { throw err; } });
-								})()
+								fs_.promises.readFile(file.link.replace('file:///', '')) // Async creating base64 data
 								.then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link).slice(1)};base64,${data.toString('base64')}`); })
 								.catch(err => { newPicture.setAttribute('src', NotFoundIMG); });
 							}
 							else { newPicture.setAttribute('src', file.link); }
-						} catch(err) { console.warn('There is problem with links:', err); }
+						} catch(err) { newPicture.setAttribute('src', NotFoundIMG); }
 						newPicture.setAttribute('aria-label', file.name);
 						newPicture.setAttribute('alt', file.name);
 						newPicture.setAttribute('title', file.name); // For displaying pictures name
@@ -917,7 +914,7 @@ module.exports = (() =>
 				/* // DEPRECATED (c)0.0.1 version //
 				_link = (escape(ChatBox.innerText) == "%uFEFF%0A") ? _link : `\n${_link}`; // "%uFEFF%0A" is empty chat value for Discord
 				ComponentDispatchModule.dispatchToLastSubscribed(DiscordModules.DiscordConstants.ComponentActions.INSERT_TEXT, {
-					content: `${link}`
+					content: `${_link}`
 				}); // Adds text to user's textbox
 				*/
 				lastSent = { file: null, link: _link}; // For Last Sent option
@@ -1024,51 +1021,68 @@ module.exports = (() =>
 						inputField.parentNode.append(specialOptionDiv);
 					}
 					let detectCreation = new MutationObserver((mutationsList, observer) =>
-					{ // For activating  all additional functions after panel creation. God is not contributor
+					{ // For activating all additional functions after panel creation (can be replaced if used onAdded()). God is not contributor
 						_ScaleSizeForPictures();
 						observer.disconnect(); // Disconnect observer after panel creating
 					});
 					Panel.setAttribute('class', 'form');
 					Panel.setAttribute('style', 'width:100%;');
+					function createSetting(...args)
+					{
+						let type = args[0];
+						if(!type) { return }
+						switch(type)
+						{
+							//case 'Switch': return new Settings.Switch(args[1], args[2], args[3], args[4], args[5]);
+							case 'Switch': return new Settings.Slider(args[1], args[2], 0, 1, Number(args[3]), args[4], { markers: [0, 1], stickToMarkers: true }); // Temporary fix
+							case 'Textbox': return new Settings.Textbox(args[1], args[2], args[3], args[4], args[5]);
+							case 'ColorPicker': return new Settings.ColorPicker(args[1], args[2], args[3], args[4], args[5]);
+							case 'Keybind': return new Settings.Keybind(args[1], args[2], args[3], args[4], args[5]);
+							case 'Dropdown': return new Settings.Dropdown(args[1], args[2], args[3], args[4], args[5], args[6]);
+							case 'RadioGroup': return new Settings.RadioGroup(args[1], args[2], args[3], args[4], args[5], args[6]);
+							case 'Slider': return new Settings.Slider(args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+							default: break;
+						}
+					}
 					const PanelSG = new Settings.SettingGroup(`${this.getName()} (${this.getVersion()}) ${labelsNames.configMenu}`, { shown:true }).appendTo(Panel)
 						// Use Sent Links
-						.append(new Settings.Switch(Configuration.UseSentLinks.Title, Configuration.UseSentLinks.Description, Configuration.UseSentLinks.Value, checked =>
+						.append(createSetting('Switch', Configuration.UseSentLinks.Title, Configuration.UseSentLinks.Description, Configuration.UseSentLinks.Value, checked =>
 						{
-							Configuration.UseSentLinks.Value = checked;
+							Configuration.UseSentLinks.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Send Text With File
-						.append(new Settings.Switch(Configuration.SendTextWithFile.Title, Configuration.SendTextWithFile.Description, Configuration.SendTextWithFile.Value, checked =>
+						.append(createSetting('Switch', Configuration.SendTextWithFile.Title, Configuration.SendTextWithFile.Description, Configuration.SendTextWithFile.Value, checked =>
 						{
-							Configuration.SendTextWithFile.Value = checked;
+							Configuration.SendTextWithFile.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Only Forced Update
-						.append(new Settings.Switch(Configuration.OnlyForcedUpdate.Title, Configuration.OnlyForcedUpdate.Description, Configuration.OnlyForcedUpdate.Value, checked =>
+						.append(createSetting('Switch', Configuration.OnlyForcedUpdate.Title, Configuration.OnlyForcedUpdate.Description, Configuration.OnlyForcedUpdate.Value, checked =>
 						{
-							Configuration.OnlyForcedUpdate.Value = checked;
+							Configuration.OnlyForcedUpdate.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// sentType to srcType
-						.append(new Settings.Switch(Configuration.sentType2srcType.Title, Configuration.sentType2srcType.Description, Configuration.sentType2srcType.Value, checked =>
+						.append(createSetting('Switch', Configuration.sentType2srcType.Title, Configuration.sentType2srcType.Description, Configuration.sentType2srcType.Value, checked =>
 						{
-							Configuration.sentType2srcType.Value = checked;
+							Configuration.sentType2srcType.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Repeat Last Sent
-						.append(new Settings.Switch(Configuration.RepeatLastSent.Title, Configuration.RepeatLastSent.Description, Configuration.RepeatLastSent.Value, checked =>
+						.append(createSetting('Switch', Configuration.RepeatLastSent.Title, Configuration.RepeatLastSent.Description, Configuration.RepeatLastSent.Value, checked =>
 						{
-							Configuration.RepeatLastSent.Value = checked;
+							Configuration.RepeatLastSent.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Auto Close Panel
-						.append(new Settings.Switch(Configuration.AutoClosePanel.Title, Configuration.AutoClosePanel.Description, Configuration.AutoClosePanel.Value, checked =>
+						.append(createSetting('Switch', Configuration.AutoClosePanel.Title, Configuration.AutoClosePanel.Description, Configuration.AutoClosePanel.Value, checked =>
 						{
-							Configuration.AutoClosePanel.Value = checked;
+							Configuration.AutoClosePanel.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Sending File Cooldown
-						.append(new Settings.Textbox(Configuration.SendingFileCooldown.Title, Configuration.SendingFileCooldown.Description, Configuration.SendingFileCooldown.Value, text =>
+						.append(createSetting('Textbox', Configuration.SendingFileCooldown.Title, Configuration.SendingFileCooldown.Description, Configuration.SendingFileCooldown.Value, text =>
 						{
 							text = Number(text);
 							if(!Number.isInteger(text)) { Configuration.SendingFileCooldown.Value = Configuration.SendingFileCooldown.Default; funcs_.saveConfiguration(); return }
@@ -1076,7 +1090,7 @@ module.exports = (() =>
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.SendingFileCooldown.Default }))
 						// Scale Size For Pictures
-						.append(PanelElements.ScaleSizeForPictures = new Settings.Textbox(Configuration.ScaleSizeForPictures.Title, Configuration.ScaleSizeForPictures.Description, Configuration.ScaleSizeForPictures.Value.num, text =>
+						.append(PanelElements.ScaleSizeForPictures = createSetting('Textbox', Configuration.ScaleSizeForPictures.Title, Configuration.ScaleSizeForPictures.Description, Configuration.ScaleSizeForPictures.Value.num, text =>
 						{
 							text = Number(text);
 							if(9999 < text)
@@ -1090,13 +1104,13 @@ module.exports = (() =>
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.ScaleSizeForPictures.Default }))
 						// Set Link Parameters
-						.append(new Settings.Textbox(Configuration.SetLinkParameters.Title, Configuration.SetLinkParameters.Description, Configuration.SetLinkParameters.Value, text =>
+						.append(createSetting('Textbox', Configuration.SetLinkParameters.Title, Configuration.SetLinkParameters.Description, Configuration.SetLinkParameters.Value, text =>
 						{
 							Configuration.SetLinkParameters.Value = text;
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.SetLinkParameters.Default }))
 						// Main Folder Path
-						.append(new Settings.Textbox(Configuration.mainFolderPath.Title, Configuration.mainFolderPath.Description, Configuration.mainFolderPath.Value, text =>
+						.append(createSetting('Textbox', Configuration.mainFolderPath.Title, Configuration.mainFolderPath.Description, Configuration.mainFolderPath.Value, text =>
 						{
 							if(!text.length) { return }
 							if(!fs_.existsSync(text)) { Configuration.mainFolderPath.Value = Configuration.mainFolderPath.Default; funcs_.saveConfiguration(); return }
@@ -1104,14 +1118,14 @@ module.exports = (() =>
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.mainFolderPath.Default }))
 						// Main Folder Name Display
-						.append(new Settings.Textbox(Configuration.mainFolderNameDisplay.Title, Configuration.mainFolderNameDisplay.Description, Configuration.mainFolderNameDisplay.Value, text =>
+						.append(createSetting('Textbox', Configuration.mainFolderNameDisplay.Title, Configuration.mainFolderNameDisplay.Description, Configuration.mainFolderNameDisplay.Value, text =>
 						{
 							if(!text.length) { return }
 							Configuration.mainFolderNameDisplay.Value = text;
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.mainFolderNameDisplay.Default }))
 						// Section Text Color
-						.append(new Settings.ColorPicker(Configuration.SectionTextColor.Title, Configuration.SectionTextColor.Description, Configuration.SectionTextColor.Value, color =>
+						.append(createSetting('ColorPicker', Configuration.SectionTextColor.Title, Configuration.SectionTextColor.Description, Configuration.SectionTextColor.Value, color =>
 							{
 								Configuration.SectionTextColor.Value = color;
 								funcs_.saveConfiguration();

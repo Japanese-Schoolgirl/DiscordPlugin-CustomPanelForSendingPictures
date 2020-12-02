@@ -29,7 +29,7 @@ Performance on operating systems other than Windows was not tested, it is likely
 2) Place [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) file into your plugin folder;<br />
 3) Place plugin's ".js" file into your plugin folder;<br />
 4) After enabling the plugin, it will create a new folder in your plugin folder, in which you need to move images that you want to use.<br />
-<br />P.S. Plugin will save all information about folder's contents in CustomPanelForSendingPictures.settings.json file, and your plugin settings in CustomPanelForSendingPictures.config.json (you can also delete those files to reset all settings).<br />
+<br />P.S. Plugin will save all information about folder's contents in CustomPanelForSendingPictures.settings.json file, and your plugin configuration in CustomPanelForSendingPictures.configuration.json (you can also delete those files to reset all settings).<br />
 
 # Support:
 If you'd want to help me with this janky project, check the [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#todo), where I've listed problems that I'm trying to solve at the moment. You can check [Communication](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#communication) section for ways of contacting me.<br />
