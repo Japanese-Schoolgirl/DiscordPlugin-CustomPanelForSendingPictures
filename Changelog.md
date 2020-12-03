@@ -1,3 +1,6 @@
+# 0.2.8
+Checkboxes now work correctly.
+
 # 0.2.7
 Code is improved a little. Also added temporary fix for ZeresPluginLibrary (checkboxes now displayed as sliders).
 

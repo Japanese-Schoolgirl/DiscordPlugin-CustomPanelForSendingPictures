@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.7",
+			version: "0.2.8",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Code is improved a little`,
+				title: `Checkboxes now work correctly`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Code is improved a little. Also added temporary fix for ZeresPluginLibrary (checkboxes now displayed as sliders).`]
+				items: [`Rauenzi fixed checkboxes issue in 0PluginLibrary.plugin.js.`]
 			}
 		]
 	};
@@ -1033,8 +1033,8 @@ module.exports = (() =>
 						if(!type) { return }
 						switch(type)
 						{
-							//case 'Switch': return new Settings.Switch(args[1], args[2], args[3], args[4], args[5]);
-							case 'Switch': return new Settings.Slider(args[1], args[2], 0, 1, Number(args[3]), args[4], { markers: [0, 1], stickToMarkers: true }); // Temporary fix
+							//case 'Switch': return new Settings.Slider(args[1], args[2], 0, 1, Number(args[3]), args[4], { markers: [0, 1], stickToMarkers: true }); // Temporary fix
+							case 'Switch': return new Settings.Switch(args[1], args[2], args[3], args[4], args[5]);
 							case 'Textbox': return new Settings.Textbox(args[1], args[2], args[3], args[4], args[5]);
 							case 'ColorPicker': return new Settings.ColorPicker(args[1], args[2], args[3], args[4], args[5]);
 							case 'Keybind': return new Settings.Keybind(args[1], args[2], args[3], args[4], args[5]);
