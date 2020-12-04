@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.8",
+			version: "0.2.9",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,19 +32,20 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Checkboxes now work correctly`,
+				title: `Fixed for Powercord (with BDCompat)`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Rauenzi fixed checkboxes issue in 0PluginLibrary.plugin.js.`]
+				items: [`Now plugin should be compatible with BDCompat.`]
 			}
 		]
 	};
 /*========================| Modules |========================*/
-	const request_ = require("request");
-	const https_ = require('https');
-	const fs_ = window.require('fs');
-	const path_ = window.require('path');
-	const util_ = window.require('util');
-	const child_process_ = window.require('child_process');
+	const _getModule = require;
+	const request_ = _getModule("request");
+	const https_ = _getModule('https');
+	const fs_ = _getModule('fs');
+	const path_ = _getModule('path');
+	const util_ = _getModule('util');
+	const child_process_ = _getModule('child_process');
 	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert('PLUGIN API NOT FOUND');
 	const uploadModule = PluginApi_.findModule(m => m.upload && typeof m.upload === 'function'); // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === 'function') or others
 	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === 'object').ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
@@ -69,7 +70,7 @@ module.exports = (() =>
 				{
 					request_.get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (err, res, body) =>
 					{
-						if(err) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
+						if(err) return _getModule("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
 						await new Promise(r => fs_.writeFile(path_.join(PluginApi_.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
 					});
 				}

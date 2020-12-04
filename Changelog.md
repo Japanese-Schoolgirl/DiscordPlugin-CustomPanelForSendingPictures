@@ -1,3 +1,6 @@
+# 0.2.9
+Fixed for Powercord (with BDCompat).
+
 # 0.2.8
 Checkboxes now work correctly.
 
