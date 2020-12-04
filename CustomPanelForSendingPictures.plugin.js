@@ -384,8 +384,11 @@ module.exports = (() =>
 			}
 			funcs_.openFolder = (event = null) =>
 			{
-				if(!fs_.existsSync(Configuration.mainFolderPath.Value)) { return }
-				child_process_.exec(`start "" "${Configuration.mainFolderPath.Value}"`); // Open Main folder in explorer
+				switch(fs_.existsSync(Configuration.mainFolderPath.Value))
+				{
+					case false: try { fs_.mkdirSync(Configuration.mainFolderPath.Value); } catch (err) { console.warn(err.code); break; } // Try create folder
+					default: child_process_.exec(`start "" "${Configuration.mainFolderPath.Value}"`); // Open Main folder in explorer
+				}
 			}
 			funcs_.checkLibraries = () =>
 			{
