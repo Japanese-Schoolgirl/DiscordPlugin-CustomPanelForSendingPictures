@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.2.9",
+			version: "0.3.0",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,14 +32,14 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed for Powercord (with BDCompat)`,
+				title: `Fix for Repeat last sent picture option`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Now plugin should be compatible with BDCompat.`]
+				items: [`Now Repeat last sent picture option will not send a picture for the entire time the key is pressed, now it requires releasing "V" key.`]
 			}
 		]
 	};
 /*========================| Modules |========================*/
-	const _getModule = require;
+	const _getModule = require; // || window.require;
 	const request_ = _getModule("request");
 	const https_ = _getModule('https');
 	const fs_ = _getModule('fs');
@@ -291,6 +291,7 @@ module.exports = (() =>
 			}
 
 			var funcs_ = {}; // Object for store all custom functions
+			var tempVars_ = {}; // Object for store all temp vars
 	//-----------|  End of Styles section |-----------//
 
 	//-----------|  Functions |-----------//
@@ -929,6 +930,7 @@ module.exports = (() =>
 			{
 				if(!Configuration.RepeatLastSent.Value) { return }
 				if(!event.altKey || event.which != 86) { return } // 86 is V key, 18 is Alt
+				if(funcs_.IsPressed_KeyWhich(86)) { return } // Will return if V not released
 				if(!lastSent) { return }
 				if(!lastSent.file && !lastSent.link) { return }
 				if(lastSent.file)
@@ -947,6 +949,21 @@ module.exports = (() =>
 				/* let filePath, fileData;
 				try { fs_.writeFileSync(filePath+sentType, JSON.stringify(fileData)); }
 				catch(err) { console.warn(`There has been an error saving your ${sentType} file:`, err.message); }*/
+			}
+			funcs_.IsPressed_KeyWhich = (keyWhich) =>
+			{ // Check pressed keys and detect when it release. It uses Which for supporting different language
+				if(!tempVars_) { console.warn('Error with keeping temp variable!'); return false }
+				if(tempVars_['IsPressed_'+'KeyWhich_'+keyWhich]) { return true }
+
+				tempVars_['IsPressed_'+'KeyWhich_'+keyWhich] = true;
+				let detectKeyRelease = (event) =>
+				{
+					if(event.which != keyWhich) { return document.body.addEventListener('keyup', detectKeyRelease, { once: true }); }
+					try { tempVars_['IsPressed_'+'KeyWhich_'+keyWhich] = false; }
+					catch(err) { return console.warn('Error with keeping temp variable!', err); }
+				}
+				document.body.addEventListener('keyup', detectKeyRelease, { once: true });
+				return false
 			}
 			funcs_.DiscordMenuObserver = new MutationObserver((mutations) =>
 			{

@@ -1,3 +1,6 @@
+# 0.3.0
+Now Repeat last sent picture option will not send a picture for the entire time the key is pressed, now it requires releasing "V" key.
+
 # 0.2.9
 Fixed for Powercord (with BDCompat).
 
