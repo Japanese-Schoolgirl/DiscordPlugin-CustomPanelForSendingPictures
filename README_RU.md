@@ -25,7 +25,7 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 Работоспособность на операционных системах помимо Windows не проверялась, на других ОС, вероятно, некоторые функции могут не работать.<br />
 
 # Установка:
-1) Установите [EnhancedDiscord](https://enhanceddiscord.com/EnhancedDiscord.exe) или [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe). Для EnhancedDiscord после установки в Настройках включите BetterDiscord Plugins;<br />
+1) Установите [EnhancedDiscord](https://enhanceddiscord.com/EnhancedDiscord.exe) или [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe). Для EnhancedDiscord после установки в "Settings" включите "BetterDiscord Plugins";<br />
 2) Перенесите [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) файл в папку с вашими плагинами;<br />
 3) Перенесите "[.js](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js)" файл плагина в папку с вашими плагинами;<br />
 4) После включения этого плагина, в папке с плагином появится папка, в которую вам нужно перенести картинки, которые вы хотите использовать.<br />
