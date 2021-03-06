@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.3.0",
+			version: "0.3.1",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fix for Repeat last sent picture option`,
+				title: `Fixed the plugin functioning with Discord beta option`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Now Repeat last sent picture option will not send a picture for the entire time the key is pressed, now it requires releasing "V" key.`]
+				items: [`Fixed the plugin functioning with "Preview emojis, mentions, and markdown syntax as you type" Discord beta option. Now messages will be sent regardless of this option, but if this beta function is turned on, then messages will not have a markdown in them because of it.`]
 			}
 		]
 	};
@@ -828,9 +828,9 @@ module.exports = (() =>
 				let isWebFile = _link.indexOf(';base64,') != -1 ? false : true;
 				let isLocalFile = !isWebFile;
 				let channelID = DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
-				let ChatBox = document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]'); // User's textbox, ZLibrary way: document.querySelector(DiscordSelectors.Textarea.channelTextArea.value).querySelector(DiscordSelectors.Textarea.textArea.value).childNodes[1]
-				//let ChatBoxText = ChatBox ? Array.from(ChatBox.querySelectorAll('span')).pop() : null;
+				let ChatBox = document.querySelector(DiscordSelectors.Textarea.channelTextArea.value).querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]')
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
+				let ChatBoxText = ChatBox.innerText ? ChatBox.innerText : ChatBox.value ? ChatBox.value : '';
 
 				if(Configuration.AutoClosePanel.Value)
 				{
@@ -845,9 +845,9 @@ module.exports = (() =>
 				// Sending text
 				if(Configuration.SendTextWithFile.Value)
 				{ // Send text from textbox before send file
-					if(ChatBox.innerText.length < 2002)
+					if(ChatBoxText.length < 2002)
 					{
-						if(ChatBox.innerText.replace(/\s/g, '').length > 0) { DiscordAPI.currentChannel.sendMessage(ChatBox.innerText); } // For don't send empty message
+						if(ChatBoxText.replace(/\s/g, '').length > 0) { DiscordAPI.currentChannel.sendMessage(ChatBoxText); } // For don't send empty message
 					} // 2001 is limit for text length
 					else { Modals.showAlertModal(`For you:`, `B-baka, your text wasn't sent with message because your text is over 2000 symbols!`); return } // or BdApi.showConfirmationModal
 				}
@@ -917,7 +917,7 @@ module.exports = (() =>
 					return
 				}
 				/* // DEPRECATED (c)0.0.1 version //
-				_link = (escape(ChatBox.innerText) == "%uFEFF%0A") ? _link : `\n${_link}`; // "%uFEFF%0A" is empty chat value for Discord
+				_link = (escape(ChatBoxText) == "%uFEFF%0A") ? _link : `\n${_link}`; // "%uFEFF%0A" is empty chat value for Discord
 				ComponentDispatchModule.dispatchToLastSubscribed(DiscordModules.DiscordConstants.ComponentActions.INSERT_TEXT, {
 					content: `${_link}`
 				}); // Adds text to user's textbox

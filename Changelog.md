@@ -1,3 +1,6 @@
+# 0.3.1
+Fixed the plugin functioning with "Preview emojis, mentions, and markdown syntax as you type" Discord beta option. Now messages will be sent regardless of this option, but if this beta function is turned on, then messages will not have a markdown in them because of it.
+
 # 0.3.0
 Now Repeat last sent picture option will not send a picture for the entire time the key is pressed, now it requires releasing "V" key.
 
