@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.3.1",
+			version: "0.3.2",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed the plugin functioning with Discord beta option`,
+				title: `Another fix for Discord beta option`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Fixed the plugin functioning with "Preview emojis, mentions, and markdown syntax as you type" Discord beta option. Now messages will be sent regardless of this option, but if this beta function is turned on, then messages will not have a markdown in them because of it.`]
+				items: [`Fixed the plugin functioning with "Preview emojis, mentions, and markdown syntax as you type" Discord beta option. Now messages will be sent without capturing redundant text (when plugin's setting for sending messages together with pictures is turned on).`]
 			}
 		]
 	};
@@ -273,6 +273,7 @@ module.exports = (() =>
 				Modal_Cancel: 			'Cancel',
 				Modal_Missing: 			'Library Missing',
 				Modal_MissingLibs: 		`The library plugin needed for turned on options in plugin ${config.info.name} is missing. Please click "Download Now" to install it.`,
+				Constants_Missing:		`Some importants constants in plugin ${config.info.name} is missing`,
 				Yamete: 				'Yamete!',
 				tooBig: 				"It's too big!",
 				Pictures: 				'Pictures',
@@ -295,6 +296,10 @@ module.exports = (() =>
 	//-----------|  End of Styles section |-----------//
 
 	//-----------|  Functions |-----------//
+			funcs_.warnsCheck = () =>
+			{
+				if(!(Patcher && DiscordAPI && Modals && DiscordModules && DiscordSelectors && Settings && PluginUtilities)) { console.warn(labelsNames.Constants_Missing); }
+			}
 			funcs_.setStyles = (command = null) =>
 			{
 				if(document.getElementById(elementNames.id) && command == 'delete') { return document.getElementById(elementNames.id).remove(); }
@@ -335,10 +340,11 @@ module.exports = (() =>
 				{
 					case 'ru':
 						config.info.description = 'Добавляет панель, которая подгружает картинки через файл настроек с используемыми файлами и ссылками, позволяя отправлять картинки с текстом или без текста нажатием по превью картинок на панели. Файл настроек автоматически создаётся при сканировании выбранной папки или папки плагина (поддерживает подпапки и будет отображать их как секции/группы).'; // Only config constanta, not keys inside
-						labelsNames.Modal_OkDownload = 'Скачать сейчас',
-						labelsNames.Modal_Cancel = 'Отмена',
-						labelsNames.Modal_Missing = 'Отсутствует библиотека',
-						labelsNames.Modal_MissingLibs = `Отсутствует библиотека, необходимая для работы включённых опций в плагине ${config.info.name}. Пожалуйста, нажмите "${labelsNames.Modal_OkDownload}" для её установки.`,
+						labelsNames.Modal_OkDownload = 'Скачать сейчас';
+						labelsNames.Modal_Cancel = 'Отмена';
+						labelsNames.Modal_Missing = 'Отсутствует библиотека';
+						labelsNames.Modal_MissingLibs = `Отсутствует библиотека, необходимая для работы включённых опций в плагине ${config.info.name}. Пожалуйста, нажмите "${labelsNames.Modal_OkDownload}" для её установки.`;
+						labelsNames.Constants_Missing = `Отсутствуют некоторые константы, важные для плагина ${config.info.name}.`;
 						labelsNames.Yamete = `Ямете!`;
 						labelsNames.tooBig = `Это слишком велико!`;
 						labelsNames.Pictures = `Картинки`;
@@ -828,7 +834,7 @@ module.exports = (() =>
 				let isWebFile = _link.indexOf(';base64,') != -1 ? false : true;
 				let isLocalFile = !isWebFile;
 				let channelID = DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
-				let ChatBox = document.querySelector(DiscordSelectors.Textarea.channelTextArea.value).querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]')
+				let ChatBox = document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') ? document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') : document.querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]')
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
 				let ChatBoxText = ChatBox.innerText ? ChatBox.innerText : ChatBox.value ? ChatBox.value : '';
 
@@ -994,6 +1000,7 @@ module.exports = (() =>
 						funcs_.loadSettings(); // despite the fact that the same method is called in the directory scan - the plugin has an option to turn off automatic scan, so doesn't remove this
 						funcs_.setStyles();
 						console.log(config.info.name, 'loaded');
+						funcs_.warnsCheck();
 
 						funcs_.scanDirectory();
 						funcs_.DiscordMenuObserver.observe(document.body, { childList: true, subtree: true });
