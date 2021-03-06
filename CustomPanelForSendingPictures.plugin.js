@@ -84,7 +84,7 @@ module.exports = (() =>
 		const plugin = (Plugin, Api) =>
 		{
 
-			const { Patcher, DiscordAPI, Modals, DiscordModules, Settings, PluginUtilities } = Api;
+			const { Patcher, DiscordAPI, Modals, DiscordModules, DiscordSelectors, Settings, PluginUtilities } = Api;
 	//-----------| Create Settings and Variables |-----------//
 			const resizePluginName = 'gifsicle';
 			var picsGlobalSettings = {};
