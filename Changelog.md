@@ -1,3 +1,6 @@
+# 0.3.3
+Fixed issue with Buffer module.
+
 # 0.3.2
 Fixed the plugin functioning with "Preview emojis, mentions, and markdown syntax as you type" Discord beta option. Now messages will be sent without capturing redundant text (when plugin's setting for sending messages together with pictures is turned on).
 

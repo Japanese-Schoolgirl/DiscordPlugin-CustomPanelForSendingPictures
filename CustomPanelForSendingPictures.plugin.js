@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.3.2",
+			version: "0.3.3",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Another fix for Discord beta option`,
+				title: `Buffer module fix`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Fixed the plugin functioning with "Preview emojis, mentions, and markdown syntax as you type" Discord beta option. Now messages will be sent without capturing redundant text (when plugin's setting for sending messages together with pictures is turned on).`]
+				items: [`Fixed issue with Buffer module.`]
 			}
 		]
 	};
@@ -46,6 +46,7 @@ module.exports = (() =>
 	const path_ = _getModule('path');
 	const util_ = _getModule('util');
 	const child_process_ = _getModule('child_process');
+	const Buffer_ = typeof Buffer !== 'undefined' ? Buffer : _getModule('buffer').Buffer;
 	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert('PLUGIN API NOT FOUND');
 	const uploadModule = PluginApi_.findModule(m => m.upload && typeof m.upload === 'function'); // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === 'function') or others
 	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === 'object').ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
@@ -877,7 +878,7 @@ module.exports = (() =>
 						{ // Sending local picture with scaled size
 							let _dataType = _link.split(';base64,')[0].split('data:')[1];
 							let _fileType = _dataType.split('/')[1];
-							let _FileU8Array = Buffer.from(_link.split(';base64,')[1], 'base64');
+							let _FileU8Array = Buffer_.from(_link.split(';base64,')[1], 'base64');
 							let isAnimated; // Detect if png or webp can containt animation. Gif anyway cannot be resized with standard canvas method properly
 							if(_fileType == 'png') { isAnimated = (_FileU8Array.indexOf("acTL") != -1 && _FileU8Array.indexOf("IDAT") != -1) ? (_FileU8Array.indexOf("acTL") < _FileU8Array.indexOf("IDAT")) : null; }
 							if(_fileType == 'webp') { isAnimated = (_FileU8Array.indexOf("VP8X") != -1 && _FileU8Array.indexOf("ANMF") != -1) ? (_FileU8Array.indexOf("VP8X") < _FileU8Array.indexOf("ANMF")) : null; }
