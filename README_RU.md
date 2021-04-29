@@ -20,12 +20,12 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 
 # Совместимость:
 С нативными и любыми пользовательскими темами плагин должен быть полностью совместим, потому что использует стандартные переменные цветов Дискорда.<br />
-Я пользуюсь [EnhancedDiscord](https://github.com/joe27g/EnhancedDiscord) и могу отслеживать проблемы возникающие только на нём. Тем не менее плагин у пользователей BetterDiscord должен работать исправно, потому что он сделан как плагин для [BetterDiscord](https://github.com/rauenzi/BetterDiscordApp).<br />
+Я пользуюсь [Powercord](https://github.com/powercord-org/powercord) и могу отслеживать проблемы возникающие только на нём. Тем не менее плагин у пользователей BetterDiscord должен работать исправно, потому что он сделан как плагин для [BetterDiscord](https://github.com/rauenzi/BetterDiscordApp).<br />
 Плагин также использует [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) и [gifsicle](http://www.lcdf.org/gifsicle/).<br />
 Работоспособность на операционных системах помимо Windows не проверялась, на других ОС, вероятно, некоторые функции могут не работать.<br />
 
 # Установка:
-1) Установите [EnhancedDiscord](https://enhanceddiscord.com/EnhancedDiscord.exe) или [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe). Для EnhancedDiscord после установки в "Settings" включите "BetterDiscord Plugins";<br />
+1) Установите [Powercord](https://powercord.dev/installation) или [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe). Для Powercord после установки вам также нужно будет установить [bdCompat](https://github.com/Juby210/bdCompat#installation) в папку плагинов Powercord (после этой установки появится раздел BetterDiscord Plugins в Powercord секции, также не забывайте что плагины отображаются в папках только после перезагрузки Дискорда);<br />
 2) Перенесите [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) файл в папку с вашими плагинами;<br />
 3) Перенесите "[.js](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js)" файл плагина в папку с вашими плагинами;<br />
 4) После включения этого плагина, в папке с плагином появится папка, в которую вам нужно перенести картинки, которые вы хотите использовать.<br />
