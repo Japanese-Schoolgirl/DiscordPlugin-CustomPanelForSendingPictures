@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.3.3",
+			version: "0.3.4",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Buffer module fix`,
+				title: `Fixed selecting tabs issue`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Fixed issue with Buffer module.`]
+				items: [`Fixed the issue with selecting Stickers or any additional tab on the panel.`]
 			}
 		]
 	};
@@ -630,14 +630,13 @@ module.exports = (() =>
 				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonGoID);
 				if(!buttonCPFSP) { return }
 				let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
-				let emojisPanel = emojisGUI.querySelector('div[role*="tabpanel"]'); // Emojis panel
+				let emojisPanel = emojisGUI.lastElementChild; // Emojis panel, old way for getting this is querySelector('div[role*="tabpanel"]'), but Stickers tab doesn't have any role :I
 				if(!emojisPanel) { return }
 				let allPicsSettings;
-				// Previous button click fix: START
+				//# Previous button click fix: START
 				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
 				let previousButton = emojisMenu.querySelector('div[aria-selected*="true"]');
 				let previousButtonID = previousButton ? previousButton.id : null;
-				let additionalButton = (previousButtonID == elementNames.emojiTabID) ? document.getElementById(elementNames.gifTabID) : document.getElementById(elementNames.emojiTabID);
 				if(previousButtonID)
 				{
 					buttonCPFSP.setAttribute('from', previousButtonID); // Necessary for fixing previous button
@@ -659,18 +658,24 @@ module.exports = (() =>
 					try
 					{ // Unselecting previous button
 						previousButton.addEventListener("click", previousButtonFix, { once: true } );
-						additionalButton.addEventListener("click", additionalButtonFix, { once: true } );
 						previousButton.querySelector('button').classList.value = previousButton.querySelector('button').classList.value.replace('ButtonActive', 'Button');
-						additionalButton.querySelector('button').classList.value = previousButton.querySelector('button').classList.value.replace('ButtonActive', 'Button');
+						// To not choose the already selected
+						emojisMenu.querySelectorAll('div[class*="navItem-"]').forEach((el) =>
+						{
+							if(el.id == previousButtonID) { return }
+							el.addEventListener("click", additionalButtonFix, { once: true } );
+							el.querySelector('button').classList.value = el.querySelector('button').classList.value.replace('ButtonActive', 'Button');
+						})
 					} catch(err) { console.warn(err); }
 				}
-				// Previous button click fix: END
+				//# Previous button click fix: END
 				function creatingPanel()
 				{
 					allPicsSettings = funcs_.scanDirectory(command);
 					if((document.getElementById(elementNames.CPFSP_panelID) && command != 'refresh')) { return } // Will repeat if command == refresh
 					emojisPanel.innerHTML = ''; // Clear panel
 					emojisPanel.setAttribute('id', elementNames.CPFSP_panelID); // Change panel ID
+					emojisPanel.removeAttribute('class'); // Removes classes for avoid styles problems
 					buttonCPFSP.classList.add(elementNames.CPFSP_activeButton); // Add CSS for select
 					funcs_.setStyleFilter(undefined, 'delete'); // Remove last filter
 					/*let previousButton = document.getElementById(buttonCPFSP.getAttribute('from'));

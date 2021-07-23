@@ -1,3 +1,6 @@
+# 0.3.4
+Fixed the issue with selecting Stickers or any additional tab on the panel.
+
 # 0.3.3
 Fixed issue with Buffer module.
 
