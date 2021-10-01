@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.3.4",
+			version: "0.3.5",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed selecting tabs issue`,
+				title: `Fixed missing button`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Fixed the issue with selecting Stickers or any additional tab on the panel.`]
+				items: [`Fixed the button missing when the panel is opened.`]
 			}
 		]
 	};
@@ -263,10 +263,12 @@ module.exports = (() =>
 				searchBar: 				'CPFSP_searchBar',
 				searchBarInput: 		'CPFSP_searchBarInput',
 				searchBarOptions: 		'CPFSP_searchBarOptions',
+				emojisClassGUI:			'contentWrapper-',
 				emojiTabID:				'emoji-picker-tab',
 				gifTabID: 				'gif-picker-tab',
+				stickerTabID: 			'sticker-picker-tab',
 				Config_scaleType: 		'CPFSP_scaleType',
-				Config_scaleExp: 		'CPFSP_scaleExp',
+				Config_scaleExp: 		'CPFSP_scaleExp'
 			}
 
 			var labelsNames = {
@@ -978,12 +980,14 @@ module.exports = (() =>
 				return false
 			}
 			funcs_.DiscordMenuObserver = new MutationObserver((mutations) =>
-			{
+			{ // To find "emoji-picker-tab-panel" and "gif-picker-tab-panel" and "wrapper-OxgYJ1" (sticker panel) exist
 				mutations.forEach((mutation) =>
 				{
 					if(!mutation.target.parentNode) { return }
-					if(mutation.target.parentNode.getAttribute('role') != 'tabpanel') { return } // Find "emoji-picker-tab-panel" and "gif-picker-tab-panel"
-					funcs_.addPicturesPanelButton(mutation.target.parentNode.parentNode); // contentWrapper
+					if(!mutation.target.parentNode.parentNode) { return }
+					if(!mutation.target.parentNode.parentNode.parentNode) { return }
+					if(!document.querySelector(`div[class*="${elementNames.emojisClassGUI}"]`)) { return }
+					funcs_.addPicturesPanelButton(document.querySelector(`div[class*="${elementNames.emojisClassGUI}"]`)); // contentWrapper
 				});
 			})
 
@@ -1009,7 +1013,7 @@ module.exports = (() =>
 						funcs_.warnsCheck();
 
 						funcs_.scanDirectory();
-						funcs_.DiscordMenuObserver.observe(document.body, { childList: true, subtree: true });
+						funcs_.DiscordMenuObserver.observe(document.body, { subtree: true, childList: true });
 						//DiscordModules.Dispatcher.subscribe(DiscordModules.DiscordConstants.ActionTypes.UPLOAD_COMPLETE, createSentFiles);
 					} catch(err) { console.warn('There is error with starting plugin:', err); }
 				}

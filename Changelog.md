@@ -1,3 +1,6 @@
+# 0.3.5
+Fixed the button missing when the panel is opened.
+
 # 0.3.4
 Fixed the issue with selecting Stickers or any additional tab on the panel.
 
