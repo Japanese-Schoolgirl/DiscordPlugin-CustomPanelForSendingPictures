@@ -1,3 +1,6 @@
+# 0.3.6
+Replaced the function with option for sending messages with images. Also added animation for preview of loading images and content will no longer jump when image previews are loading.
+
 # 0.3.5
 Fixed the button missing when the panel is opened.
 

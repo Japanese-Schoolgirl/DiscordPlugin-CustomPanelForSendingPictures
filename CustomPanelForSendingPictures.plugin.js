@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.3.5",
+			version: "0.3.6",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed missing button`,
+				title: `Fixed the error with option for sending messages with images outside of direct messages and improved the preview of loading images`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Fixed the button missing when the panel is opened.`]
+				items: [`Replaced the function with option for sending messages with images. Also added animation for preview of loading images and content will no longer jump when image previews are loading.`]
 			}
 		]
 	};
@@ -48,8 +48,15 @@ module.exports = (() =>
 	const child_process_ = _getModule('child_process');
 	const Buffer_ = typeof Buffer !== 'undefined' ? Buffer : _getModule('buffer').Buffer;
 	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert('PLUGIN API NOT FOUND');
-	const uploadModule = PluginApi_.findModule(m => m.upload && typeof m.upload === 'function'); // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === 'function') or others
 	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === 'object').ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
+	const uploadModule = PluginApi_.findModule(m => m.upload && typeof m.upload === 'function'); // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === 'function') or others
+	const messageModule = (channelID, sendText) =>
+	{ // Replace for broken DiscordAPI.currentChannel.sendMessage
+		try
+		{
+			PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === 'function')._sendMessage(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {});
+		} catch(err) { console.warn(err); }
+	};
 
 /*========================| Core |========================*/
 	//-----------| Check at ZeresPlugin Library |-----------//
@@ -98,6 +105,7 @@ module.exports = (() =>
 			let sendingCooldown = {time: 0, duration: 0};
 			let sentType = '.sent';
 			let srcType = '.src';
+			let emptyIMG = 'data:image/gif;base64,R0lGODlhAQABAHAAACH5BAEAAAAALAAAAAABAAEAgQAAAAAAAAAAAAAAAAICRAEAOw==';
 			let NotFoundIMG = 'https://i.imgur.com/r0OCBLX.png'; // old is 'https://i.imgur.com/jz767Z6.png', src as base64 also ok;
 			let imgPreviewSize = {W: '48px', H: '48px'};
 			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
@@ -118,6 +126,30 @@ module.exports = (() =>
 			};
 	//-----------|  Start of Styles section |-----------//
 			var CPFSP_Styles = () => { return ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
+:root {
+	--sectionText: ${Configuration.SectionTextColor.Value};
+	--sectionTextFlash: rgba(255, 0, 0, 0.2);
+}
+@keyframes spin360 {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+@keyframes loadingCircle {
+	from {
+		box-shadow: 2px 3px 4px var(--sectionTextFlash) inset,
+		2px 2px 2px var(--sectionText) inset,
+		2px -2px 2px var(--sectionText) inset;
+	}
+	to {
+		box-shadow: 2px 3px 4px var(--sectionTextFlash) inset,
+		2px 2px 2px var(--sectionText) inset,
+		2px -2px 2px var(--sectionText) inset;
+	}
+}
 #CPFSP_Panel {
 	overflow: hidden;
 	position: relative;
@@ -138,7 +170,7 @@ module.exports = (() =>
 	margin-left: 18px;
 	font-size: 18px;
 	font-weight: 600;
-	color: ${Configuration.SectionTextColor.Value}; /* color: var(--header-primary); */
+	color: var(--sectionText); /* color: var(--header-primary); */
 	text-shadow: 0px 0px 5px white, 0px 0px 10px white, 0px 0px 5px black, 0px 0px 10px black, 0px 0px 1px purple;
 }
 .CPFSP_ul {
@@ -154,10 +186,18 @@ module.exports = (() =>
 	margin: 5px 0px 0px 5px;
 }
 .CPFSP_IMG {
-	width: ${imgPreviewSize.W};
-	height: ${imgPreviewSize.H};
+	min-width: ${imgPreviewSize.W};
+	max-width: ${imgPreviewSize.W};
+	min-height: ${imgPreviewSize.H};
+	max-height: ${imgPreviewSize.H};
 	cursor: pointer;
-	background-size: 48px;
+	background-size: 48px 48px;
+}
+.CPFSP_IMG[waitload] {
+	content: url(${emptyIMG});
+	border-radius: 50%;
+	/*background-image: linear-gradient(to bottom, var(--sectionText) 0%, var(--sectionTextFlash) 100%);*/
+	animation: spin360 1s linear infinite, loadingCircle 2s alternate infinite;
 }
 #CPFSP_btnsPanel {
 	height: 27px; /* old is 30px */ 
@@ -764,6 +804,8 @@ module.exports = (() =>
 						newPicture.setAttribute('height', imgPreviewSize.H); // for lazy loading
 						newPicture.setAttribute('loading', 'lazy'); // asynchronously img loading
 						newPicture.setAttribute('onerror', `this.removeAttribute('onerror'); this.setAttribute('src', '${NotFoundIMG}');`);
+						newPicture.setAttribute('onload', `this.removeAttribute('onload'); this.removeAttribute('waitload');`);
+						newPicture.setAttribute('waitload', ''); // for CSS loading animation
 						newPicture.setAttribute('path', file.link);
 						try
 						{
@@ -861,7 +903,10 @@ module.exports = (() =>
 				{ // Send text from textbox before send file
 					if(ChatBoxText.length < 2002)
 					{
-						if(ChatBoxText.replace(/\s/g, '').length > 0) { DiscordAPI.currentChannel.sendMessage(ChatBoxText); } // For don't send empty message
+						if(ChatBoxText.replace(/\s/g, '').length > 0)
+						{ // For don't send empty message
+							messageModule(channelID, ChatBoxText);
+						}
 					} // 2001 is limit for text length
 					else { Modals.showAlertModal(`For you:`, `B-baka, your text wasn't sent with message because your text is over 2000 symbols!`); return } // or BdApi.showConfirmationModal
 				}
@@ -938,7 +983,7 @@ module.exports = (() =>
 				*/
 				lastSent = { file: null, link: _link}; // For Last Sent option
 				if(Configuration.SetLinkParameters.Value.length) { _link = (_link+Configuration.SetLinkParameters.Value); } // Adds user additional parameters
-				return DiscordAPI.currentChannel.sendMessage(_link);  // Sending web picture
+				return messageModule(channelID, _link); // Sending web picture
 			}
 			funcs_.RepeatLastSentFunc = (event) =>
 			{
@@ -947,14 +992,14 @@ module.exports = (() =>
 				if(funcs_.IsPressed_KeyWhich(86)) { return } // Will return if V not released
 				if(!lastSent) { return }
 				if(!lastSent.file && !lastSent.link) { return }
+				let channelID = DiscordAPI.currentChannel.id;
 				if(lastSent.file)
 				{
-					let channelID = DiscordAPI.currentChannel.id;
 					uploadModule.upload(channelID, lastSent.file);
 				}
 				else if(lastSent.link)
 				{
-					DiscordAPI.currentChannel.sendMessage(lastSent.link);
+					messageModule(channelID, lastSent.link);
 				}
 			}
 			funcs_.createSentFiles = (event) =>
