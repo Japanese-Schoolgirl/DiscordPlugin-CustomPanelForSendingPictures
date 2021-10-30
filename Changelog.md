@@ -1,3 +1,6 @@
+# 0.3.7
+Fixed the problem with displaying the animation for preview of loading images. Also made a janky fix for missing color picker in the settings (at the moment this module is broken), but it may require to delete/edit CustomPanelForSendingPictures.configuration or reselect color in the settings.
+
 # 0.3.6
 Replaced the function with option for sending messages with images. Also added animation for preview of loading images and content will no longer jump when image previews are loading.
 

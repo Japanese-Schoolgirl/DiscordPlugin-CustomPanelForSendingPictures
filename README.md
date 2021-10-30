@@ -34,8 +34,8 @@ Performance on operating systems other than Windows was not tested, it is likely
 # Support:
 If you'd want to help me with this janky project, check the [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#todo), where I've listed problems that I'm trying to solve at the moment. You can check [Communication](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#communication) section for ways of contacting me.<br />
 If you'd like to help me financially and for some reason you didn't use "Sponsor" button for it, here are my requisites:<br />
-https://donate.qiwi.com/payin/Schoolgirl<br />
 https://www.donationalerts.com/r/JapaneseSchoolgirl<br />
+https://donate.qiwi.com/payin/Schoolgirl<br />
 
 # Communication:
 I don't accept unknown friend requests, so if you want to DM me in Discord there is a huge chance I won't notice you. It's better to use GitHub or [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) to contact me (its not necessary to add me, I have open comment section). I also have [Discord Server](https://discord.gg/nZMbKkw), but it has a manual approval of every user before they are allowed to write or read most of conversation channels. You can also try to write me on [Twitch](https://www.twitch.tv/EternalSchoolgirl), but it's not the most convenient way.<br />

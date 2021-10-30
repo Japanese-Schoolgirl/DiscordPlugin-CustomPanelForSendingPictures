@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.3.6",
+			version: "0.3.7",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed the error with option for sending messages with images outside of direct messages and improved the preview of loading images`,
+				title: `Fixed the problem with displaying the animation for preview of loading images. Also made a janky fix for missing color picker in the settings`,
 				type: "fixed", // without type, fixed, improved, progress
-				items: [`Replaced the function with option for sending messages with images. Also added animation for preview of loading images and content will no longer jump when image previews are loading.`]
+				items: [`Fixed the problem with displaying the animation for preview of loading images. Also made a janky fix for missing color picker in the settings (at the moment this module is broken), but it may require to delete/edit CustomPanelForSendingPictures.configuration or reselect color in the settings.`]
 			}
 		]
 	};
@@ -122,7 +122,7 @@ module.exports = (() =>
 				SetLinkParameters:		{ Value: '', 										Default: '?width=45&height=45', 	Title: `Set parameters for web file (off by default)`, 	Description: `To automatically add custom parameters for sending links. Remove value in this setting to turn this off.` },
 				mainFolderPath:			{ Value: picturesPath, 								Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders with very big amount of files. Chosen directory should already exist.` },
 				mainFolderNameDisplay:	{ Value: 'Main folder', 							Default: 'Main folder', 			Title: `Displayed section name for Main folder`, 		Description: `You can set this section name to Main folder:` },
-				SectionTextColor:		{ Value: 'color: #000000bb', 						Default: 'color: #000000bb', 		Title: `Section's name color`, 							Description: `Your current color is:` }
+				SectionTextColor:		{ Value: '#000000bb', 						Default: '#000000bb', 		Title: `Section's name color`, 							Description: `Your current color is:` }
 			};
 	//-----------|  Start of Styles section |-----------//
 			var CPFSP_Styles = () => { return ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
@@ -131,20 +131,20 @@ module.exports = (() =>
 	--sectionTextFlash: rgba(255, 0, 0, 0.2);
 }
 @keyframes spin360 {
-	from {
+	0% {
 		transform: rotate(0deg);
 	}
-	to {
+	100% {
 		transform: rotate(360deg);
 	}
 }
 @keyframes loadingCircle {
-	from {
+	0% {
 		box-shadow: 2px 3px 4px var(--sectionTextFlash) inset,
 		2px 2px 2px var(--sectionText) inset,
 		2px -2px 2px var(--sectionText) inset;
 	}
-	to {
+	100% {
 		box-shadow: 2px 3px 4px var(--sectionTextFlash) inset,
 		2px 2px 2px var(--sectionText) inset,
 		2px -2px 2px var(--sectionText) inset;
@@ -184,6 +184,12 @@ module.exports = (() =>
 .CPFSP_li {
 	display: inline-block;
 	margin: 5px 0px 0px 5px;
+	/* background-image: linear-gradient(to bottom, var(--sectionText) 0%, var(--sectionTextFlash) 100%); */
+}
+.CPFSP_li[waitload] {
+	box-shadow: 2px 3px 4px var(--sectionText) inset; /* in case if animation not starts */
+	border-radius: 50%;
+	animation: spin360 1s linear infinite, loadingCircle 2s alternate infinite;
 }
 .CPFSP_IMG {
 	min-width: ${imgPreviewSize.W};
@@ -193,11 +199,8 @@ module.exports = (() =>
 	cursor: pointer;
 	background-size: 48px 48px;
 }
-.CPFSP_IMG[waitload] {
+.CPFSP_li[waitload] .CPFSP_IMG {
 	content: url(${emptyIMG});
-	border-radius: 50%;
-	/*background-image: linear-gradient(to bottom, var(--sectionText) 0%, var(--sectionTextFlash) 100%);*/
-	animation: spin360 1s linear infinite, loadingCircle 2s alternate infinite;
 }
 #CPFSP_btnsPanel {
 	height: 27px; /* old is 30px */ 
@@ -507,7 +510,7 @@ module.exports = (() =>
 			funcs_.loadDefaultSettings = () =>
 			{
 				picsGlobalSettings = {};
-				picsSettings = [ { name: 'AnnoyingLisa', link: 'https://i.imgur.com/l5Jf0VP.png' }, { name: 'AngryLisaNoises', link: 'https://i.imgur.com/ntW5Vqt.png'} ]; // Placeholder
+				picsSettings = [ { name: 'AnnoyingLisa', link: 'https://i.imgur.com/l5Jf0VP.png' }, { name: 'AngryLisaNoises', link: 'https://i.imgur.com/VMXymqg.png'} ]; // Placeholder
 				picsGlobalSettings[folderListName] = [ { name: mainFolderName, path: Configuration.mainFolderPath.Value } ];
 				picsGlobalSettings[mainFolderName] = picsSettings;
 				//funcs_.saveSettings(picsGlobalSettings);
@@ -597,7 +600,7 @@ module.exports = (() =>
 					let filePath = scanPath + file;
 					let webLink;
 					if(isFolder && isFirstScan) { foldersForScan.push({name: file, path: (path_.join(scanPath, file) + '\\') }); } // Add each folder only in this cycle due isFirstScan there prevents scans subfolders in subfolders. However this code not organize for subsubsubsubfolders scan yet
-					if(isFolder && isFirstScan && !absoluteIndex) { newPicsSettings[index] = { name: 'Placeholder', link: 'https://i.imgur.com/ntW5Vqt.png?AlwaysSendThisImageToNextUniverse/\\?????' }; } // Adds as placeholder only once due Main folder can't be "emtpy"
+					if(isFolder && isFirstScan && !absoluteIndex) { newPicsSettings[index] = { name: 'Placeholder', link: 'https://i.imgur.com/VMXymqg.png?AlwaysSendThisImageToNextUniverse/\\?????' }; } // Adds as placeholder only once due Main folder can't be "emtpy"
 					if(fileTypesAllow.indexOf(fileType) == -1) { return } // Check at filetype
 					if(fileType == sentType || fileType == srcType)
 					{
@@ -656,7 +659,7 @@ module.exports = (() =>
 					if((1 < newAllPicsSettings[folderListName].length) && (newAllPicsSettings[mainFolderName].length < 2))
 					{
 						let placeholder = newAllPicsSettings[mainFolderName][0];
-						if((placeholder.name === 'Placeholder') && (placeholder.link === 'https://i.imgur.com/ntW5Vqt.png?AlwaysSendThisImageToNextUniverse/\\?????'))
+						if((placeholder.name === 'Placeholder') && (placeholder.link === 'https://i.imgur.com/VMXymqg.png?AlwaysSendThisImageToNextUniverse/\\?????'))
 						{
 							newAllPicsSettings[folderListName].splice([newAllPicsSettings[folderListName].findIndex((el) => el.name == mainFolderName)], 1);
 							delete newAllPicsSettings[mainFolderName];
@@ -799,13 +802,12 @@ module.exports = (() =>
 						elementCol.setAttribute('role', 'gridcell');
 						elementCol.setAttribute('aria-rowindex', rowIndex);
 						elementCol.setAttribute('aria-colindex', colIndex);
+						elementCol.setAttribute('waitload', ''); // for CSS loading animation, after img loads it will delete this attribute
 						let newPicture = document.createElement('img');
 						newPicture.setAttribute('width', imgPreviewSize.W); // for lazy loading
 						newPicture.setAttribute('height', imgPreviewSize.H); // for lazy loading
 						newPicture.setAttribute('loading', 'lazy'); // asynchronously img loading
 						newPicture.setAttribute('onerror', `this.removeAttribute('onerror'); this.setAttribute('src', '${NotFoundIMG}');`);
-						newPicture.setAttribute('onload', `this.removeAttribute('onload'); this.removeAttribute('waitload');`);
-						newPicture.setAttribute('waitload', ''); // for CSS loading animation
 						newPicture.setAttribute('path', file.link);
 						try
 						{
@@ -821,6 +823,7 @@ module.exports = (() =>
 						newPicture.setAttribute('alt', file.name);
 						newPicture.setAttribute('title', file.name); // For displaying pictures name
 						newPicture.setAttribute('class', elementNames.newPicture);
+						newPicture.setAttribute('onload', `this.removeAttribute('onload'); this.parentNode.removeAttribute('waitload');`); // Delete onload attribute and indicate about load for li (parentNode)
 						newPicture.addEventListener('click', funcs_.send2ChatBox);
 						elementCol.append(newPicture); // Adds IMG to "li"
 						elementRow.append(elementCol); // Adds "li" to "ul"
@@ -1103,9 +1106,16 @@ module.exports = (() =>
 						specialOptionDiv.querySelector('input').addEventListener('change', (e)=>funcs_.setConfigValue(e, 'ScaleSizeForPictures', document.querySelector(`#${elementNames.Config_scaleExp} input`).checked, 'exp'));
 						inputField.parentNode.append(specialOptionDiv);
 					}
+					function fixMissingColorPicker()
+					{ // This function planned as Temporary fix and should be removed after ColorPicker starts work again
+						let inputField = PanelElements.SectionTextColor.getElement().querySelector('input');
+						if(!inputField) { return }
+						inputField.setAttribute('type', 'color');
+					}
 					let detectCreation = new MutationObserver((mutationsList, observer) =>
 					{ // For activating all additional functions after panel creation (can be replaced if used onAdded()). God is not contributor
 						_ScaleSizeForPictures();
+						fixMissingColorPicker(); // Temporary fix for ColorPicker
 						observer.disconnect(); // Disconnect observer after panel creating
 					});
 					Panel.setAttribute('class', 'form');
@@ -1119,7 +1129,8 @@ module.exports = (() =>
 							//case 'Switch': return new Settings.Slider(args[1], args[2], 0, 1, Number(args[3]), args[4], { markers: [0, 1], stickToMarkers: true }); // Temporary fix
 							case 'Switch': return new Settings.Switch(args[1], args[2], args[3], args[4], args[5]);
 							case 'Textbox': return new Settings.Textbox(args[1], args[2], args[3], args[4], args[5]);
-							case 'ColorPicker': return new Settings.ColorPicker(args[1], args[2], args[3], args[4], args[5]);
+							case 'ColorPicker': return new Settings.Textbox(args[1], args[2], args[3], args[4], args[5]); // Temporary fix
+							//case 'ColorPicker': return new Settings.ColorPicker(args[1], args[2], args[3], args[4], args[5]);
 							case 'Keybind': return new Settings.Keybind(args[1], args[2], args[3], args[4], args[5]);
 							case 'Dropdown': return new Settings.Dropdown(args[1], args[2], args[3], args[4], args[5], args[6]);
 							case 'RadioGroup': return new Settings.RadioGroup(args[1], args[2], args[3], args[4], args[5], args[6]);
@@ -1208,7 +1219,7 @@ module.exports = (() =>
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.mainFolderNameDisplay.Default }))
 						// Section Text Color
-						.append(createSetting('ColorPicker', Configuration.SectionTextColor.Title, Configuration.SectionTextColor.Description, Configuration.SectionTextColor.Value, color =>
+						.append(PanelElements.SectionTextColor = createSetting('ColorPicker', Configuration.SectionTextColor.Title, Configuration.SectionTextColor.Description, Configuration.SectionTextColor.Value, color =>
 							{
 								Configuration.SectionTextColor.Value = color;
 								funcs_.saveConfiguration();

@@ -34,8 +34,8 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 # Поддержка:
 Если вы желаете помочь мне с этим кривоватым проектом, то обратите внимание на [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F), где указаны проблемы, которые я решаю на данный момент. Смотрите подробнее в разделе [Коммуникация](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F) о способах связи со мной.
 Если вы хотите помочь мне денежкой и вы почему-то не использовали для этого кнопку "Sponsor", то вот мои реквизиты напрямую:<br />
-https://donate.qiwi.com/payin/Schoolgirl<br />
 https://www.donationalerts.com/r/JapaneseSchoolgirl<br />
+https://donate.qiwi.com/payin/Schoolgirl<br />
 
 # Коммуникация:
 Я не принимаю неизвестные мне заявки в друзья, поэтому если вы захотите написать мне в DM Дискорда, то велик шанс что я вас не замечу. Вместо этого лучше используйте как средство коммуникации со мной GitHub или [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) (вам необязательно добавляться ко мне, у меня открытая стена комментариев). У меня также есть [Discord сервер](https://discord.gg/nZMbKkw), но в нём ручная проверка каждого пользователя перед тем, как он получит разрешение на возможность писать и видеть большинство каналов для общения. Также вы можете попробовать написать мне на [Twitch](https://www.twitch.tv/EternalSchoolgirl), но это не самый удобный вариант.<br />
