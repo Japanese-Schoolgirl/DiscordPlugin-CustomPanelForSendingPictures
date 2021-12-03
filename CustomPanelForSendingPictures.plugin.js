@@ -680,7 +680,7 @@ module.exports = (() =>
 				let allPicsSettings;
 				//# Previous button click fix: START
 				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
-				let previousButton = emojisMenu.querySelector('div[aria-selected*="true"]');
+				let previousButton = emojisMenu.querySelector('button[aria-selected*="true"]'); // Will return Button tag
 				let previousButtonID = previousButton ? previousButton.id : null;
 				if(previousButtonID)
 				{
@@ -691,25 +691,26 @@ module.exports = (() =>
 						let from = buttonCPFSP.getAttribute('from');
 						let fix = (from == elementNames.emojiTabID) ? elementNames.gifTabID : elementNames.emojiTabID;
 						// Select other button and after this select previous button again
-						document.getElementById(fix).querySelector('button').click();
-						document.getElementById(from).querySelector('button').click();
+						document.getElementById(fix).click();
+						document.getElementById(from).click();
 						buttonCPFSP.classList.remove(elementNames.CPFSP_activeButton);
 						// DEBUG // console.log('Fixed', event);
 					}
 					function additionalButtonFix(event)
 					{
-						document.getElementById(elementNames.CPFSP_buttonGoID).classList.remove(elementNames.CPFSP_activeButton);
+						let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonGoID);
+						buttonCPFSP.classList.remove(elementNames.CPFSP_activeButton);
 					}
 					try
 					{ // Unselecting previous button
 						previousButton.addEventListener("click", previousButtonFix, { once: true } );
-						previousButton.querySelector('button').classList.value = previousButton.querySelector('button').classList.value.replace('ButtonActive', 'Button');
+						previousButton.classList.value = previousButton.classList.value.replace('ButtonActive', 'Button');
 						// To not choose the already selected
-						emojisMenu.querySelectorAll('div[class*="navItem-"]').forEach((el) =>
-						{
+						emojisMenu.querySelectorAll('button[class*="navItem-"]').forEach((el) =>
+						{ // For each Button with label
 							if(el.id == previousButtonID) { return }
 							el.addEventListener("click", additionalButtonFix, { once: true } );
-							el.querySelector('button').classList.value = el.querySelector('button').classList.value.replace('ButtonActive', 'Button');
+							el.classList.value = el.classList.value.replace('ButtonActive', 'Button');
 						})
 					} catch(err) { console.warn(err); }
 				}
@@ -726,7 +727,7 @@ module.exports = (() =>
 					/*let previousButton = document.getElementById(buttonCPFSP.getAttribute('from'));
 					try
 					{ // Unselecting previous button
-						previousButton.querySelector('button').classList.value = previousButton.querySelector('button').classList.value.replace('ButtonActive', 'Button');
+						previousButton.classList.value = previousButton.classList.value.replace('ButtonActive', 'Button');
 					} catch(err) { console.warn(err); }*/
 
 					// Adds buttons

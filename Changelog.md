@@ -1,3 +1,6 @@
+# 0.3.8
+Fixed incorrect display of the active category when switching categories using buttons on the emoji panel. Issue started to appear in the new version of Discord.
+
 # 0.3.7
 Fixed the problem with displaying the animation for preview of loading images. Also made a janky fix for missing color picker in the settings (at the moment this module is broken), but it may require to delete/edit CustomPanelForSendingPictures.configuration or reselect color in the settings.
 
