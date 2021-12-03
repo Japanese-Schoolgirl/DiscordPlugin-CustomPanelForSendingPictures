@@ -709,7 +709,6 @@ module.exports = (() =>
 						emojisMenu.querySelectorAll('button[class*="navItem-"]').forEach((el) =>
 						{ // For each Button with label
 							if(el.id == previousButtonID || el.id == elementNames.CPFSP_buttonGoID) { return }
-							if(el.classList.value.indexOf('ButtonActive') != -1) { return }
 							el.removeEventListener("click", additionalButtonFix, { once: true } ); // Just in cases of incidental duplicate
 							el.addEventListener("click", additionalButtonFix, { once: true } );
 							el.classList.value = el.classList.value.replace('ButtonActive', 'Button');
