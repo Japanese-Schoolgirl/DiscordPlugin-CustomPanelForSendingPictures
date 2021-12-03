@@ -34,7 +34,7 @@ module.exports = (() =>
 			{
 				title: `Fixed incorrect display of the active category on the panel`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Fixed incorrect display of the active category when switching categories using buttons on the emoji panel. It started to appear in the new version of Discord.`]
+				items: [`Fixed incorrect display of the active category when switching categories using buttons on the emoji panel. Issue started to appear in the new version of Discord.`]
 			}
 		]
 	};
@@ -708,7 +708,9 @@ module.exports = (() =>
 						// To not choose the already selected
 						emojisMenu.querySelectorAll('button[class*="navItem-"]').forEach((el) =>
 						{ // For each Button with label
-							if(el.id == previousButtonID) { return }
+							if(el.id == previousButtonID || el.id == elementNames.CPFSP_buttonGoID) { return }
+							if(el.classList.value.indexOf('ButtonActive') != -1) { return }
+							el.removeEventListener("click", additionalButtonFix, { once: true } ); // Just in cases of incidental duplicate
 							el.addEventListener("click", additionalButtonFix, { once: true } );
 							el.classList.value = el.classList.value.replace('ButtonActive', 'Button');
 						})
