@@ -1,3 +1,6 @@
+# 0.3.9
+This update should at least temporarily fix the issues related to deletion of DiscordAPI from ZeresLibrary (slightly delayed with the update because I was preparing for upcoming birthday).
+
 # 0.3.8
 Fixed incorrect display of the active category when switching categories using buttons on the emoji panel. Issue started to appear in the new version of Discord.
 

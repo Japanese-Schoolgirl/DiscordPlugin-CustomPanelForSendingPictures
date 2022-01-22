@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.3.8",
+			version: "0.3.9",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +32,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed incorrect display of the active category on the panel`,
+				title: `Hotfix for the removed DiscordAPI from ZeresLibrary`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Fixed incorrect display of the active category when switching categories using buttons on the emoji panel. Issue started to appear in the new version of Discord.`]
+				items: [`This update should at least temporarily fix the issues related to deletion of DiscordAPI from ZeresLibrary (slightly delayed with the update because I was preparing for upcoming birthday).`]
 			}
 		]
 	};
@@ -92,15 +92,16 @@ module.exports = (() =>
 		const plugin = (Plugin, Api) =>
 		{
 
-			const { Patcher, DiscordAPI, Modals, DiscordModules, DiscordSelectors, Settings, PluginUtilities } = Api;
+			const { Patcher, Modals, DiscordModules, DiscordSelectors, Settings, PluginUtilities } = Api;
 	//-----------| Create Settings and Variables |-----------//
 			const resizePluginName = 'gifsicle';
 			var picsGlobalSettings = {};
-			var pluginPath, settingsPath, configPath, picturesPath;
+			var pluginPath, settingsPath, configPath, picturesPath, DiscordLanguage;
 			pluginPath = __dirname.indexOf('\\electron.asar\\') != -1 ? __dirname.split('app-')[0] : __dirname + '\\';
 			settingsPath = pluginPath + config.info.name + '.settings.json';
 			configPath = pluginPath + config.info.name + '.configuration.json';
 			picturesPath = pluginPath + config.info.name + '\\';
+			DiscordLanguage = Object.keys(window.__localeData__)[0]; // Old is DiscordAPI.UserSettings.locale, will give input like "en-US", "ru" etc.
 			var lastSent = {};
 			let sendingCooldown = {time: 0, duration: 0};
 			let sentType = '.sent';
@@ -344,7 +345,7 @@ module.exports = (() =>
 	//-----------|  Functions |-----------//
 			funcs_.warnsCheck = () =>
 			{
-				if(!(Patcher && DiscordAPI && Modals && DiscordModules && DiscordSelectors && Settings && PluginUtilities)) { console.warn(labelsNames.Constants_Missing); }
+				if(!(Patcher && Modals && DiscordModules && DiscordSelectors && Settings && PluginUtilities)) { console.warn(labelsNames.Constants_Missing); }
 			}
 			funcs_.setStyles = (command = null) =>
 			{
@@ -382,7 +383,7 @@ module.exports = (() =>
 			}
 			funcs_.setLanguage = () =>
 			{ // Janky localization
-				switch(DiscordAPI.UserSettings.locale)
+				switch(DiscordLanguage)
 				{
 					case 'ru':
 						config.info.description = 'Добавляет панель, которая подгружает картинки через файл настроек с используемыми файлами и ссылками, позволяя отправлять картинки с текстом или без текста нажатием по превью картинок на панели. Файл настроек автоматически создаётся при сканировании выбранной папки или папки плагина (поддерживает подпапки и будет отображать их как секции/группы).'; // Only config constanta, not keys inside
@@ -883,12 +884,13 @@ module.exports = (() =>
 				} else if(sendingCooldown.time) { sendingCooldown.time = 0; }
 
 				let _link = from.target.getAttribute('src'); // Only for events from clicking at imgs
+				if(!_link) { return }
 				let _path = decodeURI(from.target.getAttribute('path').replace('file:///', '')); // I know this stupid, but file:/// I need for features, maybe..? Well
 				let _name = from.target.getAttribute('alt');
 				let _bufferFile = null;
 				let isWebFile = _link.indexOf(';base64,') != -1 ? false : true;
 				let isLocalFile = !isWebFile;
-				let channelID = DiscordAPI.currentChannel.id; // or if from other library: BDFDB.ChannelUtils.getSelected().id
+				let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id; or if from other library: BDFDB.ChannelUtils.getSelected().id
 				let ChatBox = document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') ? document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') : document.querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]')
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
 				let ChatBoxText = ChatBox.innerText ? ChatBox.innerText : ChatBox.value ? ChatBox.value : '';
@@ -997,7 +999,7 @@ module.exports = (() =>
 				if(funcs_.IsPressed_KeyWhich(86)) { return } // Will return if V not released
 				if(!lastSent) { return }
 				if(!lastSent.file && !lastSent.link) { return }
-				let channelID = DiscordAPI.currentChannel.id;
+				let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id;
 				if(lastSent.file)
 				{
 					uploadModule.upload(channelID, lastSent.file);
