@@ -24,7 +24,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.3.9",
+			version: "0.4.0",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,29 +32,36 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Hotfix for the removed DiscordAPI from ZeresLibrary`,
+				title: `Updated and fixed the use of the Discord "upload" module. Also reworked folder scanning`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`This update should at least temporarily fix the issues related to deletion of DiscordAPI from ZeresLibrary (slightly delayed with the update because I was preparing for upcoming birthday).`]
+				items: [`Fixed a fresh issue with not sending files, which happens after Discord updated their "upload" module. Also folder scanning should now become compatible with other OSs.`]
 			}
 		]
 	};
 /*========================| Modules |========================*/
 	const _getModule = require; // || window.require;
 	const request_ = _getModule("request");
-	const https_ = _getModule('https');
-	const fs_ = _getModule('fs');
-	const path_ = _getModule('path');
-	const util_ = _getModule('util');
-	const child_process_ = _getModule('child_process');
-	const Buffer_ = typeof Buffer !== 'undefined' ? Buffer : _getModule('buffer').Buffer;
-	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert('PLUGIN API NOT FOUND');
-	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === 'object').ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
-	const uploadModule = PluginApi_.findModule(m => m.upload && typeof m.upload === 'function'); // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === 'function') or others
-	const messageModule = (channelID, sendText) =>
+	const https_ = _getModule("https");
+	const fs_ = _getModule("fs");
+	const path_ = _getModule("path");
+	const util_ = _getModule("util");
+	const process_ = _getModule("process");
+	const child_process_ = _getModule("child_process");
+	const Buffer_ = typeof Buffer !== "undefined" ? Buffer : _getModule("buffer").Buffer;
+	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert("PLUGIN API NOT FOUND");
+	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === "object").ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
+	const uploadModule = (channelID, file) =>
+	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === "function") or others
+		try
+		{
+			PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
+		} catch(err) { console.warn(err); }
+	}
+	const messageModule = (channelID, sendText, reply = null) =>
 	{ // Replace for broken DiscordAPI.currentChannel.sendMessage
 		try
 		{
-			PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === 'function')._sendMessage(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {});
+			PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === "function")._sendMessage(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {/* messageReference:{"channel_id":"channelID","message_id":"messageID"} */});
 		} catch(err) { console.warn(err); }
 	};
 
@@ -96,12 +103,13 @@ module.exports = (() =>
 	//-----------| Create Settings and Variables |-----------//
 			const resizePluginName = 'gifsicle';
 			var picsGlobalSettings = {};
-			var pluginPath, settingsPath, configPath, picturesPath, DiscordLanguage;
-			pluginPath = __dirname.indexOf('\\electron.asar\\') != -1 ? __dirname.split('app-')[0] : __dirname + '\\';
-			settingsPath = pluginPath + config.info.name + '.settings.json';
-			configPath = pluginPath + config.info.name + '.configuration.json';
-			picturesPath = pluginPath + config.info.name + '\\';
+			var pluginPath, settingsPath, configPath, picturesPath, DiscordLanguage, isWindows;
+			pluginPath = PluginApi_.Plugins.folder;
+			settingsPath = path_.join(pluginPath, config.info.name + '.settings.json');
+			configPath = path_.join(pluginPath, config.info.name + '.configuration.json');
+			picturesPath = path_.join(pluginPath, config.info.name);
 			DiscordLanguage = Object.keys(window.__localeData__)[0]; // Old is DiscordAPI.UserSettings.locale, will give input like "en-US", "ru" etc.
+			isWindows = process_.platform == 'win32' ? true : false; // For not Windows OS support
 			var lastSent = {};
 			let sendingCooldown = {time: 0, duration: 0};
 			let sentType = '.sent';
@@ -114,7 +122,7 @@ module.exports = (() =>
 			var Configuration = { // Almost all Default values need only as placeholder
 				UseSentLinks:			{ Value: true, 										Default: true, 						Title: `Use "Sent Links"`, 								Description: `To create and use ${sentType} files that are replacing file sending by sending links.` },
 				SendTextWithFile:		{ Value: false, 									Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
-				OnlyForcedUpdate:		{ Value: true, 										Default: true, 						Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
+				OnlyForcedUpdate:		{ Value: false, 										Default: false, 						Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
 				sentType2srcType:		{ Value: false, 									Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
 				RepeatLastSent:			{ Value: false, 									Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
 				AutoClosePanel:			{ Value: false, 									Default: false, 					Title: `Auto close panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
@@ -438,16 +446,18 @@ module.exports = (() =>
 			}
 			funcs_.openFolder = (event = null) =>
 			{
+				let openMethod = isWindows ? `start ""` : `xdg-open`;
 				switch(fs_.existsSync(Configuration.mainFolderPath.Value))
 				{
 					case false: try { fs_.mkdirSync(Configuration.mainFolderPath.Value); } catch (err) { console.warn(err.code); break; } // Try create folder
-					default: child_process_.exec(`start "" "${Configuration.mainFolderPath.Value}"`); // Open Main folder in explorer
+					default: child_process_.exec(`${openMethod} "${Configuration.mainFolderPath.Value}"`); // Open Main folder in explorer
+					// for linux child_process_.exec(`xdg-open "${Configuration.mainFolderPath.Value}"`);
 				}
 			}
 			funcs_.checkLibraries = () =>
 			{
 				if(!Configuration.ScaleSizeForPictures.Value.exp) { return }
-				if(fs_.existsSync(pluginPath + resizePluginName + '.exe')) { return }
+				if(fs_.existsSync(path_.join(pluginPath, resizePluginName + '.exe'))) { return }
 				Modals.showConfirmationModal(labelsNames.Modal_Missing, labelsNames.Modal_MissingLibs,
 				{
 					confirmText: labelsNames.Modal_OkDownload,
@@ -472,8 +482,8 @@ module.exports = (() =>
 			funcs_.resizeGif = (gifPath, newWidth, newHeight) =>
 			{
 				if(!gifPath || !newWidth || !newHeight) { return false }
-				if(!fs_.existsSync(pluginPath + resizePluginName + '.exe')) { console.warn(`${resizePluginName}.exe not found!`); return false }
-				let gifsiclePath = pluginPath + resizePluginName;
+				if(!fs_.existsSync(path_.join(pluginPath, resizePluginName + '.exe'))) { console.warn(`${resizePluginName}.exe not found!`); return false }
+				let gifsiclePath = path_.join(pluginPath, resizePluginName);
 				let gifsicleOutput = gifsiclePath + '.output';
 				try
 				{
@@ -598,9 +608,9 @@ module.exports = (() =>
 					let isFolder = fs_.statSync(path_.join(scanPath, file)).isDirectory();
 					let fileTypesAllow = ['.jpg', '.jpeg', '.bmp', '.png', '.webp', '.gif', srcType, sentType];
 					let fileType = path_.extname(file).toLowerCase();
-					let filePath = scanPath + file;
+					let filePath = path_.join(scanPath, file);
 					let webLink;
-					if(isFolder && isFirstScan) { foldersForScan.push({name: file, path: (path_.join(scanPath, file) + '\\') }); } // Add each folder only in this cycle due isFirstScan there prevents scans subfolders in subfolders. However this code not organize for subsubsubsubfolders scan yet
+					if(isFolder && isFirstScan) { foldersForScan.push({name: file, path: filePath }); } // Add each folder only in this cycle due isFirstScan there prevents scans subfolders in subfolders. However this code not organize for subsubsubsubfolders scan yet
 					if(isFolder && isFirstScan && !absoluteIndex) { newPicsSettings[index] = { name: 'Placeholder', link: 'https://i.imgur.com/VMXymqg.png?AlwaysSendThisImageToNextUniverse/\\?????' }; } // Adds as placeholder only once due Main folder can't be "emtpy"
 					if(fileTypesAllow.indexOf(fileType) == -1) { return } // Check at filetype
 					if(fileType == sentType || fileType == srcType)
@@ -954,7 +964,7 @@ module.exports = (() =>
 								{
 									Promise.resolve(DisBlob = e).then((e) =>
 									{
-										uploadModule.upload(channelID, _file = new File([DisBlob], _name));
+										uploadModule(channelID, _file = new File([DisBlob], _name));
 										lastSent = { file: _file, link: null };
 										DisCanvas = null, DisIMG = null, DisBlob = null;
 									})
@@ -967,7 +977,7 @@ module.exports = (() =>
 								_bufferFile = funcs_.resizeGif(_path, newWidth, newHeight)
 								if(_bufferFile)
 								{
-									uploadModule.upload(channelID, _file = new File([_bufferFile], _name));
+									uploadModule(channelID, _file = new File([_bufferFile], _name));
 									lastSent = { file: _file, link: null };
 									return
 								}
@@ -978,7 +988,7 @@ module.exports = (() =>
 				if(isLocalFile)
 				{ // Sending local picture
 					_bufferFile = _bufferFile ? _bufferFile : fs_.readFileSync(_path);
-					uploadModule.upload(channelID, _file = new File([_bufferFile], _name)); // add ", {content:'new with file'}" for adding text
+					uploadModule(channelID, _file = new File([_bufferFile], _name)); // add ", {content:'new with file'}" for adding text
 					lastSent = { file: _file, link: null };
 					return
 				}
@@ -1002,7 +1012,7 @@ module.exports = (() =>
 				let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id;
 				if(lastSent.file)
 				{
-					uploadModule.upload(channelID, lastSent.file);
+					uploadModule(channelID, lastSent.file);
 				}
 				else if(lastSent.link)
 				{

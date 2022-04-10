@@ -1,3 +1,6 @@
+# 0.4.0
+Fixed a fresh issue with not sending files, which happens after Discord updated their "upload" module. Also folder scanning should now become compatible with other OSs.
+
 # 0.3.9
 This update should at least temporarily fix the issues related to deletion of DiscordAPI from ZeresLibrary (slightly delayed with the update because I was preparing for upcoming birthday).
 
