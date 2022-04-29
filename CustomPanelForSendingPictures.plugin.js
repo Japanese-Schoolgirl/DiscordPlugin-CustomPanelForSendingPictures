@@ -1,11 +1,14 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
+ * @version 0.4.1
+ * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
  * @donate https://donate.qiwi.com/payin/Schoolgirl
  * @website https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures
  * @source https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
+ * @updateUrl https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
  */
 
 module.exports = (() =>
@@ -24,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.4.0",
+			version: "0.4.1",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -32,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Updated and fixed the use of the Discord "upload" module. Also reworked folder scanning`,
+				title: `Fixed plugin's error when working with Powercord`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Fixed a fresh issue with not sending files, which happens after Discord updated their "upload" module. Also folder scanning should now become compatible with other OSs.`]
+				items: [`Changed the plugin's method of checking language and platform.`]
 			}
 		]
 	};
@@ -45,10 +48,9 @@ module.exports = (() =>
 	const fs_ = _getModule("fs");
 	const path_ = _getModule("path");
 	const util_ = _getModule("util");
-	const process_ = _getModule("process");
 	const child_process_ = _getModule("child_process");
 	const Buffer_ = typeof Buffer !== "undefined" ? Buffer : _getModule("buffer").Buffer;
-	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert("PLUGIN API NOT FOUND");
+	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert("PLUGIN API NOT FOUND"); // Window scope is needed here
 	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === "object").ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
 	const uploadModule = (channelID, file) =>
 	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === "function") or others
@@ -108,8 +110,8 @@ module.exports = (() =>
 			settingsPath = path_.join(pluginPath, config.info.name + '.settings.json');
 			configPath = path_.join(pluginPath, config.info.name + '.configuration.json');
 			picturesPath = path_.join(pluginPath, config.info.name);
-			DiscordLanguage = Object.keys(window.__localeData__)[0]; // Old is DiscordAPI.UserSettings.locale, will give input like "en-US", "ru" etc.
-			isWindows = process_.platform == 'win32' ? true : false; // For not Windows OS support
+			DiscordLanguage = navigator.language; // Output is "en-US", "ru" etc.
+			isWindows = navigator.platform.toLowerCase() == 'win32' ? true : false; // For not Windows OS support
 			var lastSent = {};
 			let sendingCooldown = {time: 0, duration: 0};
 			let sentType = '.sent';
@@ -1233,14 +1235,14 @@ module.exports = (() =>
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.mainFolderNameDisplay.Default }))
 						// Section Text Color
-						.append(PanelElements.SectionTextColor = createSetting('ColorPicker', Configuration.SectionTextColor.Title, Configuration.SectionTextColor.Description, Configuration.SectionTextColor.Value, color =>
-							{
-								Configuration.SectionTextColor.Value = color;
-								funcs_.saveConfiguration();
-								funcs_.setStyles('delete');
-								funcs_.setStyles();
+						.append(PanelElements.SectionTextColor = createSetting('ColorPicker', Configuration.SectionTextColor.Title,/*Configuration.SectionTextColor.Description*/ '', Configuration.SectionTextColor.Value, color =>
+						{ // Currently Configuration.SectionTextColor.Description isn't needed
+							Configuration.SectionTextColor.Value = color;
+							funcs_.saveConfiguration();
+							funcs_.setStyles('delete');
+							funcs_.setStyles();
 						}));
-					detectCreation.observe(PanelSG.getElement(), { childList: true, subtree: true }); // wait for creating panel
+					detectCreation.observe(PanelSG.getElement(), { childList: true, subtree: true }); // Wait for creating panel
 					return Panel;
 				}
 
