@@ -46,7 +46,7 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 - There is an [archive](https://mega.nz/folder/c3YSmJYb#vF9iswDuT0YqOreDA9KL-g) with some of previously global emojis saved, if you need to add more pictures.<br />
 
 # TODO (and known issues):
-(Some of these items are put on hold, because I wasn't able to find a way to "handle" sending messages)
+(Some of these items are put on hold, because I wasn't able to find a way to "handle" sending messages)<br />
 — ".sent" files aren't generated automatically, it's caused by inability to get a link by sent file's ID (Dispatch method only returns ID of the channel, but not ID of the message, and it doesn't contain a file link in its properties; message itself doesn't match with event's information like file size and sometimes file name);<br />
 — Fix the option for sending message before file, which sends messages without the markdown;<br />
 — Fix sending images and messages in a not opened message's thread. At the moment, images and messages are only sent to Discord's opened channel;<br />
