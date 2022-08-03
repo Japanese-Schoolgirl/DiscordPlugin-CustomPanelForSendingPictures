@@ -1,5 +1,5 @@
 # 0.4.1
-Changed the plugin's method of checking language and platform
+Changed the plugin's method of checking language and platform.
 
 # 0.4.0
 Fixed a fresh issue with not sending files, which happens after Discord updated their "upload" module. Also folder scanning should now become compatible with other OSs.

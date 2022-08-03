@@ -45,8 +45,11 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 - To resize pictures and compress them to a smaller size in selected folder (to optimize your pictures list more), you can use [FastStone Photo Resizer](https://www.faststone.org/FSResizerDownload.htm) (better to not compress gifs with this program) or similar;<br />
 - There is an [archive](https://mega.nz/folder/c3YSmJYb#vF9iswDuT0YqOreDA9KL-g) with some of previously global emojis saved, if you need to add more pictures.<br />
 
-# TODO:
-- ".sent" files aren't generating automatically, it's caused by inability to get a link by sent file's ID (because Dispatch only returns ID of the channel but not ID of the message, and of course it doesn't contain a link in its properties, and message itself doesn't match with event information like filesize and sometimes filename);<br />
-- Fix the option for message sending before file sending, which sends messages omitting the markdown;<br />
-- Even though the part with loading elements to the panel is done asynchronously, visual freeze still happens (and it's random, most often after restarting Discord). Attempt at locating the issue with Performance debug haven't brought any result yet. Apparently the problem is related exclusively to large amount of files. Also after ~5 minutes time of Discord's work, the problem with freeze disappears;<br />
-- Add support for proportional scaling of **animated** files .png (.apng) and .webp (this task has low priority since Discord cannot properly display them at the moment).<br />
+# TODO (and known issues):
+(Some of these items are put on hold, because I wasn't able to find a way to "handle" sending messages)
+— ".sent" files aren't generated automatically, it's caused by inability to get a link by sent file's ID (Dispatch method only returns ID of the channel, but not ID of the message, and it doesn't contain a file link in its properties; message itself doesn't match with event's information like file size and sometimes file name);<br />
+— Fix the option for sending message before file, which sends messages without the markdown;<br />
+— Fix sending images and messages in a not opened message's thread. At the moment, images and messages are only sent to Discord's opened channel;<br />
+— Fix sending images and messages in reply. These are sent as a normal message;<br />
+— Even though the part with loading elements to the panel is done asynchronously, visual freeze still happens (moreover it's random and very rare, usually after restarting Discord). Attempt at locating the issue with Performance debug haven't brought any result yet. Apparently the problem is related exclusively to large amount of files. Also after ~5 minutes time of Discord's work, the problem with freeze disappears;<br />
+— Add support for proportional scaling of **animated** .png (.apng) and .webp files (this task has low priority since Discord cannot properly display them at the moment).<br />
