@@ -1,17 +1,17 @@
 # Introduction:
 This plugin was written for my own use and for people I'm communicating with. But since plugin can be useful for someone else I'm uploading it here. In case you want to rewrite this plugin (and considering my inexperience, you probably should) also check the licence file.<br />
 
-P.S. I rarely use GitHub, so it is my first time in dealing with such project. Don't be surprised with some weirdness regarding commits etc. Also my native language isn't English so there may be mistakes in wording.<br />
+P.S. I rarely use GitHub, so it is my first time in dealing with such a project. Don't be surprised about some weirdness regarding commits etc. Also my native language isn't English so there may be mistakes in wording.<br />
 
 # Plugin description
-This plugin adds special "Pictures" button to the right of Emojis selection button. Clicking that button will load a panel which contents are loaded from special folder that is created by this plugin. The folder is scanned for files of following types: ".jpg", ".jpeg", ".bmp", ".png", ".webp", ".gif", ".src", ".sent".<br />
+This plugin adds a special "Pictures" button to the right of Emojis selection button. Clicking that button will load a panel which's contents are loaded from special folder that is created by this plugin. The folder is scanned for files of the following types: ".jpg", ".jpeg", ".bmp", ".png", ".webp", ".gif", ".src", ".sent".<br />
 Files of ".src" and ".sent" types are JSON files and contain a link to the web file (content example: "https://i.imgur.com/l5Jf0VP.png").<br />
-After the scan panel will show previews of all your files in the folder. After clicking a file in this panel you'll immediately send picture file (or a link of picture in case of ".src" and ".sent") to currently opened Discord chat.<br />
-Files of ".sent" type will replace files with identical name and extension. ".sent" files will automatically generate after sending local files and will be used if you have enabled corresponding setting.<br />
+After the scan the panel will show previews of all your files in the folder. After clicking a file in this panel you'll immediately send a picture file (or a link of picture in case of ".src" and ".sent") to currently opened Discord chat.<br />
+Files of ".sent" type will replace files with identical name and extension. ".sent" files will be automatically generated after sending local files and will be used if you have enabled corresponding setting.<br />
 Starting from version 0.0.7 this **plugin will search for and scan subfolders placed in the main folder. Content of these folders will be displayed as sections/groups in the panel itself**. Subfolders inside subfolders will not be scanned. It is also *not recommended* to store 300+ images as it will affect speed of panel loading (file size doesn't matter).<br />
 ### Work Example:
 ![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
-Changes not displayed in the gif above: improved buttons design, added 1 new button in the pictures panel that opens Main folder, added asynchronous pictures loading to the panel, added displaying error handler when loading local or web files failed, added option for automatic proportional scaling of pictures from local or web files to set size.<br />
+Changes not displayed in the gif above: improved buttons design, added 1 new button (opens Main folder) in the pictures panel, added asynchronous pictures loading to the panel, added displaying error handler when loading local or web files failed, added an option for automatic proportional scaling of pictures from local or web files to set size.<br />
 Also search through pictures was added and it is shown in the gif below:<br />
 ### Search bar:
 ![Search bar](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SearchBar.gif)
@@ -22,7 +22,7 @@ Also search through pictures was added and it is shown in the gif below:<br />
 Plugin should be completely compatible with native and any of user themes, as it uses default Discord colour variables.<br />
 I use [Powercord](https://github.com/powercord-org/powercord) and can only track problems that appears there. Even though, the plugin should function correctly with BetterDiscord, since it was made as a [BetterDiscord](https://github.com/rauenzi/BetterDiscordApp) plugin.<br />
 Plugin also uses [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) and [gifsicle](http://www.lcdf.org/gifsicle/).<br />
-Performance on operating systems other than Windows was not tested, it is likely that some functionality may not works on different OS.<br />
+Performance on operating systems other than Windows was not tested, it is likely that some functionality may not works on a different OS.<br />
 
 # Installation
 1) Install [Powercord](https://powercord.dev/installation) or [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe). For Powercord after installing you also need to install [bdCompat](https://github.com/Juby210/bdCompat#installation) to your Powercord's plugin folder (after this installation BetterDiscord Plugins tab will appear in Powercord section, also don't forget that plugins will be displayed only after Discord is reloaded);<br />
