@@ -1,3 +1,6 @@
+# 0.4.2 (Hotfix)
+There is big issue with new Discord update. It break almost everything. This fix should repair core utilities, but not all. Currently you cannot open folders or resize gifs. You also can read more details here: https://imgur.com/a/SPFvhpZ
+
 # 0.4.1
 Changed the plugin's method of checking language and platform.
 

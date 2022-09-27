@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.4.1",
+			version: "0.4.2",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed plugin's error when working with Powercord`,
+				title: `Hotfix for new Discord update`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Changed the plugin's method of checking language and platform.`]
+				items: [`There is a big issue with new Discord update. It breaks almost everything. This fix should repair core utilities, but not everything. Currently you cannot open folders or resize gifs. You can also read more details here: https://imgur.com/a/SPFvhpZ`]
 			}
 		]
 	};
@@ -47,11 +47,13 @@ module.exports = (() =>
 	const https_ = _getModule("https");
 	const fs_ = _getModule("fs");
 	const path_ = _getModule("path");
-	const util_ = _getModule("util");
-	const child_process_ = _getModule("child_process");
+	// Another thanks to Discord for amazing update:
+	var child_process_; try { child_process_ = _getModule("child_process"); } catch(err) { child_process_ = "Currently not working"; }
 	const Buffer_ = typeof Buffer !== "undefined" ? Buffer : _getModule("buffer").Buffer;
 	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert("PLUGIN API NOT FOUND"); // Window scope is needed here
-	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === "object").ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
+	// Not longer used & Stopped working:
+	//const util_ = _getModule("util");
+	//const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === "object").ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
 	const uploadModule = (channelID, file) =>
 	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === "function") or others
 		try
@@ -117,7 +119,7 @@ module.exports = (() =>
 			let sentType = '.sent';
 			let srcType = '.src';
 			let emptyIMG = 'data:image/gif;base64,R0lGODlhAQABAHAAACH5BAEAAAAALAAAAAABAAEAgQAAAAAAAAAAAAAAAAICRAEAOw==';
-			let NotFoundIMG = 'https://i.imgur.com/r0OCBLX.png'; // old is 'https://i.imgur.com/jz767Z6.png', src as base64 also ok;
+			let NotFoundIMG = 'https://i.imgur.com/r0OCBLX.png'; // Old is 'https://i.imgur.com/jz767Z6.png', src as base64 also ok;
 			let imgPreviewSize = {W: '48px', H: '48px'};
 			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
 			let folderListName = `?/\\!FolderList!/\\?`;
@@ -453,7 +455,7 @@ module.exports = (() =>
 				{
 					case false: try { fs_.mkdirSync(Configuration.mainFolderPath.Value); } catch (err) { console.warn(err.code); break; } // Try create folder
 					default: child_process_.exec(`${openMethod} "${Configuration.mainFolderPath.Value}"`); // Open Main folder in explorer
-					// for linux child_process_.exec(`xdg-open "${Configuration.mainFolderPath.Value}"`);
+					// For Linux child_process_.exec(`xdg-open "${Configuration.mainFolderPath.Value}"`);
 				}
 			}
 			funcs_.checkLibraries = () =>
@@ -824,16 +826,29 @@ module.exports = (() =>
 						newPicture.setAttribute('loading', 'lazy'); // asynchronously img loading
 						newPicture.setAttribute('onerror', `this.removeAttribute('onerror'); this.setAttribute('src', '${NotFoundIMG}');`);
 						newPicture.setAttribute('path', file.link);
+						// Currently not working: "fs_.promises" & "util_.promisify()" & "fs_.readFile"
+						// This function planned as Temporary fix and should be removed when new Discord update will be fixed
+						fs_readFileAsync = async (path, format) =>
+						{
+							return new Promise((resolve, reject) =>
+							{
+								try
+								{
+									let data = fs_.readFileSync(path, {encoding: format});
+									resolve(data);
+								} catch(err) { reject(err); }
+							});
+						}
 						try
 						{
 							if(file.link.indexOf('file:///') != -1)
 							{ // Convert local file to base64 for preview
-								fs_.promises.readFile(file.link.replace('file:///', '')) // Async creating base64 data
-								.then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link).slice(1)};base64,${data.toString('base64')}`); })
+								fs_readFileAsync(file.link.replace('file:///', ''), 'base64') // Async creating base64 data
+								.then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link).slice(1)};base64,${data}`); })
 								.catch(err => { newPicture.setAttribute('src', NotFoundIMG); });
 							}
 							else { newPicture.setAttribute('src', file.link); }
-						} catch(err) { newPicture.setAttribute('src', NotFoundIMG); }
+						} catch(err) { newPicture.setAttribute('src', NotFoundIMG); console.error(err); }
 						newPicture.setAttribute('aria-label', file.name);
 						newPicture.setAttribute('alt', file.name);
 						newPicture.setAttribute('title', file.name); // For displaying pictures name
