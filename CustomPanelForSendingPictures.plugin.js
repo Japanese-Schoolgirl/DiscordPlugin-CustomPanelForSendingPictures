@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.4.2
+ * @version 0.4.3
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.4.2",
+			version: "0.4.3",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Hotfix for new Discord update`,
+				title: `Additional fixes to the hotfix for new Discord update`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`There is a big issue with new Discord update. It breaks almost everything. This fix should repair core utilities, but not everything. Currently you cannot open folders or resize gifs. You can also read more details here: https://imgur.com/a/SPFvhpZ`]
+				items: [`Fixed sending the original versions of the local files, which was broken by the new horrible Discord update (details in version 0.4.2 changelog).`]
 			}
 		]
 	};
@@ -475,6 +475,27 @@ module.exports = (() =>
 					}
 				});
 			}
+			funcs_.readLocalFile = (filePath, format, sendFile) =>
+			{
+				if(!filePath) { return false }
+
+				if(!format) { return fs_.readFileSync(filePath); }
+				if(!sendFile) { return fs_.readFileSync(filePath, { encoding: format }); }
+				return Buffer.from(fs_.readFileSync(filePath, { encoding: format }), format);
+			}
+			// Currently not working: "fs_.promises" & "util_.promisify()" & "fs_.readFile"
+			// This function planned as Temporary fix and should be removed when new Discord update will be fixed
+			funcs_.readLocalFileAsync = async (filePath, format) =>
+			{
+				return new Promise((resolve, reject) =>
+				{
+					try
+					{
+						let data = funcs_.readLocalFile(filePath, format);
+						resolve(data);
+					} catch(err) { reject(err); }
+				});
+			}
 			funcs_.scaleTo = (oldWidth, oldHeight, knownType, knownValue) =>
 			{
 				if(!knownType || !knownValue || !oldWidth || !oldHeight) { return }
@@ -494,7 +515,7 @@ module.exports = (() =>
 					child_process_.execSync(`"${gifsiclePath}" "${gifPath}" --resize ${newWidth}x${newHeight} -o "${gifsicleOutput}"`);
 				} catch(err) { console.log(err); }
 				if(!fs_.existsSync(gifsicleOutput)) { console.warn("Why output file doesn't exist?!"); return false }
-				let OutputData = fs_.readFileSync(gifsicleOutput);
+				let OutputData = funcs_.readLocalFile(gifsicleOutput, "base64", true);
 				fs_.unlinkSync(gifsicleOutput);
 				return OutputData;
 			}
@@ -511,7 +532,7 @@ module.exports = (() =>
 			{
 				let newPicsGlobalSettings = {};
 				if(!fs_.existsSync(settingsPath)) { return funcs_.loadDefaultSettings(); } // This happen when settings file doesn't exist
-				try { newPicsGlobalSettings = JSON.parse(fs_.readFileSync(settingsPath)); }
+				try { newPicsGlobalSettings = JSON.parse(funcs_.readLocalFile(settingsPath)); }
 				catch(err)
 				{
 					console.warn('There has been an error parsing your settings JSON:', err.message);
@@ -536,7 +557,7 @@ module.exports = (() =>
 			{
 				let newData;
 				if(!fs_.existsSync(configPath)) { return } // This happen when settings file doesn't exist
-				try { newData = JSON.parse(fs_.readFileSync(configPath)); }
+				try { newData = JSON.parse(funcs_.readLocalFile(configPath)); }
 				catch(err) { console.warn('There has been an error parsing your config JSON:', err.message); return }
 				if(!newData || !Object.keys(newData).length) { return }  // This happen when settings file is empty
 				Object.keys(Configuration).forEach((key) =>
@@ -619,7 +640,7 @@ module.exports = (() =>
 					if(fileTypesAllow.indexOf(fileType) == -1) { return } // Check at filetype
 					if(fileType == sentType || fileType == srcType)
 					{
-						try { webLink = JSON.parse(fs_.readFileSync(filePath)); }
+						try { webLink = JSON.parse(funcs_.readLocalFile(filePath)); }
 						catch(err) { console.warn(`There has been an error parsing ${sentType} file:`, err.message); return }
 						if(Configuration.sentType2srcType.Value) { fileType = srcType; }
 					}
@@ -826,24 +847,11 @@ module.exports = (() =>
 						newPicture.setAttribute('loading', 'lazy'); // asynchronously img loading
 						newPicture.setAttribute('onerror', `this.removeAttribute('onerror'); this.setAttribute('src', '${NotFoundIMG}');`);
 						newPicture.setAttribute('path', file.link);
-						// Currently not working: "fs_.promises" & "util_.promisify()" & "fs_.readFile"
-						// This function planned as Temporary fix and should be removed when new Discord update will be fixed
-						fs_readFileAsync = async (path, format) =>
-						{
-							return new Promise((resolve, reject) =>
-							{
-								try
-								{
-									let data = fs_.readFileSync(path, {encoding: format});
-									resolve(data);
-								} catch(err) { reject(err); }
-							});
-						}
 						try
 						{
 							if(file.link.indexOf('file:///') != -1)
 							{ // Convert local file to base64 for preview
-								fs_readFileAsync(file.link.replace('file:///', ''), 'base64') // Async creating base64 data
+								funcs_.readLocalFileAsync(file.link.replace('file:///', ''), 'base64') // Async creating base64 data
 								.then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link).slice(1)};base64,${data}`); })
 								.catch(err => { newPicture.setAttribute('src', NotFoundIMG); });
 							}
@@ -1004,7 +1012,7 @@ module.exports = (() =>
 				}
 				if(isLocalFile)
 				{ // Sending local picture
-					_bufferFile = _bufferFile ? _bufferFile : fs_.readFileSync(_path);
+					_bufferFile = _bufferFile ? _bufferFile : funcs_.readLocalFile(_path, "base64", true);
 					uploadModule(channelID, _file = new File([_bufferFile], _name)); // add ", {content:'new with file'}" for adding text
 					lastSent = { file: _file, link: null };
 					return

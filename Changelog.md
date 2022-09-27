@@ -1,3 +1,6 @@
+# 0.4.3
+Fixed sending the original versions of the local files, which was broken by the new horrible Discord update (details in version 0.4.2 changelog).
+
 # 0.4.2 (Hotfix)
 There is big issue with new Discord update. It break almost everything. This fix should repair core utilities, but not all. Currently you cannot open folders or resize gifs. You also can read more details here: https://imgur.com/a/SPFvhpZ
 
