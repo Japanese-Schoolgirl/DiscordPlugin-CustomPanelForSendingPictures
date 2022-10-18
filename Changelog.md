@@ -1,3 +1,6 @@
+# 0.4.4
+Looks like access to the "child_process" module was irrevocably lost (https://github.com/BetterDiscord/BetterDiscord/issues/1443), so I had to make a compromise method.
+
 # 0.4.3
 Fixed sending the original versions of the local files, which was broken by the new horrible Discord update (details in version 0.4.2 changelog).
 

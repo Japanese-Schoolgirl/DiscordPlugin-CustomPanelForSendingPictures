@@ -34,7 +34,7 @@ Performance on operating systems other than Windows was not tested, it is likely
 # Support:
 If you'd want to help me with this janky project, check the [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#todo), where I've listed problems that I'm trying to solve at the moment. You can check [Communication](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#communication) section for ways of contacting me.<br />
 If you'd like to help me financially and for some reason you didn't use "Sponsor" button for it, here are my requisites:<br />
-https://www.donationalerts.com/r/JapaneseSchoolgirl<br />
+https://qiwi.com/n/TOUHOUSCHOOLGIRL<br />
 https://donate.qiwi.com/payin/Schoolgirl<br />
 
 # Communication:

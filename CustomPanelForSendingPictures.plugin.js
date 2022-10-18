@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.4.3
+ * @version 0.4.4
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.4.3",
+			version: "0.4.4",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,20 +35,24 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Additional fixes to the hotfix for new Discord update`,
+				title: `The "Open folder" button has been adapted. It will be replaced by "Folder path" if the "child_process" module is missing`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Fixed sending the original versions of the local files, which was broken by the new horrible Discord update (details in version 0.4.2 changelog).`]
+				items: [`Looks like access to the "child_process" module was irrevocably lost (https://github.com/BetterDiscord/BetterDiscord/issues/1443), so I had to make a compromise method.`]
 			}
 		]
 	};
 /*========================| Modules |========================*/
-	const _getModule = require; // || window.require;
+	const _getModule = (module) => 
+	{ // || window.require;
+		try { return require(module); }
+		catch(err) { console.error(err); return false; };
+	};
 	const request_ = _getModule("request");
+	const electron_ = _getModule("electron");
 	const https_ = _getModule("https");
 	const fs_ = _getModule("fs");
 	const path_ = _getModule("path");
-	// Another thanks to Discord for amazing update:
-	var child_process_; try { child_process_ = _getModule("child_process"); } catch(err) { child_process_ = "Currently not working"; }
+	const child_process_ = _getModule("child_process"); // This module not working now, thanks to Discord for amazing update!
 	const Buffer_ = typeof Buffer !== "undefined" ? Buffer : _getModule("buffer").Buffer;
 	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert("PLUGIN API NOT FOUND"); // Window scope is needed here
 	// Not longer used & Stopped working:
@@ -89,7 +93,7 @@ module.exports = (() =>
 				{
 					request_.get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (err, res, body) =>
 					{
-						if(err) return _getModule("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
+						if(err) return electron_.shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
 						await new Promise(r => fs_.writeFile(path_.join(PluginApi_.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
 					});
 				}
@@ -338,6 +342,7 @@ module.exports = (() =>
 				Pictures: 				'Pictures',
 				btnRefresh: 			'Refresh',
 				btnOpenFolder: 			'Open folder',
+				btnFolderPath: 			'Folder path',
 				searchPicture: 			'Search picture',
 				filterAnyMatch: 		'Any match',
 				filterStrictMatch: 		'Strict match',
@@ -409,6 +414,7 @@ module.exports = (() =>
 						labelsNames.Pictures = `Картинки`;
 						labelsNames.btnRefresh = `Обновить`;
 						labelsNames.btnOpenFolder = `Открыть папку`;
+						labelsNames.btnFolderPath = `Путь папки`;
 						labelsNames.searchPicture = `Искать картинку`;
 						labelsNames.filterAnyMatch = 'Любое совпадение';
 						labelsNames.filterStrictMatch = 'Строгое совпадение';
@@ -450,11 +456,19 @@ module.exports = (() =>
 			}
 			funcs_.openFolder = (event = null) =>
 			{
-				let openMethod = isWindows ? `start ""` : `xdg-open`;
+				function openMethod()
+				{
+					if(child_process_)
+					{
+						let openFolderMethod = isWindows ? `start ""` : `xdg-open`;
+						child_process_.exec(`${openFolderMethod} "${Configuration.mainFolderPath.Value}"`);
+					}
+					else { Modals.showAlertModal(labelsNames.btnFolderPath + ":", Configuration.mainFolderPath.Value); }
+				}
 				switch(fs_.existsSync(Configuration.mainFolderPath.Value))
 				{
 					case false: try { fs_.mkdirSync(Configuration.mainFolderPath.Value); } catch (err) { console.warn(err.code); break; } // Try create folder
-					default: child_process_.exec(`${openMethod} "${Configuration.mainFolderPath.Value}"`); // Open Main folder in explorer
+					default: openMethod(); // Open Main folder in explorer
 					// For Linux child_process_.exec(`xdg-open "${Configuration.mainFolderPath.Value}"`);
 				}
 			}
@@ -779,7 +793,7 @@ module.exports = (() =>
 					buttonsPanel.append(buttonRefresh);
 					let buttonOpenFolder = document.createElement('div'); // Open folder button
 					buttonOpenFolder.setAttribute('class', elementNames.buttonDefault);
-					buttonOpenFolder.innerText = labelsNames.btnOpenFolder;
+					buttonOpenFolder.innerText = child_process_ ? labelsNames.btnOpenFolder : labelsNames.btnFolderPath;
 					buttonOpenFolder.addEventListener('click', funcs_.openFolder);
 					buttonsPanel.append(buttonOpenFolder);
 					emojisPanel.insertBefore(buttonsPanel, emojisPanel.firstChild); // Adds button to panel
