@@ -490,8 +490,8 @@ module.exports = (() =>
 				});
 				*/
 
-				// For latest version: https://unpkg.com/gifsicle-wasm-browser/dist/gifsicle.min.js
-				funcs_.gifsicle = await import("https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/ExtraMethods/gifsicle.min.js").then((module) => { return module.default; });
+				// For latest version: https://unpkg.com/gifsicle-wasm-browser/dist/gifsicle.min.js || https://cdn.jsdelivr.net/npm/gifsicle-wasm-browser/dist/gifsicle.min.js 
+				funcs_.gifsicle = await import("https://unpkg.com/gifsicle-wasm-browser@1.5.16/dist/gifsicle.min.js").then((module) => { return module.default; });
 			}
 			funcs_.readLocalFile = (filePath, format, sendFile) =>
 			{
