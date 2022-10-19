@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.4.4
+ * @version 0.4.5
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.4.4",
+			version: "0.4.5",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `The "Open folder" button has been adapted. It will be replaced by "Folder path" if the "child_process" module is missing`,
+				title: `Fixed resizing method for GIF files (option in settings)`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Looks like access to the "child_process" module was irrevocably lost (https://github.com/BetterDiscord/BetterDiscord/issues/1443), so I had to make a compromise method.`]
+				items: [`External module "gifsicle-wasm-browser" is now used instead of "gifsicle.exe".`]
 			}
 		]
 	};
@@ -109,7 +109,6 @@ module.exports = (() =>
 
 			const { Patcher, Modals, DiscordModules, DiscordSelectors, Settings, PluginUtilities } = Api;
 	//-----------| Create Settings and Variables |-----------//
-			const resizePluginName = 'gifsicle';
 			var picsGlobalSettings = {};
 			var pluginPath, settingsPath, configPath, picturesPath, DiscordLanguage, isWindows;
 			pluginPath = PluginApi_.Plugins.folder;
@@ -352,7 +351,7 @@ module.exports = (() =>
 				width: 					'Width',
 				height: 				'Height',
 				intNumber: 				'Integer number',
-				scaleExperimental: 		'Experimental support for animations (additional library will be installed)'
+				scaleExperimental: 		'Experimental support for animations (will be used external module)'
 			}
 
 			var funcs_ = {}; // Object for store all custom functions
@@ -424,7 +423,7 @@ module.exports = (() =>
 						labelsNames.width = `Ширина`;
 						labelsNames.height = `Высота`;
 						labelsNames.intNumber = `Целое число`;
-						labelsNames.scaleExperimental = `Экспериментальная поддержка анимаций (установится дополнительная библиотека)`;
+						labelsNames.scaleExperimental = `Экспериментальная поддержка анимаций (будет использоваться посторонний модуль)`;
 						Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
 						Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
 						Configuration.SendTextWithFile.Title = `Отправлять текст из чата перед отправкой файла`;
@@ -472,9 +471,10 @@ module.exports = (() =>
 					// For Linux child_process_.exec(`xdg-open "${Configuration.mainFolderPath.Value}"`);
 				}
 			}
-			funcs_.checkLibraries = () =>
+			funcs_.checkLibraries = async () =>
 			{
 				if(!Configuration.ScaleSizeForPictures.Value.exp) { return }
+				/* Maybe it will be useful later. P.S. resizePluginName was 'gifsicle' and this func wasn't async
 				if(fs_.existsSync(path_.join(pluginPath, resizePluginName + '.exe'))) { return }
 				Modals.showConfirmationModal(labelsNames.Modal_Missing, labelsNames.Modal_MissingLibs,
 				{
@@ -488,6 +488,10 @@ module.exports = (() =>
 						});
 					}
 				});
+				*/
+
+				// For latest version: https://unpkg.com/gifsicle-wasm-browser/dist/gifsicle.min.js
+				funcs_.gifsicle = await import("https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/ExtraMethods/gifsicle.min.js").then((module) => { return module.default; });
 			}
 			funcs_.readLocalFile = (filePath, format, sendFile) =>
 			{
@@ -518,20 +522,33 @@ module.exports = (() =>
 				if(newWidth) { return Math.round(newHeight = (oldHeight / (oldWidth / newWidth))); }
 				if(newHeight) { return Math.round(newWidth = (oldWidth / (oldHeight / newHeight))); }
 			}
-			funcs_.resizeGif = (gifPath, newWidth, newHeight) =>
+			funcs_.resizeGif = async (gifPath, newWidth, newHeight, gifName) =>
 			{
 				if(!gifPath || !newWidth || !newHeight) { return false }
+				/* Deprecated gifsicle.exe method
 				if(!fs_.existsSync(path_.join(pluginPath, resizePluginName + '.exe'))) { console.warn(`${resizePluginName}.exe not found!`); return false }
 				let gifsiclePath = path_.join(pluginPath, resizePluginName);
 				let gifsicleOutput = gifsiclePath + '.output';
 				try
 				{
 					child_process_.execSync(`"${gifsiclePath}" "${gifPath}" --resize ${newWidth}x${newHeight} -o "${gifsicleOutput}"`);
-				} catch(err) { console.log(err); }
+				} catch(err) { console.warn(err); }
 				if(!fs_.existsSync(gifsicleOutput)) { console.warn("Why output file doesn't exist?!"); return false }
-				let OutputData = funcs_.readLocalFile(gifsicleOutput, "base64", true);
+				let outputData = funcs_.readLocalFile(gifsicleOutput, "base64", true);
 				fs_.unlinkSync(gifsicleOutput);
-				return OutputData;
+				*/
+
+				var outputData;
+				try
+				{
+					let gifFile = (new File([funcs_.readLocalFile(gifPath, "base64", true)], gifName));
+					let outputName = "output_" + gifName;
+					outputData = funcs_.gifsicle.run({
+						input: [{ file: gifFile, name: gifName }],
+						command: [`${gifName} --resize ${newWidth}x${newHeight} -o /out/${outputName} `]
+					}).then((outfiles) => { return outfiles[0]; });
+				} catch(err) { console.warn(err); }
+				return await outputData;
 			}
 			funcs_.saveSettings = (data, once = null) =>
 			{
@@ -944,6 +961,13 @@ module.exports = (() =>
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
 				let ChatBoxText = ChatBox.innerText ? ChatBox.innerText : ChatBox.value ? ChatBox.value : '';
 
+				function sendLocalFile(_bufferFile)
+				{
+					_bufferFile = _bufferFile ? _bufferFile : funcs_.readLocalFile(_path, "base64", true);
+					uploadModule(channelID, _file = new File([_bufferFile], _name)); // add ", {content:'new with file'}" for adding text
+					lastSent = { file: _file, link: null };
+				}
+
 				if(Configuration.AutoClosePanel.Value)
 				{
 					if(document.getElementById(elementNames.CPFSP_buttonGoID) && !from.shiftKey)
@@ -1003,8 +1027,7 @@ module.exports = (() =>
 								{
 									Promise.resolve(DisBlob = e).then((e) =>
 									{
-										uploadModule(channelID, _file = new File([DisBlob], _name));
-										lastSent = { file: _file, link: null };
+										sendLocalFile(DisBlob);
 										DisCanvas = null, DisIMG = null, DisBlob = null;
 									})
 								}, _dataType, 1);
@@ -1012,23 +1035,19 @@ module.exports = (() =>
 							}
 							if(Configuration.ScaleSizeForPictures.Value.exp && _fileType == 'gif')
 							{ // Special support for format
-								// DisBlobResponse = await fetch(child_process_.execSync(`python ...`)); DisBlob = await DisBlobResponse.blob();
-								_bufferFile = funcs_.resizeGif(_path, newWidth, newHeight)
-								if(_bufferFile)
+								(async () =>
 								{
-									uploadModule(channelID, _file = new File([_bufferFile], _name));
-									lastSent = { file: _file, link: null };
-									return
-								}
+									let _bufferFile = await funcs_.resizeGif(_path, newWidth, newHeight, _name);
+									sendLocalFile(_bufferFile);
+								})();
+								return
 							}
 						}
 					}
 				}
 				if(isLocalFile)
 				{ // Sending local picture
-					_bufferFile = _bufferFile ? _bufferFile : funcs_.readLocalFile(_path, "base64", true);
-					uploadModule(channelID, _file = new File([_bufferFile], _name)); // add ", {content:'new with file'}" for adding text
-					lastSent = { file: _file, link: null };
+					sendLocalFile(_bufferFile);
 					return
 				}
 				/* // DEPRECATED (c)0.0.1 version //

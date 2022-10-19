@@ -1,3 +1,6 @@
+# 0.4.5
+External module "gifsicle-wasm-browser" is now used instead of "gifsicle.exe".
+
 # 0.4.4
 Looks like access to the "child_process" module was irrevocably lost (https://github.com/BetterDiscord/BetterDiscord/issues/1443), so I had to make a compromise method.
 
