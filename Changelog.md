@@ -1,3 +1,6 @@
+# 0.4.7
+Now "gifsicle" doesn't cause an error when there are spaces in a file name. Also "refresh" button on the emoji panel no longer creates a copy of it.
+
 # 0.4.6
 Fixed a bug with panel disappearing due to Discord's element name change. Also added one new option in settings under the image resizing section that allows to add the subpanel for image resizing to the emoji panel.
 

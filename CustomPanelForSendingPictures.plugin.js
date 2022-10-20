@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.4.6
+ * @version 0.4.7
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.4.6",
+			version: "0.4.7",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed a bug with the disappearance of the panel, also adding one new option in settings`,
+				title: `Fixed bugs with resizing GIFs and refreshing emoji panel`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Fixed a bug with panel disappearing due to Discord's element name change. Also added one new option in settings under the image resizing section that allows to add the subpanel for image resizing to the emoji panel.`]
+				items: [`Now "gifsicle" doesn't cause an error when there are spaces in a file name. Also "refresh" button on the emoji panel no longer creates a copy of it.`]
 			}
 		]
 	};
@@ -315,6 +315,7 @@ module.exports = (() =>
 
 			var searchNames = {
 				emojisGUI:				'div[role="tablist"]', // Panel with menu and buttons (aria label is Expression Picker)
+				emojisPanel:			'div[role="tabpanel"]', // Or emojisGUI.lastElementChild (cause bug with scale subpanel);
 				emojisClassGUI:			'div[class*="contentWrapper-"]' // Whole panel
 			}
 
@@ -562,11 +563,12 @@ module.exports = (() =>
 				var outputData;
 				try
 				{
-					let gifFile = (new File([funcs_.readLocalFile(gifPath, "base64", true)], gifName));
-					let outputName = "output_" + gifName;
+					let inputName = "gifsicleInput";
+					let outputName = "gifsicleOutput";
+					let gifFile = (new File([funcs_.readLocalFile(gifPath, "base64", true)], inputName));
 					outputData = funcs_.gifsicle.run({
-						input: [{ file: gifFile, name: gifName }],
-						command: [`${gifName} --resize ${newWidth}x${newHeight} -o /out/${outputName} `]
+						input: [{ file: gifFile, name: inputName }],
+						command: [`${inputName} --resize ${newWidth}x${newHeight} -o /out/${outputName} `]
 					}).then((outfiles) => { return outfiles[0]; });
 				} catch(err) { console.warn(err); }
 				return await outputData;
@@ -782,7 +784,7 @@ module.exports = (() =>
 				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonGoID);
 				if(!buttonCPFSP) { return }
 				let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
-				let emojisPanel = emojisGUI.lastElementChild; // Emojis panel, old way for getting this is querySelector('div[role*="tabpanel"]'), but Stickers tab doesn't have any role :I
+				let emojisPanel = emojisGUI.querySelector(searchNames.emojisPanel); // Emojis panel, old way for getting this is querySelector('div[role*="tabpanel"]'), but Stickers tab doesn't have any role :I
 				if(!emojisPanel) { return }
 
 				let allPicsSettings;
