@@ -1,3 +1,6 @@
+# 0.4.6
+Fixed a bug with panel disappearing due to Discord's element name change. Also added one new option in settings under the image resizing section that allows to add the subpanel for image resizing to the emoji panel.
+
 # 0.4.5
 External module "gifsicle-wasm-browser" is now used instead of "gifsicle.exe".
 

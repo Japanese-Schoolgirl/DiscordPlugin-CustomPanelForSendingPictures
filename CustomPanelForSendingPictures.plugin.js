@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.4.5
+ * @version 0.4.6
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.4.5",
+			version: "0.4.6",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed resizing method for GIF files (option in settings)`,
+				title: `Fixed a bug with the disappearance of the panel, also adding one new option in settings`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`External module "gifsicle-wasm-browser" is now used instead of "gifsicle.exe".`]
+				items: [`Fixed a bug with panel disappearing due to Discord's element name change. Also added one new option in settings under the image resizing section that allows to add the subpanel for image resizing to the emoji panel.`]
 			}
 		]
 	};
@@ -45,11 +45,11 @@ module.exports = (() =>
 	const _getModule = (module) => 
 	{ // || window.require;
 		try { return require(module); }
-		catch(err) { console.error(err); return false; };
+		catch(err) { console.warn(err); return false; };
 	};
 	const request_ = _getModule("request");
 	const electron_ = _getModule("electron");
-	const https_ = _getModule("https");
+	//const https_ = _getModule("https");
 	const fs_ = _getModule("fs");
 	const path_ = _getModule("path");
 	const child_process_ = _getModule("child_process"); // This module not working now, thanks to Discord for amazing update!
@@ -58,18 +58,19 @@ module.exports = (() =>
 	// Not longer used & Stopped working:
 	//const util_ = _getModule("util");
 	//const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === "object").ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
-	const uploadModule = (channelID, file) =>
-	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === "function") or others
-		try
-		{
-			PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
-		} catch(err) { console.warn(err); }
-	}
 	const messageModule = (channelID, sendText, reply = null) =>
 	{ // Replace for broken DiscordAPI.currentChannel.sendMessage
 		try
 		{
 			PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === "function")._sendMessage(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {/* messageReference:{"channel_id":"channelID","message_id":"messageID"} */});
+		} catch(err) { console.warn(err); }
+	};
+	const uploadModule = (channelID, file, sendText = null) =>
+	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === "function") or others
+		try
+		{
+			if(sendText) { messageModule(channelID, sendText); }
+			PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
 		} catch(err) { console.warn(err); }
 	};
 
@@ -127,18 +128,18 @@ module.exports = (() =>
 			let mainFolderName = 'Main folder!/\\?'; // It'll still be used for arrays and objects. Change in configuration only affects at section's name
 			let folderListName = `?/\\!FolderList!/\\?`;
 			var Configuration = { // Almost all Default values need only as placeholder
-				UseSentLinks:			{ Value: true, 										Default: true, 						Title: `Use "Sent Links"`, 								Description: `To create and use ${sentType} files that are replacing file sending by sending links.` },
-				SendTextWithFile:		{ Value: false, 									Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
-				OnlyForcedUpdate:		{ Value: false, 										Default: false, 						Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
-				sentType2srcType:		{ Value: false, 									Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
-				RepeatLastSent:			{ Value: false, 									Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
-				AutoClosePanel:			{ Value: false, 									Default: false, 					Title: `Auto close panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
-				SendingFileCooldown:	{ Value: 0, 										Default: '0', 						Title: `Sending file cooldown`, 						Description: `To set cooldown in millisecond before you can send another file. Set 0 in this setting to turn this off. This option exists to prevent double/miss clicks so it doesn't apply to hotkey sending.` },
-				ScaleSizeForPictures:	{ Value: { type: 'width', num: '45', exp: false }, 	Default: '', 						Title: `Set size for scaling (on by default)`, 			Description: `For automatic proportional scaling of pictures from local or web files to set size. Value is set only either for width or height. Clicking while holding Ctrl key will ignore enabling of this option. Remove value in this setting to turn this off.` },
-				SetLinkParameters:		{ Value: '', 										Default: '?width=45&height=45', 	Title: `Set parameters for web file (off by default)`, 	Description: `To automatically add custom parameters for sending links. Remove value in this setting to turn this off.` },
-				mainFolderPath:			{ Value: picturesPath, 								Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders with very big amount of files. Chosen directory should already exist.` },
-				mainFolderNameDisplay:	{ Value: 'Main folder', 							Default: 'Main folder', 			Title: `Displayed section name for Main folder`, 		Description: `You can set this section name to Main folder:` },
-				SectionTextColor:		{ Value: '#000000bb', 						Default: '#000000bb', 		Title: `Section's name color`, 							Description: `Your current color is:` }
+				UseSentLinks:			{ Value: true, 															Default: true, 						Title: `Use "Sent Links"`, 								Description: `To create and use ${sentType} files that are replacing file sending by sending links.` },
+				SendTextWithFile:		{ Value: false, 														Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
+				OnlyForcedUpdate:		{ Value: false, 														Default: false, 					Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
+				sentType2srcType:		{ Value: false, 														Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
+				RepeatLastSent:			{ Value: false, 														Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
+				AutoClosePanel:			{ Value: false, 														Default: false, 					Title: `Auto close panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
+				SendingFileCooldown:	{ Value: 0, 															Default: '0', 						Title: `Sending file cooldown`, 						Description: `To set cooldown in millisecond before you can send another file. Set 0 in this setting to turn this off. This option exists to prevent double/miss clicks so it doesn't apply to hotkey sending.` },
+				ScaleSizeForPictures:	{ Value: { type: 'width', num: '45', subpanel: true, exp: false }, 		Default: '', 						Title: `Set size for scaling (on by default)`, 			Description: `For automatic proportional scaling of pictures from local or web files to set size. Value is set only either for width or height. Clicking while holding Ctrl key will ignore enabling of this option. Remove value in this setting to turn this off.` },
+				SetLinkParameters:		{ Value: '', 															Default: '?width=45&height=45', 	Title: `Set parameters for web file (off by default)`, 	Description: `To automatically add custom parameters for sending links. Remove value in this setting to turn this off.` },
+				mainFolderPath:			{ Value: picturesPath, 													Default: picturesPath, 				Title: `There is your folder for pictures:`, 			Description: `You can set your Main folder which will be scanned for pictures and subfolders. Please try to avoid using folders with very big amount of files. Chosen directory should already exist.` },
+				mainFolderNameDisplay:	{ Value: 'Main folder', 												Default: 'Main folder', 			Title: `Displayed section name for Main folder`, 		Description: `You can set this section name to Main folder:` },
+				SectionTextColor:		{ Value: '#000000bb', 													Default: '#000000bb', 				Title: `Section's name color`, 							Description: `Your current color is:` }
 			};
 	//-----------|  Start of Styles section |-----------//
 			var CPFSP_Styles = () => { return ` /* Extract from "emojiList" and etc classes + additional margin and fixes */
@@ -218,7 +219,7 @@ module.exports = (() =>
 .CPFSP_li[waitload] .CPFSP_IMG {
 	content: url(${emptyIMG});
 }
-#CPFSP_btnsPanel {
+#CPFSP_btnsPanel, #CPFSP_scaleSubpanelID {
 	height: 27px; /* old is 30px */ 
 	line-height: 27px; /* old is 32px */
 	width: 100%;
@@ -227,6 +228,14 @@ module.exports = (() =>
 	font-size: 15px;
 	font-weight: 600;
 	/* column-gap: 5px; */
+}
+#CPFSP_scaleSubpanelID {
+	position: absolute;
+	justify-content: right;
+	grid-template-columns: none;
+}
+#CPFSP_scaleSubpanelID input {
+	max-width: 75px;
 }
 .CPFSP_btnDefault {
 	cursor: pointer;
@@ -282,11 +291,11 @@ module.exports = (() =>
 	color: var(--channels-default);
 	font-weight: 600;
 }
-#CPFSP_scaleExp {
+#CPFSP_scaleExp, #CPFSP_scaleSubpanel {
 	color: var(--channels-default);
 	font-weight: 600;
 }
-#CPFSP_scaleExp input {
+#CPFSP_scaleExp input, #CPFSP_scaleSubpanel input {
 	cursor: pointer;
 	margin: 5px 0px 0px 0px;
 }
@@ -304,10 +313,16 @@ module.exports = (() =>
 }
 			`};
 
+			var searchNames = {
+				emojisGUI:				'div[role="tablist"]', // Panel with menu and buttons (aria label is Expression Picker)
+				emojisClassGUI:			'div[class*="contentWrapper-"]' // Whole panel
+			}
+
 			var elementNames = {
 				id: 					'CPFSP_StyleSheet',
 				filter: 				'CPFSP_StyleFilter',
 				CPFSP_panelID: 			'CPFSP_Panel',
+				CPFSP_scalePanelID: 	'CPFSP_scaleSubpanelID',
 				CPFSP_buttonGoID: 		'CPFSP_ButtonGo',
 				CPFSP_activeButton: 	'CPFSP_activeButton',
 				elementList: 			'CPFSP_List',
@@ -322,11 +337,11 @@ module.exports = (() =>
 				searchBar: 				'CPFSP_searchBar',
 				searchBarInput: 		'CPFSP_searchBarInput',
 				searchBarOptions: 		'CPFSP_searchBarOptions',
-				emojisClassGUI:			'contentWrapper-',
 				emojiTabID:				'emoji-picker-tab',
 				gifTabID: 				'gif-picker-tab',
 				stickerTabID: 			'sticker-picker-tab',
 				Config_scaleType: 		'CPFSP_scaleType',
+				Config_scaleSubpanel: 	'CPFSP_scaleSubpanel',
 				Config_scaleExp: 		'CPFSP_scaleExp'
 			}
 
@@ -338,6 +353,8 @@ module.exports = (() =>
 				Constants_Missing:		`Some importants constants in plugin ${config.info.name} is missing`,
 				Yamete: 				'Yamete!',
 				tooBig: 				"It's too big!",
+				forYou: 				'For you:',
+				symbolsLimit: 			"B-baka, your text wasn't sent with image because your text is over 2000 symbols!",
 				Pictures: 				'Pictures',
 				btnRefresh: 			'Refresh',
 				btnOpenFolder: 			'Open folder',
@@ -351,6 +368,7 @@ module.exports = (() =>
 				width: 					'Width',
 				height: 				'Height',
 				intNumber: 				'Integer number',
+				scaleSubpanel: 			'Adds the subpanel for image resizing to the emoji panel',
 				scaleExperimental: 		'Experimental support for animations (will be used external module)'
 			}
 
@@ -410,6 +428,8 @@ module.exports = (() =>
 						labelsNames.Constants_Missing = `Отсутствуют некоторые константы, важные для плагина ${config.info.name}.`;
 						labelsNames.Yamete = `Ямете!`;
 						labelsNames.tooBig = `Это слишком велико!`;
+						labelsNames.forYou = `Для тебя:`;
+						labelsNames.symbolsLimit = `Б-бака, твой текст не был отправлен с файлом, потому что в нём больше 2000 символов!`;
 						labelsNames.Pictures = `Картинки`;
 						labelsNames.btnRefresh = `Обновить`;
 						labelsNames.btnOpenFolder = `Открыть папку`;
@@ -423,11 +443,12 @@ module.exports = (() =>
 						labelsNames.width = `Ширина`;
 						labelsNames.height = `Высота`;
 						labelsNames.intNumber = `Целое число`;
+						labelsNames.scaleSubpanel = `Добавляет субпанель для масштабирования картинок к панели с эмодзи`;
 						labelsNames.scaleExperimental = `Экспериментальная поддержка анимаций (будет использоваться посторонний модуль)`;
 						Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
 						Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
-						Configuration.SendTextWithFile.Title = `Отправлять текст из чата перед отправкой файла`;
-						Configuration.SendTextWithFile.Description = `Включает отправку текста из чата перед отправкой локального или веб файла. Не удаляет текст из чата. Не отправляет сообщение превышающее 2000 символов.`;
+						Configuration.SendTextWithFile.Title = `Отправлять текст из чата перед отправляемым файлом`;
+						Configuration.SendTextWithFile.Description = `Включает отправку текста из чата перед отправляемым локальным или веб файлом. Не удаляет текст из чата. Не отправляет сообщение превышающее 2000 символов.`;
 						Configuration.OnlyForcedUpdate.Title = `Только принудительное обновление`;
 						Configuration.OnlyForcedUpdate.Description = `Не позволяет плагину автоматически обновлять настройки через сканирование с используемыми файлами без участия пользователя.`;
 						Configuration.sentType2srcType.Title = `Рассматривать ${sentType} как ${srcType}`;
@@ -625,6 +646,24 @@ module.exports = (() =>
 				catch(err) { console.warn('There has been an error saving your config data:', err.message); }
 				funcs_.loadConfiguration();
 			}
+			funcs_.createSetting = (...args) =>
+			{
+				let type = args[0];
+				if(!type) { return }
+				switch(type)
+				{
+					//case 'Switch': return new Settings.Slider(args[1], args[2], 0, 1, Number(args[3]), args[4], { markers: [0, 1], stickToMarkers: true }); // Temporary fix
+					case 'Switch': return new Settings.Switch(args[1], args[2], args[3], args[4], args[5]);
+					case 'Textbox': return new Settings.Textbox(args[1], args[2], args[3], args[4], args[5]);
+					case 'ColorPicker': return new Settings.Textbox(args[1], args[2], args[3], args[4], args[5]); // Temporary fix
+					//case 'ColorPicker': return new Settings.ColorPicker(args[1], args[2], args[3], args[4], args[5]);
+					case 'Keybind': return new Settings.Keybind(args[1], args[2], args[3], args[4], args[5]);
+					case 'Dropdown': return new Settings.Dropdown(args[1], args[2], args[3], args[4], args[5], args[6]);
+					case 'RadioGroup': return new Settings.RadioGroup(args[1], args[2], args[3], args[4], args[5], args[6]);
+					case 'Slider': return new Settings.Slider(args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+					default: break;
+				}
+			}
 			funcs_.scanDirectory = (forced = null, repeat = null) =>
 			{ // Scanning plugin folder
 				if((Configuration.OnlyForcedUpdate.Value && !forced) && !repeat) { return funcs_.loadSettings(); }
@@ -739,14 +778,16 @@ module.exports = (() =>
 			funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 			{ // once for funcs_.scanDirectory and waitingScan check
 				let command = (elem == 'refresh') ? 'refresh' : elem ? elem.target.getAttribute('command') : null;
+
 				let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonGoID);
 				if(!buttonCPFSP) { return }
 				let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
 				let emojisPanel = emojisGUI.lastElementChild; // Emojis panel, old way for getting this is querySelector('div[role*="tabpanel"]'), but Stickers tab doesn't have any role :I
 				if(!emojisPanel) { return }
+
 				let allPicsSettings;
 				//# Previous button click fix: START
-				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
+				let emojisMenu = emojisGUI.querySelector(searchNames.emojisGUI);
 				let previousButton = emojisMenu.querySelector('button[aria-selected*="true"]'); // Will return Button tag
 				let previousButtonID = previousButton ? previousButton.id : null;
 				if(previousButtonID)
@@ -910,24 +951,77 @@ module.exports = (() =>
 						elementList.append(folderSection); // Adds all sections to list
 					});
 				}
+				// Creating subpanel for image resizing
+				function createScaleSubpanel()
+				{
+					if(document.getElementById(elementNames.CPFSP_scalePanelID)) { return }
+
+					let scaleSubpanel = document.createElement('div');
+					scaleSubpanel.setAttribute('id', elementNames.CPFSP_scalePanelID);
+
+					let subpanelInput = document.createElement('input');
+					subpanelInput.setAttribute('placeholder', labelsNames.intNumber);
+					subpanelInput.value = Configuration.ScaleSizeForPictures.Value.num;
+					subpanelInput.addEventListener('change', ()=>funcs_.SSFPFunc.validateNum(subpanelInput.value, scaleSubpanel));
+
+					scaleSubpanel.append(subpanelInput);
+					scaleSubpanel.append(funcs_.SSFPFunc.createSelect());
+
+					let emojisPanel = document.getElementById(elementNames.CPFSP_panelID);
+					emojisPanel.parentNode.append(scaleSubpanel);
+				}
 				creatingPanel();
+				if(Configuration.ScaleSizeForPictures.Value.subpanel) { createScaleSubpanel(); }
+				
 			}
 			funcs_.addPicturesPanelButton = (emojisGUI) =>
 			{
 				if(!emojisGUI) { return } // I know that in Discord there is no "s"
 				// let emojiButton = document.querySelector('button[class*="emojiButton"]'); // Emojis button in chat
-				let emojisMenu = emojisGUI.querySelector('div[aria-label*="Expression Picker"]'); // Panel menus
+				let emojisMenu = emojisGUI.querySelector(searchNames.emojisGUI);
 				if(!emojisMenu) { return }
 				if(document.getElementById(elementNames.CPFSP_buttonGoID)) { return }
+
 				let buttonCPFSP = document.createElement('button');
 				buttonCPFSP.innerText = labelsNames.Pictures;
 				buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonGoID);
 				let buttonClass = emojisMenu.querySelector('button').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
 				buttonCPFSP.setAttribute('class', buttonClass);
-				//buttonCPFSP.setAttribute('onclick', 'this.classList.add("TimeToPicturesPanel");');
 				buttonCPFSP.removeEventListener('click', funcs_.moveToPicturesPanel); // Insurance
 				buttonCPFSP.addEventListener('click', funcs_.moveToPicturesPanel);
 				emojisMenu.append(buttonCPFSP);
+			}
+			// Functions for ScaleSizeForPictures setting
+			funcs_.SSFPFunc = {};
+			funcs_.SSFPFunc.validateNum = (text, el) =>
+			{
+				text = Number(text);
+				if(9999 < text)
+				{ // Against freezes
+					text = 9999;
+					setTimeout(()=>{ el.querySelector('input').value = 9999}, 200);
+					Modals.showAlertModal(labelsNames.Yamete, labelsNames.tooBig);
+				}
+				if(!Number.isInteger(text) || text <= 0)
+				{
+					setTimeout(()=>{ el.querySelector('input').value = ''}, 200);
+					Configuration.ScaleSizeForPictures.Value.num = '';
+				}
+				else { Configuration.ScaleSizeForPictures.Value.num = Math.abs(Math.round(text)); }
+				funcs_.saveConfiguration();
+				return true;
+			}
+			funcs_.SSFPFunc.createSelect = () =>
+			{
+				let selectList = document.createElement('select');
+				selectList.setAttribute('id', elementNames.Config_scaleType);
+				let isWidth = (Configuration.ScaleSizeForPictures.Value.type == 'width');
+				let isHeight = (Configuration.ScaleSizeForPictures.Value.type == 'height');
+				selectList.add(new Option(labelsNames.width, 'width', isWidth, isWidth));
+				selectList.add(new Option(labelsNames.height, 'height', isHeight, isHeight));
+				selectList.addEventListener('change', (e)=>funcs_.setConfigValue(e, 'ScaleSizeForPictures', document.getElementById(elementNames.Config_scaleType).value, 'type'));
+
+				return selectList;
 			}
 			funcs_.send2ChatBox = (from) => // from is event
 			{
@@ -961,10 +1055,22 @@ module.exports = (() =>
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
 				let ChatBoxText = ChatBox.innerText ? ChatBox.innerText : ChatBox.value ? ChatBox.value : '';
 
+				// Sending text
+				if(!Configuration.SendTextWithFile.Value) { ChatBoxText = null; }
+				else
+				{
+					if(ChatBoxText.replace(/\s/g, '').length <= 0) { ChatBoxText = null; }
+					else if(ChatBoxText.length > 2001) // 2001 is limit for text length
+					{ // +-return for interrupt action; or BdApi.showConfirmationModal
+						ChatBoxText = null;
+						Modals.showAlertModal(labelsNames.forYou, labelsNames.symbolsLimit);
+					}
+				}
+
 				function sendLocalFile(_bufferFile)
 				{
 					_bufferFile = _bufferFile ? _bufferFile : funcs_.readLocalFile(_path, "base64", true);
-					uploadModule(channelID, _file = new File([_bufferFile], _name)); // add ", {content:'new with file'}" for adding text
+					uploadModule(channelID, _file = new File([_bufferFile], _name), ChatBoxText); // add ", {content:'new with file'}" for adding text
 					lastSent = { file: _file, link: null };
 				}
 
@@ -978,18 +1084,6 @@ module.exports = (() =>
 					}
 				}
 
-				// Sending text
-				if(Configuration.SendTextWithFile.Value)
-				{ // Send text from textbox before send file
-					if(ChatBoxText.length < 2002)
-					{
-						if(ChatBoxText.replace(/\s/g, '').length > 0)
-						{ // For don't send empty message
-							messageModule(channelID, ChatBoxText);
-						}
-					} // 2001 is limit for text length
-					else { Modals.showAlertModal(`For you:`, `B-baka, your text wasn't sent with message because your text is over 2000 symbols!`); return } // or BdApi.showConfirmationModal
-				}
 				if(Object.keys(Configuration.ScaleSizeForPictures.Value).length && !from.ctrlKey)
 				{ // Adds autoscaling parameters
 					let scaleSize = { type: Configuration.ScaleSizeForPictures.Value.type, value: Configuration.ScaleSizeForPictures.Value.num };
@@ -1058,6 +1152,7 @@ module.exports = (() =>
 				*/
 				lastSent = { file: null, link: _link}; // For Last Sent option
 				if(Configuration.SetLinkParameters.Value.length) { _link = (_link+Configuration.SetLinkParameters.Value); } // Adds user additional parameters
+				if(ChatBoxText) { messageModule(channelID, ChatBoxText); }
 				return messageModule(channelID, _link); // Sending web picture
 			}
 			funcs_.RepeatLastSentFunc = (event) =>
@@ -1106,8 +1201,8 @@ module.exports = (() =>
 					if(!mutation.target.parentNode) { return }
 					if(!mutation.target.parentNode.parentNode) { return }
 					if(!mutation.target.parentNode.parentNode.parentNode) { return }
-					if(!document.querySelector(`div[class*="${elementNames.emojisClassGUI}"]`)) { return }
-					funcs_.addPicturesPanelButton(document.querySelector(`div[class*="${elementNames.emojisClassGUI}"]`)); // contentWrapper
+					if(!document.querySelector(searchNames.emojisClassGUI)) { return }
+					funcs_.addPicturesPanelButton(document.querySelector(searchNames.emojisClassGUI)); // contentWrapper
 				});
 			})
 
@@ -1162,21 +1257,19 @@ module.exports = (() =>
 						let inputField = PanelElements.ScaleSizeForPictures.getElement().querySelector('input');
 						if(!inputField || document.getElementById(elementNames.Config_scaleType)) { return }
 						// List with width or height setting
-						let selectList = document.createElement('select');
-						selectList.setAttribute('id', elementNames.Config_scaleType);
-						let isWidth = (Configuration.ScaleSizeForPictures.Value.type == 'width');
-						let isHeight = (Configuration.ScaleSizeForPictures.Value.type == 'height');
-						selectList.add(new Option(labelsNames.width, 'width', isWidth, isWidth));
-						selectList.add(new Option(labelsNames.height, 'height', isHeight, isHeight));
-						selectList.addEventListener('change', (e)=>funcs_.setConfigValue(e, 'ScaleSizeForPictures', document.getElementById(elementNames.Config_scaleType).value, 'type'));
-						inputField.parentNode.append(selectList);
+						inputField.parentNode.append(funcs_.SSFPFunc.createSelect());
 						// List with experimental setting
-						let specialOptionDiv = document.createElement('div');
-						specialOptionDiv.setAttribute('id', elementNames.Config_scaleExp);
-						let isChecked = Configuration.ScaleSizeForPictures.Value.exp ? 'checked' : '';
-						specialOptionDiv.innerHTML = `<text>${labelsNames.scaleExperimental}: </text><input type='checkbox' ${isChecked}>`;
-						specialOptionDiv.querySelector('input').addEventListener('change', (e)=>funcs_.setConfigValue(e, 'ScaleSizeForPictures', document.querySelector(`#${elementNames.Config_scaleExp} input`).checked, 'exp'));
-						inputField.parentNode.append(specialOptionDiv);
+						function createOptionCheckbox(option_name, option_param, el_name, el_label)
+						{
+							let specialOptionDiv = document.createElement('div');
+							specialOptionDiv.setAttribute('id', el_name);
+							let isChecked = Configuration[option_name]["Value"][option_param] ? 'checked' : '';
+							specialOptionDiv.innerHTML = `<text>${el_label}: </text><input type='checkbox' ${isChecked}>`;
+							specialOptionDiv.querySelector('input').addEventListener('change', (e)=>funcs_.setConfigValue(e, option_name, document.querySelector(`#${el_name} input`).checked, option_param));
+							inputField.parentNode.append(specialOptionDiv);
+						}
+						createOptionCheckbox('ScaleSizeForPictures', 'subpanel', elementNames.Config_scaleSubpanel, labelsNames.scaleSubpanel);
+						createOptionCheckbox('ScaleSizeForPictures', 'exp', elementNames.Config_scaleExp, labelsNames.scaleExperimental);
 					}
 					function fixMissingColorPicker()
 					{ // This function planned as Temporary fix and should be removed after ColorPicker starts work again
@@ -1192,63 +1285,45 @@ module.exports = (() =>
 					});
 					Panel.setAttribute('class', 'form');
 					Panel.setAttribute('style', 'width:100%;');
-					function createSetting(...args)
-					{
-						let type = args[0];
-						if(!type) { return }
-						switch(type)
-						{
-							//case 'Switch': return new Settings.Slider(args[1], args[2], 0, 1, Number(args[3]), args[4], { markers: [0, 1], stickToMarkers: true }); // Temporary fix
-							case 'Switch': return new Settings.Switch(args[1], args[2], args[3], args[4], args[5]);
-							case 'Textbox': return new Settings.Textbox(args[1], args[2], args[3], args[4], args[5]);
-							case 'ColorPicker': return new Settings.Textbox(args[1], args[2], args[3], args[4], args[5]); // Temporary fix
-							//case 'ColorPicker': return new Settings.ColorPicker(args[1], args[2], args[3], args[4], args[5]);
-							case 'Keybind': return new Settings.Keybind(args[1], args[2], args[3], args[4], args[5]);
-							case 'Dropdown': return new Settings.Dropdown(args[1], args[2], args[3], args[4], args[5], args[6]);
-							case 'RadioGroup': return new Settings.RadioGroup(args[1], args[2], args[3], args[4], args[5], args[6]);
-							case 'Slider': return new Settings.Slider(args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
-							default: break;
-						}
-					}
 					const PanelSG = new Settings.SettingGroup(`${this.getName()} (${this.getVersion()}) ${labelsNames.configMenu}`, { shown:true }).appendTo(Panel)
 						// Use Sent Links
-						.append(createSetting('Switch', Configuration.UseSentLinks.Title, Configuration.UseSentLinks.Description, Configuration.UseSentLinks.Value, checked =>
+						.append(funcs_.createSetting('Switch', Configuration.UseSentLinks.Title, Configuration.UseSentLinks.Description, Configuration.UseSentLinks.Value, checked =>
 						{
 							Configuration.UseSentLinks.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Send Text With File
-						.append(createSetting('Switch', Configuration.SendTextWithFile.Title, Configuration.SendTextWithFile.Description, Configuration.SendTextWithFile.Value, checked =>
+						.append(funcs_.createSetting('Switch', Configuration.SendTextWithFile.Title, Configuration.SendTextWithFile.Description, Configuration.SendTextWithFile.Value, checked =>
 						{
 							Configuration.SendTextWithFile.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Only Forced Update
-						.append(createSetting('Switch', Configuration.OnlyForcedUpdate.Title, Configuration.OnlyForcedUpdate.Description, Configuration.OnlyForcedUpdate.Value, checked =>
+						.append(funcs_.createSetting('Switch', Configuration.OnlyForcedUpdate.Title, Configuration.OnlyForcedUpdate.Description, Configuration.OnlyForcedUpdate.Value, checked =>
 						{
 							Configuration.OnlyForcedUpdate.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// sentType to srcType
-						.append(createSetting('Switch', Configuration.sentType2srcType.Title, Configuration.sentType2srcType.Description, Configuration.sentType2srcType.Value, checked =>
+						.append(funcs_.createSetting('Switch', Configuration.sentType2srcType.Title, Configuration.sentType2srcType.Description, Configuration.sentType2srcType.Value, checked =>
 						{
 							Configuration.sentType2srcType.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Repeat Last Sent
-						.append(createSetting('Switch', Configuration.RepeatLastSent.Title, Configuration.RepeatLastSent.Description, Configuration.RepeatLastSent.Value, checked =>
+						.append(funcs_.createSetting('Switch', Configuration.RepeatLastSent.Title, Configuration.RepeatLastSent.Description, Configuration.RepeatLastSent.Value, checked =>
 						{
 							Configuration.RepeatLastSent.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Auto Close Panel
-						.append(createSetting('Switch', Configuration.AutoClosePanel.Title, Configuration.AutoClosePanel.Description, Configuration.AutoClosePanel.Value, checked =>
+						.append(funcs_.createSetting('Switch', Configuration.AutoClosePanel.Title, Configuration.AutoClosePanel.Description, Configuration.AutoClosePanel.Value, checked =>
 						{
 							Configuration.AutoClosePanel.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
 						// Sending File Cooldown
-						.append(createSetting('Textbox', Configuration.SendingFileCooldown.Title, Configuration.SendingFileCooldown.Description, Configuration.SendingFileCooldown.Value, text =>
+						.append(funcs_.createSetting('Textbox', Configuration.SendingFileCooldown.Title, Configuration.SendingFileCooldown.Description, Configuration.SendingFileCooldown.Value, text =>
 						{
 							text = Number(text);
 							if(!Number.isInteger(text)) { Configuration.SendingFileCooldown.Value = Configuration.SendingFileCooldown.Default; funcs_.saveConfiguration(); return }
@@ -1256,27 +1331,25 @@ module.exports = (() =>
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.SendingFileCooldown.Default }))
 						// Scale Size For Pictures
-						.append(PanelElements.ScaleSizeForPictures = createSetting('Textbox', Configuration.ScaleSizeForPictures.Title, Configuration.ScaleSizeForPictures.Description, Configuration.ScaleSizeForPictures.Value.num, text =>
+						.append(PanelElements.ScaleSizeForPictures = funcs_.createSetting('Textbox', Configuration.ScaleSizeForPictures.Title, Configuration.ScaleSizeForPictures.Description, Configuration.ScaleSizeForPictures.Value.num, text =>
 						{
-							text = Number(text);
-							if(9999 < text)
-							{ // Against freezes
-								text = 9999;
-								setTimeout(()=>{ PanelElements.ScaleSizeForPictures.getElement().querySelector('input').value = 9999}, 200 );
-								Modals.showAlertModal(labelsNames.Yamete, labelsNames.tooBig);
-							}
-							if(!Number.isInteger(text) || text <= 0) { Configuration.ScaleSizeForPictures.Value = ''; funcs_.saveConfiguration(); return }
-							Configuration.ScaleSizeForPictures.Value = { type: document.getElementById(elementNames.Config_scaleType).value, num: Math.abs(Math.round(text)), exp: document.querySelector(`#${elementNames.Config_scaleExp} input`).checked };
-							funcs_.saveConfiguration();
+							if(funcs_.SSFPFunc.validateNum(text, PanelElements.ScaleSizeForPictures.getElement())) { return }; // Validate and save value
+
+							// Saving all settings after size change
+							//let valueType = document.getElementById(elementNames.Config_scaleType).value;
+							//let valueSubpanel = document.querySelector(`#${elementNames.Config_scaleSubpanel} input`).checked;
+							//let valueExp = document.querySelector(`#${elementNames.Config_scaleExp} input`).checked;
+							//Configuration.ScaleSizeForPictures.Value = { type: valueType, num: Math.abs(Math.round(text)), subpanel: valueSubpanel, exp: valueExp };
+							//funcs_.saveConfiguration();
 						}, { placeholder: Configuration.ScaleSizeForPictures.Default }))
 						// Set Link Parameters
-						.append(createSetting('Textbox', Configuration.SetLinkParameters.Title, Configuration.SetLinkParameters.Description, Configuration.SetLinkParameters.Value, text =>
+						.append(funcs_.createSetting('Textbox', Configuration.SetLinkParameters.Title, Configuration.SetLinkParameters.Description, Configuration.SetLinkParameters.Value, text =>
 						{
 							Configuration.SetLinkParameters.Value = text;
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.SetLinkParameters.Default }))
 						// Main Folder Path
-						.append(createSetting('Textbox', Configuration.mainFolderPath.Title, Configuration.mainFolderPath.Description, Configuration.mainFolderPath.Value, text =>
+						.append(funcs_.createSetting('Textbox', Configuration.mainFolderPath.Title, Configuration.mainFolderPath.Description, Configuration.mainFolderPath.Value, text =>
 						{
 							if(!text.length) { return }
 							if(!fs_.existsSync(text)) { Configuration.mainFolderPath.Value = Configuration.mainFolderPath.Default; funcs_.saveConfiguration(); return }
@@ -1284,14 +1357,14 @@ module.exports = (() =>
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.mainFolderPath.Default }))
 						// Main Folder Name Display
-						.append(createSetting('Textbox', Configuration.mainFolderNameDisplay.Title, Configuration.mainFolderNameDisplay.Description, Configuration.mainFolderNameDisplay.Value, text =>
+						.append(funcs_.createSetting('Textbox', Configuration.mainFolderNameDisplay.Title, Configuration.mainFolderNameDisplay.Description, Configuration.mainFolderNameDisplay.Value, text =>
 						{
 							if(!text.length) { return }
 							Configuration.mainFolderNameDisplay.Value = text;
 							funcs_.saveConfiguration();
 						}, { placeholder: Configuration.mainFolderNameDisplay.Default }))
 						// Section Text Color
-						.append(PanelElements.SectionTextColor = createSetting('ColorPicker', Configuration.SectionTextColor.Title,/*Configuration.SectionTextColor.Description*/ '', Configuration.SectionTextColor.Value, color =>
+						.append(PanelElements.SectionTextColor = funcs_.createSetting('ColorPicker', Configuration.SectionTextColor.Title,/*Configuration.SectionTextColor.Description*/ '', Configuration.SectionTextColor.Value, color =>
 						{ // Currently Configuration.SectionTextColor.Description isn't needed
 							Configuration.SectionTextColor.Value = color;
 							funcs_.saveConfiguration();
