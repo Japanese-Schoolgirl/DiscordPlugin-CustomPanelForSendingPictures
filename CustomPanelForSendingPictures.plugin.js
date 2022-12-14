@@ -1329,7 +1329,7 @@ module.exports = (() =>
 							Configuration.RepeatLastSent.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
-						// Don't send local files if size more than 8 MB
+						// Prevents send local files if size more than 8 MB
 						.append(funcs_.createSetting('Switch', Configuration.SizeLimitForFile.Title, Configuration.SizeLimitForFile.Description, Configuration.SizeLimitForFile.Value, checked =>
 						{
 							Configuration.SizeLimitForFile.Value = !!checked;
