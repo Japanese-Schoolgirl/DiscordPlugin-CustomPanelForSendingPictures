@@ -1,3 +1,6 @@
+# 0.4.8
+Adds an option to prevent files larger than 8 MB from being sent. It's enabled by default.
+
 # 0.4.7
 Now "gifsicle" doesn't cause an error when there are spaces in a file name. Also "refresh" button on the emoji panel no longer creates a copy of it.
 
