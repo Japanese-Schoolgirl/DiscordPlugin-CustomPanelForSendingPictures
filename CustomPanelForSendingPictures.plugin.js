@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.4.8",
+			version: "0.4.9",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Added an option to prevent sending large files`,
+				title: `Fixed the broken function for sending local files`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Adds an option to prevent files larger than 8 MB from being sent. It's enabled by default.`]
+				items: [`New Discord update broke the "upload" module, so I replaced it with another.`]
 			}
 		]
 	};
@@ -66,11 +66,12 @@ module.exports = (() =>
 		} catch(err) { console.warn(err); }
 	};
 	const uploadModule = (channelID, file, sendText = null) =>
-	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getModule(m => m.upload && typeof m.upload === "function") or others
+	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getByProps("upload").upload and etc.
 		try
 		{
 			if(sendText) { messageModule(channelID, sendText); }
-			PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
+			//Previous method: PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
+			PluginApi_.findModule(m => m.instantBatchUpload && typeof m.instantBatchUpload === "function").instantBatchUpload(channelID, [file]);
 		} catch(err) { console.warn(err); }
 	};
 
@@ -1329,7 +1330,7 @@ module.exports = (() =>
 							Configuration.RepeatLastSent.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
-						// Prevents send local files if size more than 8 MB
+						// Don't send local files if size more than 8 MB
 						.append(funcs_.createSetting('Switch', Configuration.SizeLimitForFile.Title, Configuration.SizeLimitForFile.Description, Configuration.SizeLimitForFile.Value, checked =>
 						{
 							Configuration.SizeLimitForFile.Value = !!checked;

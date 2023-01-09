@@ -1,3 +1,6 @@
+# 0.4.9
+New Discord update broke the "upload" module, so I replaced it with another.
+
 # 0.4.8
 Adds an option to prevent files larger than 8 MB from being sent. It's enabled by default.
 
