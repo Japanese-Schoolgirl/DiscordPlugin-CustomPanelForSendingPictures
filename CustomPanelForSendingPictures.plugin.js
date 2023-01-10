@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.4.9
+ * @version 0.5.0
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.4.9",
+			version: "0.5.0",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed the broken function for sending local files`,
+				title: `Added the feature to send a picture as a spoiler`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`New Discord update broke the "upload" module, so I replaced it with another.`]
+				items: [`The checkbox for a spoiler has been added to the picture panel. If it is checked, then links and files will be sent as spoilers.`]
 			}
 		]
 	};
@@ -58,20 +58,25 @@ module.exports = (() =>
 	// Not longer used & Stopped working:
 	//const util_ = _getModule("util");
 	//const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === "object").ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
-	const messageModule = (channelID, sendText, reply = null) =>
-	{ // Replace for broken DiscordAPI.currentChannel.sendMessage
+	const messageModule = (channelID, sendText, options = {}) =>
+	{ // Making spoiler from text using stupid way
+		if(options.asSpoiler) { sendText = "||"+sendText+"||"; }
+
 		try
-		{
-			PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === "function")._sendMessage(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {/* messageReference:{"channel_id":"channelID","message_id":"messageID"} */});
+		{ // Replace for broken DiscordAPI.currentChannel.sendMessage
+			let SEND = PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === "function")._sendMessage;
+			SEND(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {/* messageReference:{"channel_id":"channelID","message_id":"messageID"} */});
 		} catch(err) { console.warn(err); }
 	};
 	const uploadModule = (channelID, file, sendText = null) =>
-	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getByProps("upload").upload and etc.
+	{ // Sending text before file
+		if(sendText) { messageModule(channelID, sendText); }
+
 		try
-		{
-			if(sendText) { messageModule(channelID, sendText); }
+		{  // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getByProps("upload").upload and etc.
 			//Previous method: PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
-			PluginApi_.findModule(m => m.instantBatchUpload && typeof m.instantBatchUpload === "function").instantBatchUpload(channelID, [file]);
+			let UPLOAD = PluginApi_.findModule(m => m.instantBatchUpload && typeof m.instantBatchUpload === "function").instantBatchUpload;
+			UPLOAD(channelID, [file]);
 		} catch(err) { console.warn(err); }
 	};
 
@@ -231,14 +236,6 @@ module.exports = (() =>
 	font-weight: 600;
 	/* column-gap: 5px; */
 }
-#CPFSP_scaleSubpanelID {
-	position: absolute;
-	justify-content: right;
-	grid-template-columns: none;
-}
-#CPFSP_scaleSubpanelID input {
-	max-width: 75px;
-}
 .CPFSP_btnDefault {
 	cursor: pointer;
 	color: var(--channels-default);
@@ -261,6 +258,33 @@ module.exports = (() =>
 .CPFSP_activeButton {
 	background-color: var(--background-accent);
 	color: #fff;
+}
+#CPFSP_spoilerCheckbox {
+	max-width: 22px;
+	color: var(--channels-default);
+	background-color: var(--background-tertiary);
+	border-radius: 0px 0px 10px 0px;
+	z-index: 1;
+}
+#CPFSP_spoilerCheckbox input {
+	margin-left: 5px;
+	transform: scale(1.5);
+	vertical-align: middle;
+}
+#CPFSP_spoilerCheckbox p {
+	margin: 0px 0px 10px 2px;
+	line-height: 1;
+	writing-mode: vertical-lr;
+	text-orientation: upright;
+	font-weight: bolder;
+}
+#CPFSP_scaleSubpanelID {
+	position: absolute;
+	justify-content: right;
+	grid-template-columns: none;
+}
+#CPFSP_scaleSubpanelID input {
+	max-width: 75px;
 }
 .CPFSP_searchBar {
 	display: grid;
@@ -337,6 +361,7 @@ module.exports = (() =>
 				buttonDefault: 			'CPFSP_btnDefault',
 				buttonRefresh: 			'CPFSP_btnRefresh',
 				buttonOpenFolder: 		'CPFSP_btnOpenFolder',
+				spoilerCheckbox: 		'CPFSP_spoilerCheckbox',
 				searchBar: 				'CPFSP_searchBar',
 				searchBarInput: 		'CPFSP_searchBarInput',
 				searchBarOptions: 		'CPFSP_searchBarOptions',
@@ -349,31 +374,33 @@ module.exports = (() =>
 			}
 
 			var labelsNames = {
-				Modal_OkDownload: 		'Download Now',
-				Modal_Cancel: 			'Cancel',
-				Modal_Missing: 			'Library Missing',
+				Modal_OkDownload: 		`Download Now`,
+				Modal_Cancel: 			`Cancel`,
+				Modal_Missing: 			`Library Missing`,
 				Modal_MissingLibs: 		`The library plugin needed for turned on options in plugin ${config.info.name} is missing. Please click "Download Now" to install it.`,
 				Constants_Missing:		`Some importants constants in plugin ${config.info.name} is missing`,
-				Yamete: 				'Yamete!',
-				tooBig: 				"It's too big!",
-				forYou: 				'For you:',
-				symbolsLimit: 			"B-baka, your text wasn't sent with image because your text is over 2000 symbols!",
-				filesizeLimit: 			"B-baka, your message wasn't sent because your file size is larger than 8 MB!",
-				Pictures: 				'Pictures',
-				btnRefresh: 			'Refresh',
-				btnOpenFolder: 			'Open folder',
-				btnFolderPath: 			'Folder path',
-				searchPicture: 			'Search picture',
-				filterAnyMatch: 		'Any match',
-				filterStrictMatch: 		'Strict match',
-				filterAnyLetterCase: 	'Case-insensitive',
-				filterInAnyPlace: 		'In any place',
-				configMenu: 			'Configuration Menu',
-				width: 					'Width',
-				height: 				'Height',
-				intNumber: 				'Integer number',
-				scaleSubpanel: 			'Adds the subpanel for image resizing to the emoji panel',
-				scaleExperimental: 		'Experimental support for animations (will be used external module)'
+				Yamete: 				`Yamete!`,
+				tooBig: 				`It's too big!`,
+				forYou: 				`For you:`,
+				symbolsLimit: 			`B-baka, your text wasn't sent with image because your text is over 2000 symbols!`,
+				filesizeLimit: 			`B-baka, your message wasn't sent because your file size is larger than 8 MB!`,
+				Pictures: 				`Pictures`,
+				btnRefresh: 			`Refresh`,
+				btnOpenFolder: 			`Open folder`,
+				btnFolderPath: 			`Folder path`,
+				searchPicture: 			`Search picture`,
+				spoilerCheckbox: 		`Spoiler`,
+				spoilerTooltip: 		`If it is checked, then links and files will be sent as spoilers`,
+				filterAnyMatch: 		`Any match`,
+				filterStrictMatch: 		`Strict match`,
+				filterAnyLetterCase: 	`Case-insensitive`,
+				filterInAnyPlace: 		`In any place`,
+				configMenu: 			`Configuration Menu`,
+				width: 					`Width`,
+				height: 				`Height`,
+				intNumber: 				`Integer number`,
+				scaleSubpanel: 			`Adds the subpanel for image resizing to the emoji panel`,
+				scaleExperimental: 		`Experimental support for animations (will be used external module)`
 			}
 
 			var funcs_ = {}; // Object for store all custom functions
@@ -424,10 +451,10 @@ module.exports = (() =>
 				switch(DiscordLanguage)
 				{
 					case 'ru':
-						config.info.description = 'Добавляет панель, которая подгружает картинки через файл настроек с используемыми файлами и ссылками, позволяя отправлять картинки с текстом или без текста нажатием по превью картинок на панели. Файл настроек автоматически создаётся при сканировании выбранной папки или папки плагина (поддерживает подпапки и будет отображать их как секции/группы).'; // Only config constanta, not keys inside
-						labelsNames.Modal_OkDownload = 'Скачать сейчас';
-						labelsNames.Modal_Cancel = 'Отмена';
-						labelsNames.Modal_Missing = 'Отсутствует библиотека';
+						config.info.description = `Добавляет панель, которая подгружает картинки через файл настроек с используемыми файлами и ссылками, позволяя отправлять картинки с текстом или без текста нажатием по превью картинок на панели. Файл настроек автоматически создаётся при сканировании выбранной папки или папки плагина (поддерживает подпапки и будет отображать их как секции/группы).`; // Only config constanta, not keys inside
+						labelsNames.Modal_OkDownload = `Скачать сейчас`;
+						labelsNames.Modal_Cancel = `Отмена`;
+						labelsNames.Modal_Missing = `Отсутствует библиотека`;
 						labelsNames.Modal_MissingLibs = `Отсутствует библиотека, необходимая для работы включённых опций в плагине ${config.info.name}. Пожалуйста, нажмите "${labelsNames.Modal_OkDownload}" для её установки.`;
 						labelsNames.Constants_Missing = `Отсутствуют некоторые константы, важные для плагина ${config.info.name}.`;
 						labelsNames.Yamete = `Ямете!`;
@@ -440,10 +467,12 @@ module.exports = (() =>
 						labelsNames.btnOpenFolder = `Открыть папку`;
 						labelsNames.btnFolderPath = `Путь папки`;
 						labelsNames.searchPicture = `Искать картинку`;
-						labelsNames.filterAnyMatch = 'Любое совпадение';
-						labelsNames.filterStrictMatch = 'Строгое совпадение';
-						labelsNames.filterAnyLetterCase = 'Любой регистр';
-						labelsNames.filterInAnyPlace = 'В любом месте';
+						labelsNames.spoilerCheckbox = `Спойлер`;
+						labelsNames.spoilerTooltip = `Если отмечено галочкой, то ссылки и файлы отправляются как спойлеры`;
+						labelsNames.filterAnyMatch = `Любое совпадение`;
+						labelsNames.filterStrictMatch = `Строгое совпадение`;
+						labelsNames.filterAnyLetterCase = `Любой регистр`;
+						labelsNames.filterInAnyPlace = `В любом месте`;
 						labelsNames.configMenu = `Меню Конфигурации`;
 						labelsNames.width = `Ширина`;
 						labelsNames.height = `Высота`;
@@ -863,6 +892,12 @@ module.exports = (() =>
 					buttonOpenFolder.addEventListener('click', funcs_.openFolder);
 					buttonsPanel.append(buttonOpenFolder);
 					emojisPanel.insertBefore(buttonsPanel, emojisPanel.firstChild); // Adds button to panel
+					// Adds checkbox for spoiler
+					let SpoilerCheckbox = document.createElement('div');
+					SpoilerCheckbox.setAttribute('id', elementNames.spoilerCheckbox);
+					SpoilerCheckbox.setAttribute('title', labelsNames.spoilerTooltip);
+					SpoilerCheckbox.innerHTML = `<input type="checkbox"></input><p>${labelsNames.spoilerCheckbox}</p>`;
+					buttonsPanel.append(SpoilerCheckbox);
 					// Adds search bar
 					let SearchBarPanel = document.createElement('div'); // Panel for Search bar
 					SearchBarPanel.setAttribute('class', elementNames.searchBar);
@@ -1058,6 +1093,7 @@ module.exports = (() =>
 				let _bufferFile = null;
 				let isWebFile = _link.indexOf(';base64,') != -1 ? false : true;
 				let isLocalFile = !isWebFile;
+				let asSpoiler = document.querySelector(`#${elementNames.spoilerCheckbox} input`).checked;
 				let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id; or if from other library: BDFDB.ChannelUtils.getSelected().id
 				let ChatBox = document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') ? document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') : document.querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]')
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
@@ -1078,6 +1114,7 @@ module.exports = (() =>
 				function sendLocalFile(_bufferFile)
 				{
 					_bufferFile = _bufferFile ? _bufferFile : funcs_.readLocalFile(_path, "base64", true);
+					if(asSpoiler) { _name = "SPOILER_"+_name; }
 					let _fileNew = new File([_bufferFile], _name);
 
 					// test func, add option for this later
@@ -1167,7 +1204,8 @@ module.exports = (() =>
 				lastSent = { file: null, link: _link}; // For Last Sent option
 				if(Configuration.SetLinkParameters.Value.length) { _link = (_link+Configuration.SetLinkParameters.Value); } // Adds user additional parameters
 				if(ChatBoxText) { messageModule(channelID, ChatBoxText); }
-				return messageModule(channelID, _link); // Sending web picture
+				// Sending link of picture
+				return messageModule(channelID, _link, {asSpoiler: asSpoiler});
 			}
 			funcs_.RepeatLastSentFunc = (event) =>
 			{

@@ -1,3 +1,6 @@
+# 0.5.0
+The checkbox for a spoiler has been added to the picture panel. If it is checked, then links and files will be sent as spoilers.
+
 # 0.4.9
 New Discord update broke the "upload" module, so I replaced it with another.
 
