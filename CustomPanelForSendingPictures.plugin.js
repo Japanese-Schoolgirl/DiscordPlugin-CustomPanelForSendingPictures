@@ -58,10 +58,8 @@ module.exports = (() =>
 	// Not longer used & Stopped working:
 	//const util_ = _getModule("util");
 	//const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === "object").ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
-	const messageModule = (channelID, sendText, options = {}) =>
-	{ // Making spoiler from text using stupid way
-		if(options.asSpoiler) { sendText = "||"+sendText+"||"; }
-
+	const messageModule = (channelID, sendText, reply = null) =>
+	{
 		try
 		{ // Replace for broken DiscordAPI.currentChannel.sendMessage
 			let SEND = PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === "function")._sendMessage;
@@ -1114,7 +1112,10 @@ module.exports = (() =>
 				function sendLocalFile(_bufferFile)
 				{
 					_bufferFile = _bufferFile ? _bufferFile : funcs_.readLocalFile(_path, "base64", true);
-					if(asSpoiler) { _name = "SPOILER_"+_name; }
+					if(asSpoiler)
+					{  // Making spoiler from text using stupid way
+						_name = "SPOILER_"+_name;
+					}
 					let _fileNew = new File([_bufferFile], _name);
 
 					// test func, add option for this later
@@ -1194,6 +1195,10 @@ module.exports = (() =>
 				{ // Sending local picture
 					sendLocalFile(_bufferFile);
 					return
+				}
+				if(asSpoiler)
+				{  // Making spoiler from text using stupid way
+					_link = "||"+_link+"||";
 				}
 				/* // DEPRECATED (c)0.0.1 version //
 				_link = (escape(ChatBoxText) == "%uFEFF%0A") ? _link : `\n${_link}`; // "%uFEFF%0A" is empty chat value for Discord
