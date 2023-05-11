@@ -1,3 +1,6 @@
+# 0.5.2
+Updated the limit setting of sent file size from 8 MB to 25 MB. Note that resizing (option in the plugin's settings) large GIFs may cause freezes and very long uploading.
+
 # 0.5.1
 This update should fix some random crashes due to loading of pictures preview. Hope that it will not cause new bugs.
 
