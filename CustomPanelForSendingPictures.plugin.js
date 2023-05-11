@@ -557,7 +557,6 @@ module.exports = (() =>
 				return Buffer.from(fs_.readFileSync(filePath, { encoding: format }), format);
 			}
 			// Currently not working: "fs_.promises" & "util_.promisify()"
-			// This function planned as Temporary fix and should be removed when new Discord update will be fixed
 			funcs_.readLocalFileAsync = (filePath, format) =>
 			{
 				return new Promise((resolve, reject) =>
