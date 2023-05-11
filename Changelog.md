@@ -1,3 +1,6 @@
+# 0.5.1
+This update should fix some random crashes due to loading of pictures preview. Hope that it will not cause new bugs.
+
 # 0.5.0
 The checkbox for a spoiler has been added to the picture panel. If it is checked, then links and files will be sent as spoilers.
 

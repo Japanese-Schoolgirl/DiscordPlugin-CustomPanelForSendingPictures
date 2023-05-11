@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.5.0
+ * @version 0.5.1
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.5.0",
+			version: "0.5.1",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Added the feature to send a picture as a spoiler`,
+				title: `Optimized loading of pictures preview`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`The checkbox for a spoiler has been added to the picture panel. If it is checked, then links and files will be sent as spoilers.`]
+				items: [`This update should fix some random crashes due to loading of pictures preview. Hope that it will not cause new bugs.`]
 			}
 		]
 	};
@@ -211,7 +211,7 @@ module.exports = (() =>
 .CPFSP_li[waitload] {
 	box-shadow: 2px 3px 4px var(--sectionText) inset; /* in case if animation not starts */
 	border-radius: 50%;
-	animation: spin360 1s linear infinite, loadingCircle 2s alternate infinite;
+	animation: spin360 1s linear infinite, loadingCircle 2s alternate infinite; /* Causes lags */
 }
 .CPFSP_IMG {
 	min-width: ${imgPreviewSize.W};
@@ -556,17 +556,24 @@ module.exports = (() =>
 				if(!sendFile) { return fs_.readFileSync(filePath, { encoding: format }); }
 				return Buffer.from(fs_.readFileSync(filePath, { encoding: format }), format);
 			}
-			// Currently not working: "fs_.promises" & "util_.promisify()" & "fs_.readFile"
+			// Currently not working: "fs_.promises" & "util_.promisify()"
 			// This function planned as Temporary fix and should be removed when new Discord update will be fixed
-			funcs_.readLocalFileAsync = async (filePath, format) =>
+			funcs_.readLocalFileAsync = (filePath, format) =>
 			{
 				return new Promise((resolve, reject) =>
 				{
-					try
+					fs_.readFile(filePath, format, (err, data) =>
 					{
-						let data = funcs_.readLocalFile(filePath, format);
-						resolve(data);
-					} catch(err) { reject(err); }
+						if(err) { reject(err); }
+						else { resolve(data); }
+					})
+				});
+			}
+			funcs_.writeFile = (filePath, content) =>
+			{ // Async alternative for fs_.writeFileSync
+				fs_.writeFile(filePath, content, (err) =>
+				{
+					if(err) { throw err };
 				});
 			}
 			funcs_.scaleTo = (oldWidth, oldHeight, knownType, knownValue) =>
@@ -609,7 +616,7 @@ module.exports = (() =>
 			funcs_.saveSettings = (data, once = null) =>
 			{
 				if(Object.keys(data).length < 2) { return funcs_.loadDefaultSettings(); } // This happen when folder is empty
-				try { fs_.writeFileSync(settingsPath, JSON.stringify(data)); }
+				try { funcs_.writeFile(settingsPath, JSON.stringify(data)); }
 				catch(err) { console.warn('There has been an error saving your setting data:', err.message); }
 				if(once) { return picsGlobalSettings; } // to avoid endless engine
 				return funcs_.loadSettings();
@@ -677,7 +684,7 @@ module.exports = (() =>
 				{
 					exportData[key] = Configuration[key].Value;
 				});
-				try { fs_.writeFileSync(configPath, JSON.stringify(exportData)); }
+				try { funcs_.writeFile(configPath, JSON.stringify(exportData)); }
 				catch(err) { console.warn('There has been an error saving your config data:', err.message); }
 				funcs_.loadConfiguration();
 			}
@@ -834,8 +841,8 @@ module.exports = (() =>
 						let from = buttonCPFSP.getAttribute('from');
 						let fix = (from == elementNames.emojiTabID) ? elementNames.gifTabID : elementNames.emojiTabID;
 						// Select other button and after this select previous button again
+						document.getElementById(fix).addEventListener("click", document.getElementById(from).click(), { once: true } ); // Maybe not better idea
 						document.getElementById(fix).click();
-						document.getElementById(from).click();
 						buttonCPFSP.classList.remove(elementNames.CPFSP_activeButton);
 						// DEBUG // console.log('Fixed', event);
 					}
@@ -931,6 +938,38 @@ module.exports = (() =>
 						textEl.innerText = currentSection;
 						folderSection.append(textEl);
 					}
+					async function setImagesSRC(newPicture, elementCol, file)
+					{
+						try
+						{
+							if(file.link.includes('file:///'))
+							{
+								async function loadImagesSRC(newPicture)
+								{ // Convert local file to base64 for preview
+									let filePath = newPicture.getAttribute('path').replace('file:///', ''); // both "path" attribute and "file.link" variable contains "file:///path..."
+									funcs_.readLocalFileAsync(filePath, 'base64') // Async creating base64 data
+									.then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(filePath).slice(1)};base64,${data}`); })
+									.catch(err => { console.warn(err); newPicture.setAttribute('src', NotFoundIMG); });
+								}
+
+								let emojisPanel = document.querySelector(searchNames.emojisPanel);
+								var GodForgiveMeObserver = new IntersectionObserver((entries) =>
+								{ // I was very tired and couldn't think of a better solution
+									entries.forEach((entry) =>
+									{
+										// If user not see this element on screen
+										if(!entry.isIntersecting) { return elementCol.removeAttribute('waitload'); }
+
+										elementCol.setAttribute('waitload', '');
+										loadImagesSRC(newPicture);
+										GodForgiveMeObserver.disconnect();
+									});
+								}, { root: emojisPanel });
+								GodForgiveMeObserver.observe(newPicture);
+							}
+							else { newPicture.setAttribute('src', file.link); }
+						} catch(err) { newPicture.setAttribute('src', NotFoundIMG); console.error(err); }
+					}
 					async function appendElements(folder, indexFolder, file, indexFile)
 					{
 						if(indexFolder === 0 && indexFile === 0) { setCurrentSection(folder); } // Set first section for first element
@@ -953,23 +992,17 @@ module.exports = (() =>
 						elementCol.setAttribute('role', 'gridcell');
 						elementCol.setAttribute('aria-rowindex', rowIndex);
 						elementCol.setAttribute('aria-colindex', colIndex);
-						elementCol.setAttribute('waitload', ''); // for CSS loading animation, after img loads it will delete this attribute
+
 						let newPicture = document.createElement('img');
 						newPicture.setAttribute('width', imgPreviewSize.W); // for lazy loading
 						newPicture.setAttribute('height', imgPreviewSize.H); // for lazy loading
 						newPicture.setAttribute('loading', 'lazy'); // asynchronously img loading
 						newPicture.setAttribute('onerror', `this.removeAttribute('onerror'); this.setAttribute('src', '${NotFoundIMG}');`);
 						newPicture.setAttribute('path', file.link);
-						try
-						{
-							if(file.link.indexOf('file:///') != -1)
-							{ // Convert local file to base64 for preview
-								funcs_.readLocalFileAsync(file.link.replace('file:///', ''), 'base64') // Async creating base64 data
-								.then(data => { newPicture.setAttribute('src', `data:image/${path_.extname(file.link).slice(1)};base64,${data}`); })
-								.catch(err => { newPicture.setAttribute('src', NotFoundIMG); });
-							}
-							else { newPicture.setAttribute('src', file.link); }
-						} catch(err) { newPicture.setAttribute('src', NotFoundIMG); console.error(err); }
+
+						elementCol.setAttribute('waitload', ''); // for CSS loading animation, after img loads it will delete this attribute
+						setImagesSRC(newPicture, elementCol, file);
+
 						newPicture.setAttribute('aria-label', file.name);
 						newPicture.setAttribute('alt', file.name);
 						newPicture.setAttribute('title', file.name); // For displaying pictures name
@@ -1113,7 +1146,7 @@ module.exports = (() =>
 				{
 					_bufferFile = _bufferFile ? _bufferFile : funcs_.readLocalFile(_path, "base64", true);
 					if(asSpoiler)
-					{  // Making spoiler from text using stupid way
+					{ // Making spoiler from text using stupid way
 						_name = "SPOILER_"+_name;
 					}
 					let _fileNew = new File([_bufferFile], _name);
