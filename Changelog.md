@@ -1,3 +1,6 @@
+# 0.5.3
+The plugin's upload module has been updated in accordance with the Discord update.
+
 # 0.5.2
 Updated the limit setting of sent file size from 8 MB to 25 MB. Note that resizing (option in the plugin's settings) large GIFs may cause freezes and very long uploading.
 

@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.5.2",
+			version: "0.5.3",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Updated the limit setting of sent file size`,
+				title: `Fixed the upload module`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Updated the limit setting of sent file size from 8 MB to 25 MB. Note that resizing (option in the plugin's settings) large GIFs may cause freezes and very long uploading.`]
+				items: [`The plugin's upload module has been updated in accordance with the Discord update.`]
 			}
 		]
 	};
@@ -74,7 +74,7 @@ module.exports = (() =>
 		{  // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getByProps("upload").upload and etc.
 			//Previous method: PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
 			let UPLOAD = PluginApi_.findModule(m => m.instantBatchUpload && typeof m.instantBatchUpload === "function").instantBatchUpload;
-			UPLOAD(channelID, [file]);
+			UPLOAD({ channelId: channelID, files: [file] });
 		} catch(err) { console.warn(err); }
 	};
 
