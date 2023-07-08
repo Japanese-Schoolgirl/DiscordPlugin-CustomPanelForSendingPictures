@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.5.3
+ * @version 0.5.4
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.5.3",
+			version: "0.5.4",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed the upload module`,
+				title: `Fixed the upload module (again)`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`The plugin's upload module has been updated in accordance with the Discord update.`]
+				items: [`Added support for an older version of Discord's upload module, because it is not yet updated for everyone.`]
 			}
 		]
 	};
@@ -71,10 +71,13 @@ module.exports = (() =>
 		if(sendText) { messageModule(channelID, sendText); }
 
 		try
-		{  // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getByProps("upload").upload and etc.
+		{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getByProps("upload").upload and etc.
 			//Previous method: PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
 			let UPLOAD = PluginApi_.findModule(m => m.instantBatchUpload && typeof m.instantBatchUpload === "function").instantBatchUpload;
-			UPLOAD({ channelId: channelID, files: [file] });
+			// Check if user have old version of Discord's upload module
+			let isUpdatedModule = !UPLOAD.toString().match(/^function\(e,t,n\)/);
+			if(isUpdatedModule) { UPLOAD({ channelId: channelID, files: [file] }); }
+			else { UPLOAD(channelID, [file]); }
 		} catch(err) { console.warn(err); }
 	};
 

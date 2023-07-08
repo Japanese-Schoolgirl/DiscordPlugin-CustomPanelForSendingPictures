@@ -1,3 +1,6 @@
+# 0.5.4
+Added support for an older version of Discord's upload module, because it is not yet updated for everyone.
+
 # 0.5.3
 The plugin's upload module has been updated in accordance with the Discord update.
 
