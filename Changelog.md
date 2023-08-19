@@ -1,3 +1,6 @@
+# 0.5.5
+Unfortunately I haven't been able to combine sending a picture with active reply mode, so to avoid new bug the reply mode will be canceled before sending the picture.
+
 # 0.5.4
 Added support for an older version of Discord's upload module, because it is not yet updated for everyone.
 

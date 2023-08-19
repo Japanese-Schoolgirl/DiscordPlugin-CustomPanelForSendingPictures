@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.5.4
+ * @version 0.5.5
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.5.4",
+			version: "0.5.5",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed the upload module (again)`,
+				title: `Fixed an issue with sending a picture when reply mode is active`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Added support for an older version of Discord's upload module, because it is not yet updated for everyone.`]
+				items: [`Unfortunately I haven't been able to combine sending a picture with active reply mode, so to avoid new bug the reply mode will be canceled before sending the picture.`]
 			}
 		]
 	};
@@ -725,6 +725,11 @@ module.exports = (() =>
 					return picsGlobalSettings;
 				}
 			}
+			funcs_.closeCurrentReply = () =>
+			{ // Exits the reply mode by it's close button
+				if(!document.querySelector(DiscordSelectors.Textarea.attachedBars)) { return }
+				try { document.querySelector(DiscordSelectors.Textarea.attachedBars).querySelector('div[class*="replyBar"] div[class*="closeButton"]').click(); } catch(err) {};
+			}
 			funcs_.findPictures = (scanPath, newAllPicsSettings = {}, folderName = null, foldersForScan = [], emtpyFoldersList = []) =>
 			{ // Scanning for pictures in select folder, "foldersForScan" store folders from plugin directory
 				let newPicsSettings = [];
@@ -1155,6 +1160,7 @@ module.exports = (() =>
 
 					// test func, add option for this later
 					if(Configuration.SizeLimitForFile.Value && (_fileNew.size > (25*1024*1024))) { return Modals.showAlertModal(labelsNames.forYou, labelsNames.filesizeLimit); };
+					funcs_.closeCurrentReply();
 					uploadModule(channelID, _file = _fileNew, ChatBoxText); // add ", {content:'new with file'}" for adding text
 
 					_fileNew = null;
@@ -1257,6 +1263,7 @@ module.exports = (() =>
 				let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id;
 				if(lastSent.file)
 				{
+					funcs_.closeCurrentReply();
 					uploadModule(channelID, lastSent.file);
 				}
 				else if(lastSent.link)
