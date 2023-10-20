@@ -1,3 +1,6 @@
+# 0.5.8
+You can congratulate me, after a year I found a function that allows you to open folders... No idea if it works on Linux or Mac, but at least it's some success! <(─‿‿─)>
+
 # 0.5.7
 In the previous update "Buffer" module was replaced with another function with "atob" method. Unfortunately, in the case of some gifs this method caused a crash. There are no such problems when using a third-party library with decode function. For now, I will not overload the plugin by adding new libraries. It will be integrated when the "Buffer" module stops working completely.
 

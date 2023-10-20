@@ -9,6 +9,8 @@ Files of ".src" and ".sent" types are JSON files and contain a link to the web f
 After the scan the panel will show previews of all your files in the folder. After clicking a file in this panel you'll immediately send a picture file (or a link of picture in case of ".src" and ".sent") to currently opened Discord chat.<br />
 Files of ".sent" type will replace files with identical name and extension. ".sent" files will be automatically generated after sending local files and will be used if you have enabled corresponding setting.<br />
 Starting from version 0.0.7 this **plugin will search for and scan subfolders placed in the main folder. Content of these folders will be displayed as sections/groups in the panel itself**. Subfolders inside subfolders will not be scanned. It is also *not recommended* to store 300+ images as it will affect speed of panel loading (file size doesn't matter).<br />
+### Preview of the latest update:
+![Preview of the latest update](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Overall.png)
 ### Work Example:
 ![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 Changes not displayed in the gif above: improved buttons design, added 1 new button (opens Main folder) in the pictures panel, added asynchronous pictures loading to the panel, added displaying error handler when loading local or web files failed, added an option for automatic proportional scaling of pictures from local or web files to set size.<br />

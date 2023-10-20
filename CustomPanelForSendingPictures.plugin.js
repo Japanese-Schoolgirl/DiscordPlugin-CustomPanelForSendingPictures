@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.5.7
+ * @version 0.5.8
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.5.7",
+			version: "0.5.8",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `The deprecated module has been returned. It will be replaced if it breaks`,
+				title: `Now you can open the plugin folder with your pictures again! (probably)`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`In the previous update "Buffer" module was replaced with another function with "atob" method. Unfortunately, in the case of some gifs this method caused a crash. There are no such problems when using a third-party library with decode function. For now, I will not overload the plugin by adding new libraries. It will be integrated when the "Buffer" module stops working completely.`]
+				items: [`You can congratulate me, after a year I found a function that allows you to open folders... No idea if it works on Linux or Mac, but at least it's some success! <(─‿‿─)>`]
 			}
 		]
 	};
@@ -57,7 +57,7 @@ module.exports = (() =>
 	const electron_ = getModule_("electron");
 	const fs_ = getModule_("fs");
 	const path_ = getModule_("path");
-	const child_process_ = getModule_("child_process"); // This module not working now, thanks to Discord for amazing update!
+	const open_folder_ = electron_ ? electron_.shell.openPath : false;
 
 	const messageModule = (channelID, sendText, reply = null) =>
 	{
@@ -526,10 +526,13 @@ module.exports = (() =>
 			{
 				function openMethod()
 				{
-					if(child_process_)
+					if(open_folder_)
 					{
-						let openFolderMethod = isWindows ? `start ""` : `xdg-open`;
-						child_process_.exec(`${openFolderMethod} "${Configuration.mainFolderPath.Value}"`);
+						// For Linux child_process_.exec(`xdg-open "${Configuration.mainFolderPath.Value}"`);
+						// let openFolderMethod = isWindows ? `start ""` : `xdg-open`;
+						// child_process_.exec(`${openFolderMethod} "${Configuration.mainFolderPath.Value}"`);
+						// New method (via "electron" module):
+						open_folder_(Configuration.mainFolderPath.Value);
 					}
 					else { Modals.showAlertModal(labelsNames.btnFolderPath + ":", Configuration.mainFolderPath.Value); }
 				}
@@ -537,7 +540,6 @@ module.exports = (() =>
 				{
 					case false: try { fs_.mkdirSync(Configuration.mainFolderPath.Value); } catch (err) { console.warn(err.code); break; } // Try create folder
 					default: openMethod(); // Open Main folder in explorer
-					// For Linux child_process_.exec(`xdg-open "${Configuration.mainFolderPath.Value}"`);
 				}
 			}
 			funcs_.checkLibraries = async () =>
@@ -911,7 +913,7 @@ module.exports = (() =>
 					buttonsPanel.append(buttonRefresh);
 					let buttonOpenFolder = document.createElement('div'); // Open folder button
 					buttonOpenFolder.setAttribute('class', elementNames.buttonDefault);
-					buttonOpenFolder.innerText = child_process_ ? labelsNames.btnOpenFolder : labelsNames.btnFolderPath;
+					buttonOpenFolder.innerText = open_folder_ ? labelsNames.btnOpenFolder : labelsNames.btnFolderPath;
 					buttonOpenFolder.addEventListener('click', funcs_.openFolder);
 					buttonsPanel.append(buttonOpenFolder);
 					emojisPanel.insertBefore(buttonsPanel, emojisPanel.firstChild); // Adds button to panel
