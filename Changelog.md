@@ -1,3 +1,6 @@
+# 0.5.7
+In the previous update "Buffer" module was replaced with another function with "atob" method. Unfortunately, in the case of some gifs this method caused a crash. There are no such problems when using a third-party library with decode function. For now, I will not overload the plugin by adding new libraries. It will be integrated when the "Buffer" module stops working completely.
+
 # 0.5.6
 The deprecated "Buffer" module has been replaced with alternative function.
 

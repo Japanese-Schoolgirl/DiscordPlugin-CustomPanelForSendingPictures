@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.5.6
+ * @version 0.5.7
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.5.6",
+			version: "0.5.7",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Deprecated module has been replaced`,
+				title: `The deprecated module has been returned. It will be replaced if it breaks`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`The deprecated "Buffer" module has been replaced with alternative function.`]
+				items: [`In the previous update "Buffer" module was replaced with another function with "atob" method. Unfortunately, in the case of some gifs this method caused a crash. There are no such problems when using a third-party library with decode function. For now, I will not overload the plugin by adding new libraries. It will be integrated when the "Buffer" module stops working completely.`]
 			}
 		]
 	};
@@ -48,10 +48,10 @@ module.exports = (() =>
 		catch(err) { console.warn(err); return false; };
 	};
 	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert("PLUGIN API NOT FOUND"); // Window scope is needed here
-	const BufferFromBase64_ = (content) =>
-	{ // Thanks to (https://gist.github.com/borismus/1032746?permalink_comment_id=3557109#gistcomment-3557109)
-		return Uint8Array.from(window.atob(content), (v) => v.charCodeAt(0));
-	}
+	const BufferFromFormat_ = getModule_("buffer").from; /*(content, format) =>
+	{// This library will be used when the "Buffer" module breaks: https://unpkg.com/base64-js@1.5.1/base64js.min.js
+		if(format == "base64") { return base64js.toByteArray(content); } else { return Uint8Array.from(content, (v) => v.charCodeAt(0)); }
+	}*/
 /*========================| Modules |========================*/
 	const request_ = getModule_("request");
 	const electron_ = getModule_("electron");
@@ -83,7 +83,7 @@ module.exports = (() =>
 	};
 /*========================| DEPRECATED |========================*/
 	/*
-	# Buffer_ replaced with BufferFromBase64_:
+	# Buffer_ replaced with BufferFromFormat_:
 	const Buffer_ = typeof Buffer !== "undefined" ? Buffer : getModule_("buffer").Buffer;
 	# Modules that have stopped working:
 	const util_ = getModule_("util");
@@ -568,7 +568,7 @@ module.exports = (() =>
 
 				if(!format) { return fs_.readFileSync(filePath); }
 				if(!sendFile) { return fs_.readFileSync(filePath, { encoding: format }); }
-				return BufferFromBase64_(fs_.readFileSync(filePath, { encoding: format }), format);
+				return BufferFromFormat_(fs_.readFileSync(filePath, { encoding: format }), format);
 			}
 			// Currently not working: "fs_.promises" & "util_.promisify()"
 			funcs_.readLocalFileAsync = (filePath, format) =>
@@ -1208,7 +1208,7 @@ module.exports = (() =>
 						{ // Sending local picture with scaled size
 							let _dataType = _link.split(';base64,')[0].split('data:')[1];
 							let _fileType = _dataType.split('/')[1];
-							let _FileU8Array = BufferFromBase64_(_link.split(';base64,')[1], 'base64');
+							let _FileU8Array = BufferFromFormat_(_link.split(';base64,')[1], 'base64');
 							let isAnimated; // Detect if png or webp can containt animation. Gif anyway cannot be resized with standard canvas method properly
 							if(_fileType == 'png') { isAnimated = (_FileU8Array.indexOf("acTL") != -1 && _FileU8Array.indexOf("IDAT") != -1) ? (_FileU8Array.indexOf("acTL") < _FileU8Array.indexOf("IDAT")) : null; }
 							if(_fileType == 'webp') { isAnimated = (_FileU8Array.indexOf("VP8X") != -1 && _FileU8Array.indexOf("ANMF") != -1) ? (_FileU8Array.indexOf("VP8X") < _FileU8Array.indexOf("ANMF")) : null; }
