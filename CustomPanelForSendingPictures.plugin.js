@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.5.5
+ * @version 0.5.6
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.5.5",
+			version: "0.5.6",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,29 +35,30 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed an issue with sending a picture when reply mode is active`,
+				title: `Deprecated module has been replaced`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`Unfortunately I haven't been able to combine sending a picture with active reply mode, so to avoid new bug the reply mode will be canceled before sending the picture.`]
+				items: [`The deprecated "Buffer" module has been replaced with alternative function.`]
 			}
 		]
 	};
-/*========================| Modules |========================*/
-	const _getModule = (module) => 
+/*========================| Essential functions |========================*/
+	const getModule_ = (module) => 
 	{ // || window.require;
 		try { return require(module); }
 		catch(err) { console.warn(err); return false; };
 	};
-	const request_ = _getModule("request");
-	const electron_ = _getModule("electron");
-	//const https_ = _getModule("https");
-	const fs_ = _getModule("fs");
-	const path_ = _getModule("path");
-	const child_process_ = _getModule("child_process"); // This module not working now, thanks to Discord for amazing update!
-	const Buffer_ = typeof Buffer !== "undefined" ? Buffer : _getModule("buffer").Buffer;
 	const PluginApi_ = window.EDApi ? window.EDApi : window.BdApi ? window.BdApi : window.alert("PLUGIN API NOT FOUND"); // Window scope is needed here
-	// Not longer used & Stopped working:
-	//const util_ = _getModule("util");
-	//const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === "object").ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
+	const BufferFromBase64_ = (content) =>
+	{ // Thanks to (https://gist.github.com/borismus/1032746?permalink_comment_id=3557109#gistcomment-3557109)
+		return Uint8Array.from(window.atob(content), (v) => v.charCodeAt(0));
+	}
+/*========================| Modules |========================*/
+	const request_ = getModule_("request");
+	const electron_ = getModule_("electron");
+	const fs_ = getModule_("fs");
+	const path_ = getModule_("path");
+	const child_process_ = getModule_("child_process"); // This module not working now, thanks to Discord for amazing update!
+
 	const messageModule = (channelID, sendText, reply = null) =>
 	{
 		try
@@ -80,6 +81,16 @@ module.exports = (() =>
 			else { UPLOAD(channelID, [file]); }
 		} catch(err) { console.warn(err); }
 	};
+/*========================| DEPRECATED |========================*/
+	/*
+	# Buffer_ replaced with BufferFromBase64_:
+	const Buffer_ = typeof Buffer !== "undefined" ? Buffer : getModule_("buffer").Buffer;
+	# Modules that have stopped working:
+	const util_ = getModule_("util");
+	# Might be useful later:
+	const https_ = getModule_("https");
+	const ComponentDispatchModule = PluginApi_.findModule(m => m.ComponentDispatch && typeof m.ComponentDispatch === "object").ComponentDispatch; // For insert text with .dispatchToLastSubscribe and etc.
+	*/
 
 /*========================| Core |========================*/
 	//-----------| Check at ZeresPlugin Library |-----------//
@@ -557,7 +568,7 @@ module.exports = (() =>
 
 				if(!format) { return fs_.readFileSync(filePath); }
 				if(!sendFile) { return fs_.readFileSync(filePath, { encoding: format }); }
-				return Buffer.from(fs_.readFileSync(filePath, { encoding: format }), format);
+				return BufferFromBase64_(fs_.readFileSync(filePath, { encoding: format }), format);
 			}
 			// Currently not working: "fs_.promises" & "util_.promisify()"
 			funcs_.readLocalFileAsync = (filePath, format) =>
@@ -1197,7 +1208,7 @@ module.exports = (() =>
 						{ // Sending local picture with scaled size
 							let _dataType = _link.split(';base64,')[0].split('data:')[1];
 							let _fileType = _dataType.split('/')[1];
-							let _FileU8Array = Buffer_.from(_link.split(';base64,')[1], 'base64');
+							let _FileU8Array = BufferFromBase64_(_link.split(';base64,')[1], 'base64');
 							let isAnimated; // Detect if png or webp can containt animation. Gif anyway cannot be resized with standard canvas method properly
 							if(_fileType == 'png') { isAnimated = (_FileU8Array.indexOf("acTL") != -1 && _FileU8Array.indexOf("IDAT") != -1) ? (_FileU8Array.indexOf("acTL") < _FileU8Array.indexOf("IDAT")) : null; }
 							if(_fileType == 'webp') { isAnimated = (_FileU8Array.indexOf("VP8X") != -1 && _FileU8Array.indexOf("ANMF") != -1) ? (_FileU8Array.indexOf("VP8X") < _FileU8Array.indexOf("ANMF")) : null; }
