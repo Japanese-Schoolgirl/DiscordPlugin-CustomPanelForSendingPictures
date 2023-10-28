@@ -1,3 +1,6 @@
+# Read this:
+Discord released a [massive rework](https://www.reddit.com/r/BetterDiscordOfficial/comments/17gkg0g/betterdiscord_and_themesplugins_broken/) that broke a bunch of things, especially BetterDiscord and its library. I'm currently waiting for BetterDiscord to be fixed up so I can get to work on fixing this plugin.
+
 # Introduction:
 This plugin was written for my own use and for people I'm communicating with. But since plugin can be useful for someone else I'm uploading it here. In case you want to rewrite this plugin (and considering my inexperience, you probably should) also check the licence file.<br />
 
@@ -22,7 +25,7 @@ Also search through pictures was added and it is shown in the gif below:<br />
 
 # Compatibility:
 Plugin should be completely compatible with native and any of user themes, as it uses default Discord colour variables.<br />
-I use [Powercord](https://github.com/powercord-org/powercord) and can only track problems that appears there. Even though, the plugin should function correctly with BetterDiscord, since it was made as a [BetterDiscord](https://github.com/rauenzi/BetterDiscordApp) plugin.<br />
+I use [BetterDiscord](https://github.com/BetterDiscord/BetterDiscord) and can only track problems that appears there.<br />
 Plugin also uses [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) and [gifsicle](http://www.lcdf.org/gifsicle/).<br />
 Performance on operating systems other than Windows was not tested, it is likely that some functionality may not works on a different OS.<br />
 
