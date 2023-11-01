@@ -1,3 +1,6 @@
+# 0.5.9
+Discord replaced "-" in names of classes with "__", which prevented plugin from finding essential elements using selectors. After a quick thought, I just got rid of those spellings, so everything should work now.
+
 # 0.5.8
 You can congratulate me, after a year I found a function that allows you to open folders... No idea if it works on Linux or Mac, but at least it's some success! <(─‿‿─)>
 

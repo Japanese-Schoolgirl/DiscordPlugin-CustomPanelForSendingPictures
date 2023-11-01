@@ -1,6 +1,3 @@
-# Read this:
-Discord released a [massive rework](https://www.reddit.com/r/BetterDiscordOfficial/comments/17gkg0g/betterdiscord_and_themesplugins_broken/) that broke a bunch of things, especially BetterDiscord and its library. I'm currently waiting for BetterDiscord to be fixed up so I can get to work on fixing this plugin.
-
 # Introduction:
 This plugin was written for my own use and for people I'm communicating with. But since plugin can be useful for someone else I'm uploading it here. In case you want to rewrite this plugin (and considering my inexperience, you probably should) also check the licence file.<br />
 

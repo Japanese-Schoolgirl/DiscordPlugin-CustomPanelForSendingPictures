@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.5.8
+ * @version 0.5.9
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.5.8",
+			version: "0.5.9",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Now you can open the plugin folder with your pictures again! (probably)`,
+				title: `Fixed a critical bug after Discord's massive rework`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`You can congratulate me, after a year I found a function that allows you to open folders... No idea if it works on Linux or Mac, but at least it's some success! <(─‿‿─)>`]
+				items: [`Discord replaced "-" in names of classes with "__", which prevented plugin from finding essential elements using selectors. After a quick thought, I just got rid of those spellings, so everything should work now.`]
 			}
 		]
 	};
@@ -354,7 +354,7 @@ module.exports = (() =>
 			var searchNames = {
 				emojisGUI:				'div[role="tablist"]', // Panel with menu and buttons (aria label is Expression Picker)
 				emojisPanel:			'div[role="tabpanel"]', // Or emojisGUI.lastElementChild (cause bug with scale subpanel);
-				emojisClassGUI:			'div[class*="contentWrapper-"]' // Whole panel
+				emojisClassGUI:			'div[class*="contentWrapper"]' // Whole panel
 			}
 
 			var elementNames = {
@@ -876,7 +876,7 @@ module.exports = (() =>
 						previousButton.addEventListener("click", previousButtonFix, { once: true } );
 						previousButton.classList.value = previousButton.classList.value.replace('ButtonActive', 'Button');
 						// To not choose the already selected
-						emojisMenu.querySelectorAll('button[class*="navItem-"]').forEach((el) =>
+						emojisMenu.querySelectorAll('button[class*="navItem"]').forEach((el) =>
 						{ // For each Button with label
 							if(el.id == previousButtonID || el.id == elementNames.CPFSP_buttonGoID) { return }
 							el.removeEventListener("click", additionalButtonFix, { once: true } ); // Just in cases of incidental duplicate
@@ -1146,7 +1146,7 @@ module.exports = (() =>
 				let isLocalFile = !isWebFile;
 				let asSpoiler = document.querySelector(`#${elementNames.spoilerCheckbox} input`).checked;
 				let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id; or if from other library: BDFDB.ChannelUtils.getSelected().id
-				let ChatBox = document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') ? document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') : document.querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]')
+				let ChatBox = document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') ? document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') : document.querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea"]').querySelector('div[role*="textbox"]')
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
 				let ChatBoxText = ChatBox.innerText ? ChatBox.innerText : ChatBox.value ? ChatBox.value : '';
 
