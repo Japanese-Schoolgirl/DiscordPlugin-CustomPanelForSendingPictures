@@ -1146,7 +1146,7 @@ module.exports = (() =>
 				let isLocalFile = !isWebFile;
 				let asSpoiler = document.querySelector(`#${elementNames.spoilerCheckbox} input`).checked;
 				let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id; or if from other library: BDFDB.ChannelUtils.getSelected().id
-				let ChatBox = document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') ? document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') : document.querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea"]').querySelector('div[role*="textbox"]')
+				let ChatBox = document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') ? document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') : document.querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]')
 				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
 				let ChatBoxText = ChatBox.innerText ? ChatBox.innerText : ChatBox.value ? ChatBox.value : '';
 
