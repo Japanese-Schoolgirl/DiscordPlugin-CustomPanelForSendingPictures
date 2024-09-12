@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.6.0
+ * @version 0.6.1
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.6.0",
+			version: "0.6.1",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Adjusting one of the settings`,
-				type: "improved", // without type || fixed || improved || progress
-				items: [`This update changes the 25 MB limit to 10 MB for "Prevent sending files larger than" option in accordance with the new Discord's policy.`]
+				title: `Fixed display of alerts`,
+				type: "fixed", // without type || fixed || improved || progress
+				items: [`"showAlertModal" no longer works, the function has been replaced by a more cursed counterpart.`]
 			}
 		]
 	};
@@ -424,6 +424,7 @@ module.exports = (() =>
 			{
 				if(!(Patcher && Modals && DiscordModules && DiscordSelectors && Settings && PluginUtilities)) { console.warn(labelsNames.Constants_Missing); }
 			}
+			funcs_.showAlert = PluginApi_.alert; // Old function is Modals.showAlertModal;
 			funcs_.setStyles = (command = null) =>
 			{
 				if(document.getElementById(elementNames.id) && command == 'delete') { return document.getElementById(elementNames.id).remove(); }
@@ -534,7 +535,7 @@ module.exports = (() =>
 						// New method (via "electron" module):
 						open_folder_(Configuration.mainFolderPath.Value);
 					}
-					else { Modals.showAlertModal(labelsNames.btnFolderPath + ":", Configuration.mainFolderPath.Value); }
+					else { funcs_.showAlert(labelsNames.btnFolderPath + ":", Configuration.mainFolderPath.Value); }
 				}
 				switch(fs_.existsSync(Configuration.mainFolderPath.Value))
 				{
@@ -1094,7 +1095,7 @@ module.exports = (() =>
 				{ // Against freezes
 					text = 9999;
 					setTimeout(()=>{ el.querySelector('input').value = 9999}, 200);
-					Modals.showAlertModal(labelsNames.Yamete, labelsNames.tooBig);
+					funcs_.showAlert(labelsNames.Yamete, labelsNames.tooBig);
 				}
 				if(!Number.isInteger(text) || text <= 0)
 				{
@@ -1158,7 +1159,7 @@ module.exports = (() =>
 					else if(ChatBoxText.length > 2001) // 2001 is limit for text length
 					{ // +-return for interrupt action; or BdApi.showConfirmationModal
 						ChatBoxText = null;
-						Modals.showAlertModal(labelsNames.forYou, labelsNames.symbolsLimit);
+						funcs_.showAlert(labelsNames.forYou, labelsNames.symbolsLimit);
 					}
 				}
 
@@ -1172,7 +1173,7 @@ module.exports = (() =>
 					let _fileNew = new File([_bufferFile], _name);
 
 					// Prevents sending files larger than 10 MB if the corresponding option is enabled
-					if(Configuration.SizeLimitForFile.Value && (_fileNew.size > (10*1024*1024))) { return Modals.showAlertModal(labelsNames.forYou, labelsNames.filesizeLimit); };
+					if(Configuration.SizeLimitForFile.Value && (_fileNew.size > (10*1024*1024))) { return funcs_.showAlert(labelsNames.forYou, labelsNames.filesizeLimit); };
 					funcs_.closeCurrentReply();
 					uploadModule(channelID, _file = _fileNew, ChatBoxText); // add ", {content:'new with file'}" for adding text
 

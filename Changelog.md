@@ -1,3 +1,6 @@
+# 0.6.1
+"showAlertModal" no longer works, the function has been replaced by a more cursed counterpart.
+
 # 0.6.0
 This update changes the 25 MB limit to 10 MB for "Prevent sending files larger than" option in accordance with the new Discord's policy.
 
