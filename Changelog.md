@@ -1,3 +1,6 @@
+# 0.6.0
+This update changes the 25 MB limit to 10 MB for "Prevent sending files larger than" option in accordance with the new Discord's policy.
+
 # 0.5.9
 Discord replaced "-" in names of classes with "__", which prevented plugin from finding essential elements using selectors. After a quick thought, I just got rid of those spellings, so everything should work now.
 

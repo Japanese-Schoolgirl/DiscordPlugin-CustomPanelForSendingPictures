@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.5.9
+ * @version 0.6.0
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.5.9",
+			version: "0.6.0",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed a critical bug after Discord's massive rework`,
-				type: "fixed", // without type || fixed || improved || progress
-				items: [`Discord replaced "-" in names of classes with "__", which prevented plugin from finding essential elements using selectors. After a quick thought, I just got rid of those spellings, so everything should work now.`]
+				title: `Adjusting one of the settings`,
+				type: "improved", // without type || fixed || improved || progress
+				items: [`This update changes the 25 MB limit to 10 MB for "Prevent sending files larger than" option in accordance with the new Discord's policy.`]
 			}
 		]
 	};
@@ -151,7 +151,7 @@ module.exports = (() =>
 				OnlyForcedUpdate:		{ Value: false, 														Default: false, 					Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
 				sentType2srcType:		{ Value: false, 														Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
 				RepeatLastSent:			{ Value: false, 														Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
-				SizeLimitForFile:		{ Value: true, 															Default: true, 						Title: `Prevent sending files larger than 25 MB`, 		Description: `Prevents a message from being sent if the file size is larger than 25 MB.` },
+				SizeLimitForFile:		{ Value: true, 															Default: true, 						Title: `Prevent sending files larger than 10 MB`, 		Description: `Prevents a message from being sent if the file size is larger than 10 MB.` },
 				AutoClosePanel:			{ Value: false, 														Default: false, 					Title: `Auto close panel`, 								Description: `To autoclose pictures panel after sending any file when pressed without Shift modificator key.` },
 				SendingFileCooldown:	{ Value: 0, 															Default: '0', 						Title: `Sending file cooldown`, 						Description: `To set cooldown in millisecond before you can send another file. Set 0 in this setting to turn this off. This option exists to prevent double/miss clicks so it doesn't apply to hotkey sending.` },
 				ScaleSizeForPictures:	{ Value: { type: 'width', num: '45', subpanel: true, exp: false }, 		Default: '', 						Title: `Set size for scaling (on by default)`, 			Description: `For automatic proportional scaling of pictures from local or web files to set size. Value is set only either for width or height. Clicking while holding Ctrl key will ignore enabling of this option. Remove value in this setting to turn this off.` },
@@ -395,7 +395,7 @@ module.exports = (() =>
 				tooBig: 				`It's too big!`,
 				forYou: 				`For you:`,
 				symbolsLimit: 			`B-baka, your text wasn't sent with image because your text is over 2000 symbols!`,
-				filesizeLimit: 			`B-baka, your message wasn't sent because your file size is larger than 25 MB!`,
+				filesizeLimit: 			`B-baka, your message wasn't sent because your file size is larger than 10 MB!`,
 				Pictures: 				`Pictures`,
 				btnRefresh: 			`Refresh`,
 				btnOpenFolder: 			`Open folder`,
@@ -473,7 +473,7 @@ module.exports = (() =>
 						labelsNames.tooBig = `Это слишком велико!`;
 						labelsNames.forYou = `Для тебя:`;
 						labelsNames.symbolsLimit = `Б-бака, твой текст не был отправлен с файлом, потому что в нём больше 2000 символов!`;
-						labelsNames.filesizeLimit = `Б-бака, твоё сообщение не было отправлено, потому что размер файла больше 25 МБ!`;
+						labelsNames.filesizeLimit = `Б-бака, твоё сообщение не было отправлено, потому что размер файла больше 10 МБ!`;
 						labelsNames.Pictures = `Картинки`;
 						labelsNames.btnRefresh = `Обновить`;
 						labelsNames.btnOpenFolder = `Открыть папку`;
@@ -501,8 +501,8 @@ module.exports = (() =>
 						Configuration.sentType2srcType.Description = `Для использования ${sentType} в качестве ${srcType}.`;
 						Configuration.RepeatLastSent.Title = `Повторение последний отправки`;
 						Configuration.RepeatLastSent.Description = `Включает использование сочетания клавиш Alt+V для повторения отправки последнего отправленного файла или ссылки (без текста) в текущий канал.`;
-						Configuration.SizeLimitForFile.Title = `Не отправлять файл размером больше 25 МБ`;
-						Configuration.SizeLimitForFile.Description = `Предотвращает отправку сообщения, если размер отправляемого файла в нём больше 25 МБ.`;
+						Configuration.SizeLimitForFile.Title = `Не отправлять файл размером больше 10 МБ`;
+						Configuration.SizeLimitForFile.Description = `Предотвращает отправку сообщения, если размер отправляемого файла в нём больше 10 МБ.`;
 						Configuration.AutoClosePanel.Title = `Автоматическое закрытие панели`;
 						Configuration.AutoClosePanel.Description = `Для автоматического закрытия панели с картинками после отправки любого файла по нажатию, если не зажата клавиша Shift.`;
 						Configuration.SendingFileCooldown.Title = `Минимальная задержка перед отправкой`;
@@ -1171,8 +1171,8 @@ module.exports = (() =>
 					}
 					let _fileNew = new File([_bufferFile], _name);
 
-					// test func, add option for this later
-					if(Configuration.SizeLimitForFile.Value && (_fileNew.size > (25*1024*1024))) { return Modals.showAlertModal(labelsNames.forYou, labelsNames.filesizeLimit); };
+					// Prevents sending files larger than 10 MB if the corresponding option is enabled
+					if(Configuration.SizeLimitForFile.Value && (_fileNew.size > (10*1024*1024))) { return Modals.showAlertModal(labelsNames.forYou, labelsNames.filesizeLimit); };
 					funcs_.closeCurrentReply();
 					uploadModule(channelID, _file = _fileNew, ChatBoxText); // add ", {content:'new with file'}" for adding text
 
@@ -1428,7 +1428,7 @@ module.exports = (() =>
 							Configuration.RepeatLastSent.Value = !!checked;
 							funcs_.saveConfiguration();
 						}))
-						// Don't send local files if size more than 25 MB
+						// Don't send local files if size more than 10 MB
 						.append(funcs_.createSetting('Switch', Configuration.SizeLimitForFile.Title, Configuration.SizeLimitForFile.Description, Configuration.SizeLimitForFile.Value, checked =>
 						{
 							Configuration.SizeLimitForFile.Value = !!checked;
