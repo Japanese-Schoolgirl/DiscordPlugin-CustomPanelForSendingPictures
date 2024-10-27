@@ -1,7 +1,7 @@
 /**
  * @name CustomPanelForSendingPictures
  * @authorName Japanese Schoolgirl (Lisa)
- * @version 0.6.1
+ * @version 0.6.2
  * @description Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).
  * @invite nZMbKkw
  * @authorLink https://github.com/Japanese-Schoolgirl
@@ -27,7 +27,7 @@ module.exports = (() =>
 					steam_link: "https://steamcommunity.com/id/EternalSchoolgirl/",
 					twitch_link: "https://www.twitch.tv/EternalSchoolgirl"
 			},
-			version: "0.6.1",
+			version: "0.6.2",
 			description: "Adds panel that loads pictures via settings file with used files and links, allowing you to send pictures in chat with or without text by clicking on pictures preview on the panel. Settings file is automatically created on scanning the plugin folder or custom folder (supports subfolders and will show them as sections/groups).",
 			github: "https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures",
 			github_raw: "https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js"
@@ -35,9 +35,9 @@ module.exports = (() =>
 		changelog:
 		[
 			{
-				title: `Fixed display of alerts`,
+				title: `Fixed problem with sending messages`,
 				type: "fixed", // without type || fixed || improved || progress
-				items: [`"showAlertModal" no longer works, the function has been replaced by a more cursed counterpart.`]
+				items: [`"DiscordSelectors" in 0PluginLibrary stopped working and was replaced.`]
 			}
 		]
 	};
@@ -136,6 +136,7 @@ module.exports = (() =>
 			picturesPath = path_.join(pluginPath, config.info.name);
 			DiscordLanguage = navigator.language; // Output is "en-US", "ru" etc.
 			isWindows = navigator.platform.toLowerCase() == 'win32' ? true : false; // For not Windows OS support
+			var getDiscordTextarea = () => { return document.querySelector('div[class*="channelTextArea"]') };
 			var lastSent = {};
 			let sendingCooldown = {time: 0, duration: 0};
 			let sentType = '.sent';
@@ -422,7 +423,7 @@ module.exports = (() =>
 	//-----------|  Functions |-----------//
 			funcs_.warnsCheck = () =>
 			{
-				if(!(Patcher && Modals && DiscordModules && DiscordSelectors && Settings && PluginUtilities)) { console.warn(labelsNames.Constants_Missing); }
+				if(!(Patcher && Modals && DiscordModules && Settings && PluginUtilities)) { console.warn(labelsNames.Constants_Missing); }
 			}
 			funcs_.showAlert = PluginApi_.alert; // Old function is Modals.showAlertModal;
 			funcs_.setStyles = (command = null) =>
@@ -741,8 +742,9 @@ module.exports = (() =>
 			}
 			funcs_.closeCurrentReply = () =>
 			{ // Exits the reply mode by it's close button
-				if(!document.querySelector(DiscordSelectors.Textarea.attachedBars)) { return }
-				try { document.querySelector(DiscordSelectors.Textarea.attachedBars).querySelector('div[class*="replyBar"] div[class*="closeButton"]').click(); } catch(err) {};
+				// "DiscordSelectors.Textarea.attachedBars" stopped working
+				if(!getDiscordTextarea()) { return }
+				try { getDiscordTextarea().querySelector('div[class*="replyBar"] div[class*="closeButton"]').click(); } catch(err) {};
 			}
 			funcs_.findPictures = (scanPath, newAllPicsSettings = {}, folderName = null, foldersForScan = [], emtpyFoldersList = []) =>
 			{ // Scanning for pictures in select folder, "foldersForScan" store folders from plugin directory
@@ -1147,8 +1149,9 @@ module.exports = (() =>
 				let isLocalFile = !isWebFile;
 				let asSpoiler = document.querySelector(`#${elementNames.spoilerCheckbox} input`).checked;
 				let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id; or if from other library: BDFDB.ChannelUtils.getSelected().id
-				let ChatBox = document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') ? document.querySelector(DiscordSelectors.Textarea.textArea.value).querySelector('div[role*="textbox"]') : document.querySelector(DiscordSelectors.Textarea.textArea.value); // User's textbox, old way: document.querySelector('div[class*="channelTextArea-"]').querySelector('div[role*="textbox"]')
-				if(!ChatBox) { return } // Stop method if user doesn't have access to chat
+				if(!getDiscordTextarea()) { return } // Stop method if user doesn't have chatbox
+				// "DiscordSelectors.Textarea.textArea.value" stopped working
+				let ChatBox = getDiscordTextarea().querySelector('div[role*="textbox"]') ? getDiscordTextarea().querySelector('div[role*="textbox"]') : getDiscordTextarea().querySelector('textarea'); // User's textbox. 'div[role*="textbox"]' for modern textarea; tag 'textarea' fore old textarea
 				let ChatBoxText = ChatBox.innerText ? ChatBox.innerText : ChatBox.value ? ChatBox.value : '';
 
 				// Sending text

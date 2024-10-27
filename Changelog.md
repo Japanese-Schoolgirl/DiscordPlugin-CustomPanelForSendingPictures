@@ -1,3 +1,6 @@
+# 0.6.2
+"DiscordSelectors" in 0PluginLibrary stopped working and was replaced.
+
 # 0.6.1
 "showAlertModal" no longer works, the function has been replaced by a more cursed counterpart.
 
