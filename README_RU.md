@@ -23,21 +23,17 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 # Совместимость:
 С нативными и любыми пользовательскими темами плагин должен быть полностью совместим, потому что использует стандартные переменные цветов Дискорда.<br />
 Я пользуюсь [BetterDiscord](https://github.com/BetterDiscord/BetterDiscord) и могу отслеживать проблемы возникающие только на нём.<br />
-Плагин также использует [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) и [gifsicle](http://www.lcdf.org/gifsicle/).<br />
+Для изменения размера гифок плагин использует внешнюю библиотеку [gifsicle-wasm-browser](https://unpkg.com/gifsicle-wasm-browser@1.5.16/dist/gifsicle.min.js).<br />
 Работоспособность на операционных системах помимо Windows не проверялась, на других ОС, вероятно, некоторые функции могут не работать.<br />
 
 # Установка:
-1) Установите [Powercord](https://powercord.dev/installation) или [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe). Для Powercord после установки вам также нужно будет установить [bdCompat](https://github.com/Juby210/bdCompat#installation) в папку плагинов Powercord (после этой установки появится раздел BetterDiscord Plugins в Powercord секции, также не забывайте что плагины отображаются в папках только после перезагрузки Дискорда);<br />
-2) Перенесите [Zerebos' Plugin Library](https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js) файл в папку с вашими плагинами;<br />
-3) Перенесите "[.js](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js)" файл плагина в папку с вашими плагинами;<br />
-4) После включения этого плагина, в папке с плагином появится папка, в которую вам нужно перенести картинки, которые вы хотите использовать.<br />
+1) Установите [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe);<br />
+2) Перенесите "[.js](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js)" файл плагина в папку с вашими плагинами;<br />
+3) После включения этого плагина, в папке с плагином появится папка, в которую вам нужно перенести картинки, которые вы хотите использовать.<br />
 <br />P.S. Плагин будет хранить информацию о содержимом в папке в файле CustomPanelForSendingPictures.settings.json, а вашу конфигурацию плагина в CustomPanelForSendingPictures.configuration.json (вы также можете удалить эти файлы, чтобы полностью сбросить все настройки).<br />
 
 # Поддержка:
-Если вы желаете помочь мне с этим кривоватым проектом, то обратите внимание на [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F), где указаны проблемы, которые я решаю на данный момент. Смотрите подробнее в разделе [Коммуникация](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F) о способах связи со мной.
-Если вы хотите помочь мне денежкой и вы почему-то не использовали для этого кнопку "Sponsor", то вот мои реквизиты напрямую:<br />
-https://qiwi.com/n/TOUHOUSCHOOLGIRL<br />
-https://donate.qiwi.com/payin/Schoolgirl<br />
+Если вы желаете помочь мне с этим кривоватым проектом, то обратите внимание на [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F), где указаны проблемы, которые я решаю на данный момент. Смотрите подробнее в разделе [Коммуникация](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F) о способах связи со мной.<br />
 
 # Коммуникация:
 Я не принимаю неизвестные мне заявки в друзья, поэтому если вы захотите написать мне в DM Дискорда, то велик шанс что я вас не замечу. Вместо этого лучше используйте как средство коммуникации со мной GitHub или [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) (вам необязательно добавляться ко мне, у меня открытая стена комментариев). У меня также есть [Discord сервер](https://discord.gg/nZMbKkw), но в нём ручная проверка каждого пользователя перед тем, как он получит разрешение на возможность писать и видеть большинство каналов для общения. Также вы можете попробовать написать мне на [Twitch](https://www.twitch.tv/EternalSchoolgirl), но это не самый удобный вариант.<br />
@@ -49,9 +45,7 @@ https://donate.qiwi.com/payin/Schoolgirl<br />
 
 # TODO (и известные проблемы):
 (Некоторые из этих пунктов отложены в долгий ящик, потому что у меня не получилось найти способ "обрабатывать" отправляемые сообщения)<br />
-— ".sent" файлы не генерируются автоматически, это связано с проблемой получения ссылки из ID отправленного файла (вариант через Dispatch возвращает только ID канала, но не ID сообщения, при том у него и нет свойства с ссылкой на файл; само сообщение не совпадает с информацией из события по размеру файла и иногда по названию);<br />
 — Исправить опцию отправки сообщений перед отправкой файлов, которая отправляет сообщения без учёта разметки;<br />
 — Исправить отправку картинок и сообщений в случае с нераскрытой полностью веткой сообщения. На данный момент картинки и сообщения отправляются только в открытый канал Дискорда;<br />
 — Исправить отправку картинок и сообщений в случае с "Ответить". Они отправляются как обычное сообщение;<br />
-— Несмотря на то, что вроде как часть с подгрузкой элементов на панель сделана асинхронно и раздельно, всё ещё случается визуальный фриз (при том случайно и крайне редко, обычно после рестарта Дискорда). Попытка найти проблему в Perfomance через дебаг пока что успехом не увенчалась. Судя по всему проблема связана исключительно с большим количеством файлов. Также после минут 5 работы Дискорда подобные фризы исчезают;<br />
 — Добавить поддержку пропорционального масштабирования размера картинок для **анимированных** файлов .png (.apng) и .webp (приоритет для этой задачи низкий, потому что Дискорд не умеет их корректно отображать на данный момент).<br />
