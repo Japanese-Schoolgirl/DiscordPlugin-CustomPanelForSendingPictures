@@ -1,3 +1,6 @@
+# 0.6.4
+The "instantBatchUpload" function no longer exists, so it has been replaced with "uploadFiles". Also, text messages are now sent together with images instead of separately.
+
 # 0.6.3
 Starting with this version the plugin can work without using ZeresPluginLibrary/0PluginLibrary and in case of anything the plugin now has its own update checker (can be disabled in the settings). As this is a potentially unstable release, it is recommended to backup your settings or roll back to [a previous version](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/979daac45616c3c42424a39a4b2c2dbef9d3c8c5/CustomPanelForSendingPictures.plugin.js) if necessary.
 

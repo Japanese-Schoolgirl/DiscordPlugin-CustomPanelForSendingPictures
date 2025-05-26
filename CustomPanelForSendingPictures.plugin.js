@@ -8,7 +8,7 @@
  * @website https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures
  * @source https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
  * @updateUrl https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
- * @version 0.6.3
+ * @version 0.6.4
  */
 
 /*========================| Info |========================*/
@@ -17,9 +17,9 @@ const config =
 	changelog:
 	[
 		{
-			title: `This is a potentially unstable update. The plugin is no longer dependent on ZeresPluginLibrary and now it also has a built-in update checker`,
+			title: `Fixed an error with sending images after Discord's recent update`,
 			type: "fixed", // without type || fixed || improved || progress
-			items: [`Starting with this version the plugin can work without using ZeresPluginLibrary/0PluginLibrary and in case of anything the plugin now has its own update checker (can be disabled in the settings). As this is a potentially unstable release, it is recommended to backup your settings or roll back to a previous version if necessary.`]
+			items: [`The "instantBatchUpload" function no longer exists, so it has been replaced with "uploadFiles". Also, text messages are now sent together with images instead of separately.`]
 		}
 	],
 	info:
@@ -63,18 +63,22 @@ const messageModule = (channelID, sendText, reply = null) =>
 		SEND(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {/* messageReference:{"channel_id":"channelID","message_id":"messageID"} */});
 	} catch(err) { console.warn(err); }
 };
+const uploadClass = PluginApi_.Webpack.getModule(m => m.prototype && m.prototype.upload && m.prototype.getSize && m.prototype.cancel, { searchExports: true });
 const uploadModule = (channelID, file, sendText = null) =>
 { // Sending text before file
-	if(sendText) { messageModule(channelID, sendText); }
+	//if(sendText) { messageModule(channelID, sendText); } //"messageModule" is still needed, but it looks like that this line is no longer needed, :<
 
 	try
 	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getByProps("upload").upload and etc.
-		//Previous method: PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
-		let UPLOAD = PluginApi_.findModule(m => m.instantBatchUpload && typeof m.instantBatchUpload === "function").instantBatchUpload;
-		// Check if user have old version of Discord's upload module
-		let isUpdatedModule = !UPLOAD.toString().match(/^function\(e,t,n\)/);
-		if(isUpdatedModule) { UPLOAD({ channelId: channelID, files: [file] }); }
-		else { UPLOAD(channelID, [file]); }
+		//Very old method: PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
+		//Previous method: PluginApi_.findModule(m => m.instantBatchUpload && typeof m.instantBatchUpload === "function").instantBatchUpload;
+		let UPLOAD = PluginApi_.findModule(m => m.uploadFiles && typeof m.uploadFiles === "function").uploadFiles;
+		UPLOAD({
+			channelId: channelID,
+			parsedMessage: { content: sendText || ''},
+			draftType: 0,
+			uploads: [new uploadClass({file: file, platform: 1}, channelID, false, 0)]
+		}); //There also params "messageReference" and "allowedMentions" in "options", which I can't implement properly
 	} catch(err) { console.warn(err); }
 };
 /*========================| DEPRECATED |========================*/
@@ -344,9 +348,10 @@ var elementNames = {
 	emojiTabID:				'emoji-picker-tab',
 	gifTabID: 				'gif-picker-tab',
 	stickerTabID: 			'sticker-picker-tab',
+	soundmojiTabID: 		'DUNNO',
 	Config_scaleType: 		'CPFSP_scaleType',
 	Config_scaleSubpanel: 	'CPFSP_scaleSubpanel',
-	Config_scaleExp: 		'CPFSP_scaleExp'
+	Config_scaleExp: 		'CPFSP_scaleExp',
 }
 
 var labelsNames = {
@@ -436,7 +441,7 @@ funcs_.updateCheck = (this_plugin) =>
 		if(match)
 		{
 			const latestVersion = match[1].match(/[0-9]+\.[0-9]+\.[0-9]+/)[0];
-			console.log(`Latest version for ${config.info.name} is ${latestVersion}. Your is config.info.version`);
+			console.log(`Latest version for ${config.info.name} is ${latestVersion}. Your is ${config.info.version}`);
 			// Compare the latest version with your current version
 			if(latestVersion !== config.info.version)
 			{
@@ -449,7 +454,7 @@ funcs_.updateCheck = (this_plugin) =>
 }
 funcs_.warnsCheck = () =>
 {
-	if(!(PluginApi_.UI && PluginApi_.Patcher)) { console.warn(labelsNames.Constants_Missing); }
+	if(!(PluginApi_.UI)) { console.warn(labelsNames.Constants_Missing); }
 }
 funcs_.showAlert = PluginApi_.UI.alert; // Old function is Modals.showAlertModal;
 funcs_.setStyles = (command = null) =>
@@ -880,11 +885,20 @@ funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 			document.getElementById(fix).click();
 			buttonCPFSP.classList.remove(elementNames.CPFSP_activeButton);
 			// DEBUG // console.log('Fixed', event);
+
+			removeScaleSubpanel();
 		}
 		function additionalButtonFix(event)
 		{
 			let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonGoID);
 			buttonCPFSP.classList.remove(elementNames.CPFSP_activeButton);
+
+			removeScaleSubpanel();
+		}
+		function removeScaleSubpanel()
+		{ // Fix for Subpanel for scaling images
+			let scaleSubpanel = document.getElementById('CPFSP_scaleSubpanelID');
+			if(scaleSubpanel) { scaleSubpanel.remove() };
 		}
 		try
 		{ // Unselecting previous button
@@ -1293,7 +1307,7 @@ funcs_.RepeatLastSentFunc = (event) =>
 	if(lastSent.file)
 	{
 		funcs_.closeCurrentReply();
-		uploadModule(channelID, lastSent.file);
+		uploadModule(channelID, lastSent.file); //Repeat sent file without a text from the textbox
 	}
 	else if(lastSent.link)
 	{
