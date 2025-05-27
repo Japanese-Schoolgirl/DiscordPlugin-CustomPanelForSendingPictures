@@ -115,7 +115,7 @@ let folderListName = `?/\\!FolderList!/\\?`;
 var Configuration = { // Almost all Default values need only as placeholder
 	CheckForUpdates:		{ Value: true, 															Default: true, 						Title: `Check for updates`, 							Description: `Enables built-in update checking.` },
 	UseSentLinks:			{ Value: true, 															Default: true, 						Title: `Use "Sent Links"`, 								Description: `To create and use ${sentType} files that are replacing file sending by sending links.` },
-	SendTextWithFile:		{ Value: false, 														Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
+	SendTextWithFile:		{ Value: false, 														Default: false, 					Title: `Send text from textbox with sending file`, 	Description: `To send text from textbox with sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
 	OnlyForcedUpdate:		{ Value: false, 														Default: false, 					Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
 	sentType2srcType:		{ Value: false, 														Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
 	RepeatLastSent:			{ Value: false, 														Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
@@ -528,7 +528,7 @@ funcs_.setLanguage = () =>
 			Configuration.CheckForUpdates.Description = `Включает встроенную проверку обновлений.`;
 			Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
 			Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
-			Configuration.SendTextWithFile.Title = `Отправлять текст из чата перед отправляемым файлом`;
+			Configuration.SendTextWithFile.Title = `Отправлять текст из чата с отправляемым файлом`;
 			Configuration.SendTextWithFile.Description = `Включает отправку текста из чата перед отправляемым локальным или веб файлом. Не удаляет текст из чата. Не отправляет сообщение превышающее 2000 символов.`;
 			Configuration.OnlyForcedUpdate.Title = `Только принудительное обновление`;
 			Configuration.OnlyForcedUpdate.Description = `Не позволяет плагину автоматически обновлять настройки через сканирование с используемыми файлами без участия пользователя.`;

@@ -45,7 +45,7 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 
 # TODO (and known issues):
 (Some of these items are put on hold, because I wasn't able to find a way to "handle" sending messages)<br />
-— Fix the option for sending message before file, which sends messages without the markdown;<br />
+— Fix the option for sending message with file, which sends messages without the markdown;<br />
 — Fix sending images and messages in a not opened message's thread. At the moment, images and messages are only sent to Discord's opened channel;<br />
 — Fix sending images and messages in reply. These are sent as a normal message;<br />
 — Add support for proportional scaling of **animated** .png (.apng) and .webp files (this task has low priority since Discord cannot properly display them at the moment).<br />
