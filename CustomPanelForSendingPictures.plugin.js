@@ -8,7 +8,7 @@
  * @website https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures
  * @source https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
  * @updateUrl https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
- * @version 0.6.4
+ * @version 0.6.5
  */
 
 /*========================| Info |========================*/
@@ -55,44 +55,21 @@ const fs_ = getModule_("fs");
 const path_ = getModule_("path");
 const open_folder_ = electron_ ? electron_.shell.openPath : false;
 
-const messageModule = (channelID, sendText, replyIDs = null) =>
+const uploadClass = PluginApi_.Webpack.getModule(m => m.prototype && m.prototype.upload && m.prototype.getSize && m.prototype.cancel, { searchExports: true });
+const messageModule = (channelID, sendText = null, replyIDs = null, file = null) =>
 {
+	if(!channelID || (!sendText && !file)) { return console.warn("What"); }
+
 	try
 	{
 		// Replace for broken DiscordAPI.currentChannel.sendMessage
 		let SEND = PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === "function")._sendMessage;
 		if(replyIDs) { if(replyIDs.channel !== channelID) { channelID = replyIDs.channel; console.warn("There something strange with replyIDs.channel and channelID"); } };
 
-		if(replyIDs) { SEND(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {messageReference:{channel_id: replyIDs.channel, message_id: replyIDs.message}}); }
-		else { SEND(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {}); }
-	} catch(err) { console.warn(err); }
-};
-const uploadClass = PluginApi_.Webpack.getModule(m => m.prototype && m.prototype.upload && m.prototype.getSize && m.prototype.cancel, { searchExports: true });
-const uploadModule = (channelID, file, sendText = null, replyIDs = null) =>
-{ // Sending text before file
-	//if(sendText) { messageModule(channelID, sendText); } // "messageModule" is still needed, but it looks like that this line is no longer needed, :<
-	try
-	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getByProps("upload").upload and etc.
-		//Very old method: PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
-		//Previous method: PluginApi_.findModule(m => m.instantBatchUpload && typeof m.instantBatchUpload === "function").instantBatchUpload;
-		let UPLOAD = PluginApi_.findModule(m => m.uploadFiles && typeof m.uploadFiles === "function").uploadFiles;
-		if(replyIDs) { if(replyIDs.channel !== channelID) { channelID = replyIDs.channel; console.warn("There something strange with replyIDs.channel and channelID"); } };
-
-		if(replyIDs) { UPLOAD({
-				channelId: channelID,
-				parsedMessage: { content: sendText || ''},
-				draftType: 0,
-				uploads: [new uploadClass({file: file, platform: 1}, channelID, false, 0)],
-				options: {messageReference:{channel_id: replyIDs.channel, message_id: replyIDs.message}}
-			}); // There also param "allowedMentions" in "options", which I didn't implement
-		}
-		else { UPLOAD({
-				channelId: channelID,
-				parsedMessage: { content: sendText || ''},
-				draftType: 0,
-				uploads: [new uploadClass({file: file, platform: 1}, channelID, false, 0)]
-			});
-		};
+		SEND(channelID, { content: sendText, validNonShortcutEmojis: Array(0) }, {
+			...(replyIDs ? { messageReference: {channel_id: replyIDs.channel, message_id: replyIDs.message} } : {}),
+			...(file ? { attachmentsToUpload: [new uploadClass({file: file, platform: 1}, channelID, false, 0)] } : {})
+		});
 	} catch(err) { console.warn(err); }
 };
 /*========================| DEPRECATED |========================*/
@@ -1238,7 +1215,7 @@ funcs_.send2ChatBox = (from) => // from is event
 		if(Configuration.SizeLimitForFile.Value && (_fileNew.size > (10*1024*1024))) { return funcs_.showAlert(labelsNames.forYou, labelsNames.filesizeLimit); };
 		let replyIDs = funcs_.getCurrentReply();
 		funcs_.closeCurrentReply();
-		uploadModule(channelID, _file = _fileNew, ChatBoxText, replyIDs); // add ", {content:'new with file'}" for adding text
+		messageModule(channelID, ChatBoxText, replyIDs, _file = _fileNew); // add ", {content:'new with file'}" for adding text
 
 		_fileNew = null;
 		lastSent = { file: _file, link: null };
@@ -1345,7 +1322,7 @@ funcs_.RepeatLastSentFunc = (event) =>
 	funcs_.closeCurrentReply();
 	if(lastSent.file)
 	{
-		uploadModule(channelID, lastSent.file, undefined, replyIDs); //Repeat sent file without a text from the textbox
+		messageModule(channelID, undefined, replyIDs, lastSent.file); //Repeat sent file without a text from the textbox
 	}
 	else if(lastSent.link)
 	{
