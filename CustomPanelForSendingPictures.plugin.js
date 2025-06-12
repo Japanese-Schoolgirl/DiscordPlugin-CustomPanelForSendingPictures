@@ -17,9 +17,9 @@ const config =
 	changelog:
 	[
 		{
-			title: `Fixed an error with sending images after Discord's recent update`,
+			title: `Now works with the replies system and interacts with threads' window in a slightly different way`,
 			type: "fixed", // without type || fixed || improved || progress
-			items: [`The "instantBatchUpload" function no longer exists, so it has been replaced with "uploadFiles". Also, text messages are now sent together with images instead of separately.`]
+			items: [`Sending will no longer ignore a message you are trying to reply to. Also, now prioritizes opened thread's window in case of replies.`]
 		}
 	],
 	info:
@@ -55,30 +55,44 @@ const fs_ = getModule_("fs");
 const path_ = getModule_("path");
 const open_folder_ = electron_ ? electron_.shell.openPath : false;
 
-const messageModule = (channelID, sendText, reply = null) =>
+const messageModule = (channelID, sendText, replyIDs = null) =>
 {
 	try
-	{ // Replace for broken DiscordAPI.currentChannel.sendMessage
+	{
+		// Replace for broken DiscordAPI.currentChannel.sendMessage
 		let SEND = PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === "function")._sendMessage;
-		SEND(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {/* messageReference:{"channel_id":"channelID","message_id":"messageID"} */});
+		if(replyIDs) { if(replyIDs.channel !== channelID) { channelID = replyIDs.channel; console.warn("There something strange with replyIDs.channel and channelID"); } };
+
+		if(replyIDs) { SEND(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {messageReference:{channel_id: replyIDs.channel, message_id: replyIDs.message}}); }
+		else { SEND(channelID, {content: sendText, validNonShortcutEmojis: Array(0)}, {}); }
 	} catch(err) { console.warn(err); }
 };
 const uploadClass = PluginApi_.Webpack.getModule(m => m.prototype && m.prototype.upload && m.prototype.getSize && m.prototype.cancel, { searchExports: true });
-const uploadModule = (channelID, file, sendText = null) =>
+const uploadModule = (channelID, file, sendText = null, replyIDs = null) =>
 { // Sending text before file
-	//if(sendText) { messageModule(channelID, sendText); } //"messageModule" is still needed, but it looks like that this line is no longer needed, :<
-
+	//if(sendText) { messageModule(channelID, sendText); } // "messageModule" is still needed, but it looks like that this line is no longer needed, :<
 	try
 	{ // Found module from BdApi/EDApi for uploading files can be replaced with WebpackModules.getByProps("upload").upload and etc.
 		//Very old method: PluginApi_.findModule(m => m.upload && typeof m.upload === "function").upload({channelId:channelID, file: file});
 		//Previous method: PluginApi_.findModule(m => m.instantBatchUpload && typeof m.instantBatchUpload === "function").instantBatchUpload;
 		let UPLOAD = PluginApi_.findModule(m => m.uploadFiles && typeof m.uploadFiles === "function").uploadFiles;
-		UPLOAD({
-			channelId: channelID,
-			parsedMessage: { content: sendText || ''},
-			draftType: 0,
-			uploads: [new uploadClass({file: file, platform: 1}, channelID, false, 0)]
-		}); //There also params "messageReference" and "allowedMentions" in "options", which I can't implement properly
+		if(replyIDs) { if(replyIDs.channel !== channelID) { channelID = replyIDs.channel; console.warn("There something strange with replyIDs.channel and channelID"); } };
+
+		if(replyIDs) { UPLOAD({
+				channelId: channelID,
+				parsedMessage: { content: sendText || ''},
+				draftType: 0,
+				uploads: [new uploadClass({file: file, platform: 1}, channelID, false, 0)],
+				options: {messageReference:{channel_id: replyIDs.channel, message_id: replyIDs.message}}
+			}); // There also param "allowedMentions" in "options", which I didn't implement
+		}
+		else { UPLOAD({
+				channelId: channelID,
+				parsedMessage: { content: sendText || ''},
+				draftType: 0,
+				uploads: [new uploadClass({file: file, platform: 1}, channelID, false, 0)]
+			});
+		};
 	} catch(err) { console.warn(err); }
 };
 /*========================| DEPRECATED |========================*/
@@ -102,7 +116,13 @@ configPath = path_.join(pluginPath, config.info.name + '.configuration.json');
 picturesPath = path_.join(pluginPath, config.info.name);
 DiscordLanguage = navigator.language; // Output is "en-US", "ru" etc.
 isWindows = navigator.userAgentData.platform.toLowerCase() == 'windows' ? true : false; // For not Windows OS support
-var getDiscordTextarea = () => { return document.querySelector('div[class*="channelTextArea"]') };
+// Thread window causes a existence of a second textarea. The plugin prioritizes thread textarea
+var getDiscordTextarea = () =>
+{
+	let textarea = document.querySelectorAll('div[class*="channelTextArea"]');
+	if(!textarea.length) { return }
+	return textarea[textarea.length-1]; // Prioritizes a thread window
+};
 var lastSent = {};
 let sendingCooldown = {time: 0, duration: 0};
 let sentType = '.sent';
@@ -115,7 +135,7 @@ let folderListName = `?/\\!FolderList!/\\?`;
 var Configuration = { // Almost all Default values need only as placeholder
 	CheckForUpdates:		{ Value: true, 															Default: true, 						Title: `Check for updates`, 							Description: `Enables built-in update checking.` },
 	UseSentLinks:			{ Value: true, 															Default: true, 						Title: `Use "Sent Links"`, 								Description: `To create and use ${sentType} files that are replacing file sending by sending links.` },
-	SendTextWithFile:		{ Value: false, 														Default: false, 					Title: `Send text from textbox with sending file`, 	Description: `To send text from textbox with sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
+	SendTextWithFile:		{ Value: false, 														Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
 	OnlyForcedUpdate:		{ Value: false, 														Default: false, 					Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
 	sentType2srcType:		{ Value: false, 														Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
 	RepeatLastSent:			{ Value: false, 														Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
@@ -528,7 +548,7 @@ funcs_.setLanguage = () =>
 			Configuration.CheckForUpdates.Description = `Включает встроенную проверку обновлений.`;
 			Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
 			Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
-			Configuration.SendTextWithFile.Title = `Отправлять текст из чата с отправляемым файлом`;
+			Configuration.SendTextWithFile.Title = `Отправлять текст из чата перед отправляемым файлом`;
 			Configuration.SendTextWithFile.Description = `Включает отправку текста из чата перед отправляемым локальным или веб файлом. Не удаляет текст из чата. Не отправляет сообщение превышающее 2000 символов.`;
 			Configuration.OnlyForcedUpdate.Title = `Только принудительное обновление`;
 			Configuration.OnlyForcedUpdate.Description = `Не позволяет плагину автоматически обновлять настройки через сканирование с используемыми файлами без участия пользователя.`;
@@ -758,10 +778,22 @@ funcs_.scanDirectory = (forced = null, repeat = null) =>
 	}
 }
 funcs_.closeCurrentReply = () =>
-{ // Exits the reply mode by it's close button
+{ // Exits ALL selected replies by it's close button
 	// "DiscordSelectors.Textarea.attachedBars" stopped working
-	if(!getDiscordTextarea()) { return }
-	try { getDiscordTextarea().querySelector('div[class*="replyBar"] div[class*="closeButton"]').click(); } catch(err) {};
+	let replyCloseButton = document.querySelectorAll('div[class*="replyBar"] div[class*="closeButton"]');
+	if(!getDiscordTextarea() || !replyCloseButton.length) { return }
+	try { replyCloseButton.forEach((el) => el.click()); } catch(err) { console.error(err) };
+}
+funcs_.getCurrentReply = () =>
+{ // Currently it not implement with threads properly. querySelectorAll(...)[1] is for thread
+	let replyMessage = document.querySelectorAll('div[class*="replying"][data-list-item-id*="chat-messages"]');
+	if(!getDiscordTextarea() || !replyMessage.length) { return }
+	replyMessage = replyMessage[replyMessage.length-1]; // Prioritizes a thread window
+
+	let replyIDs = replyMessage.getAttribute("data-list-item-id").match(/(\d+)/g).slice(-2); // Receives only the last two sets of digits (server-id and message-id)
+	if(!replyIDs) { return }
+	return { channel: replyIDs[0], message: replyIDs[1] }
+	// New code
 }
 funcs_.findPictures = (scanPath, newAllPicsSettings = {}, folderName = null, foldersForScan = [], emtpyFoldersList = []) =>
 { // Scanning for pictures in select folder, "foldersForScan" store folders from plugin directory
@@ -1174,7 +1206,8 @@ funcs_.send2ChatBox = (from) => // from is event
 	let isWebFile = _link.indexOf(';base64,') != -1 ? false : true;
 	let isLocalFile = !isWebFile;
 	let asSpoiler = document.querySelector(`#${elementNames.spoilerCheckbox} input`).checked;
-	let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id; or if from other library: BDFDB.ChannelUtils.getSelected().id
+	// Old is DiscordAPI.currentChannel.id; or if from other library: BDFDB.ChannelUtils.getSelected().id
+	let channelID = window.location.pathname.split('/').pop(); // When thread is open in a separate window it is considered as current location
 	if(!getDiscordTextarea()) { return } // Stop method if user doesn't have chatbox
 	// "DiscordSelectors.Textarea.textArea.value" stopped working
 	let ChatBox = getDiscordTextarea().querySelector('div[role*="textbox"]') ? getDiscordTextarea().querySelector('div[role*="textbox"]') : getDiscordTextarea().querySelector('textarea'); // User's textbox. 'div[role*="textbox"]' for modern textarea; tag 'textarea' fore old textarea
@@ -1203,8 +1236,9 @@ funcs_.send2ChatBox = (from) => // from is event
 
 		// Prevents sending files larger than 10 MB if the corresponding option is enabled
 		if(Configuration.SizeLimitForFile.Value && (_fileNew.size > (10*1024*1024))) { return funcs_.showAlert(labelsNames.forYou, labelsNames.filesizeLimit); };
+		let replyIDs = funcs_.getCurrentReply();
 		funcs_.closeCurrentReply();
-		uploadModule(channelID, _file = _fileNew, ChatBoxText); // add ", {content:'new with file'}" for adding text
+		uploadModule(channelID, _file = _fileNew, ChatBoxText, replyIDs); // add ", {content:'new with file'}" for adding text
 
 		_fileNew = null;
 		lastSent = { file: _file, link: null };
@@ -1292,9 +1326,11 @@ funcs_.send2ChatBox = (from) => // from is event
 	*/
 	lastSent = { file: null, link: _link}; // For Last Sent option
 	if(Configuration.SetLinkParameters.Value.length) { _link = (_link+Configuration.SetLinkParameters.Value); } // Adds user additional parameters
-	if(ChatBoxText) { messageModule(channelID, ChatBoxText); }
+	let replyIDs = funcs_.getCurrentReply();
+	funcs_.closeCurrentReply();
+	if(ChatBoxText) { messageModule(channelID, ChatBoxText, replyIDs); }
 	// Sending link of picture
-	return messageModule(channelID, _link, {asSpoiler: asSpoiler});
+	return messageModule(channelID, _link, replyIDs);
 }
 funcs_.RepeatLastSentFunc = (event) =>
 {
@@ -1304,14 +1340,16 @@ funcs_.RepeatLastSentFunc = (event) =>
 	if(!lastSent) { return }
 	if(!lastSent.file && !lastSent.link) { return }
 	let channelID = window.location.pathname.split('/').pop(); // Old is DiscordAPI.currentChannel.id;
+
+	let replyIDs = funcs_.getCurrentReply();
+	funcs_.closeCurrentReply();
 	if(lastSent.file)
 	{
-		funcs_.closeCurrentReply();
-		uploadModule(channelID, lastSent.file); //Repeat sent file without a text from the textbox
+		uploadModule(channelID, lastSent.file, undefined, replyIDs); //Repeat sent file without a text from the textbox
 	}
 	else if(lastSent.link)
 	{
-		messageModule(channelID, lastSent.link);
+		messageModule(channelID, lastSent.link, replyIDs);
 	}
 }
 funcs_.createSentFiles = (event) =>
