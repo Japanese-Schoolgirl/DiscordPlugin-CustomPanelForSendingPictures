@@ -1,5 +1,5 @@
 # 0.6.5
-Sending will no longer ignore a message you are trying to reply to. Also, now prioritizes opened thread's window in case of replies.
+Sending will no longer ignore a message you are trying to reply to! Also, now prioritizes opened thread's window in case of replies.
 
 # 0.6.4
 The "instantBatchUpload" function no longer exists, so it has been replaced with "uploadFiles". Also, text messages are now sent together with images instead of separately.
