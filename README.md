@@ -12,7 +12,7 @@ Starting from version 0.0.7 this **plugin will search for and scan subfolders pl
 ### Preview of the latest update:
 ![Preview of the latest update](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Overall.png)
 ### Some LENGTHY demonstration of plugin's usage:
-[![Some LENGTHY demonstration of plugin's usage](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration_Thumbnail.png)](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration.mp4)
+[![Some LENGTHY demonstration of plugin's usage (Click to open YouTube video)](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration.gif)](https://www.youtube.com/watch?v=4jj9iMq5YzM)
 ### Work Example:
 ![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 Changes not displayed in the gif above: improved buttons design, added 1 new button (opens Main folder) in the pictures panel, added asynchronous pictures loading to the panel, added markdown support, added displaying error handler when loading local or web files failed, added an option for automatic proportional scaling of pictures from local or web files to set size.<br />

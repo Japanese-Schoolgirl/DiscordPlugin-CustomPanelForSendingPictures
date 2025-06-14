@@ -12,7 +12,7 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 ### Превью последнего обновления:
 ![Превью последнего обновления](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Overall.png)
 ### Немного ЗАТЯНУТОЙ демонстрации использования плагина:
-![Немного ЗАТЯНУТОЙ демонстрации использования плагина](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration_Thumbnail.png)](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration.mp4)
+[![Немного ЗАТЯНУТОЙ демонстрации использования плагина (Клик открывает YouTube видео)](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration.gif)](https://www.youtube.com/watch?v=4jj9iMq5YzM)
 ### Пример работы:
 ![Пример работы](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 Неотображённые в гифке выше изменения: улучшен дизайн кнопок, добавлена кнопка в панель картинок для открытия Главной папки, добавлена асинхронная подгрузка картинок на панель, добавлена поддержка разметки, добавлено отображение заглушки на превью картинки при проваленной загрузки локального или веб файла, добавлена опция для автоматического пропорционального масштабирования размера картинок из локальных или веб файлов к заданному размеру.<br />
