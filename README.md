@@ -45,6 +45,5 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 
 # TODO (and known issues):
 (Some of these items are put on hold, because I wasn't able to find a way to "handle" sending messages)<br />
-— Fix the option for sending message with file, which sends messages without the markdown;<br />
 — Improve sending images and messages in a not fully opened message's thread. Currently, sending images and messages only prioritize thread's window in case of replies. The main chat window will be prioritized in other cases;<br />
 — Add support for proportional scaling of **animated** .png (.apng), (this task has low priority since Discord cannot properly display them at the moment).<br />
