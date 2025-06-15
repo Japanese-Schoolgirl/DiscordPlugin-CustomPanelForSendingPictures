@@ -29,7 +29,7 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 Работоспособность на операционных системах помимо Windows не проверялась, на других ОС, вероятно, некоторые функции могут не работать.<br />
 
 # Установка:
-1) Установите [BetterDiscord](https://github.com/rauenzi/BBDInstaller/releases/latest/download/BandagedBD.exe);<br />
+1) Установите [BetterDiscord](https://github.com/BetterDiscord/BetterDiscord?tab=readme-ov-file#installation);<br />
 2) Перенесите "[.js](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js)" файл плагина в папку с вашими плагинами;<br />
 3) После включения этого плагина, в папке с плагином появится папка, в которую вам нужно перенести картинки, которые вы хотите использовать.<br />
 <br />P.S. Плагин будет хранить информацию о содержимом в папке в файле CustomPanelForSendingPictures.settings.json, а вашу конфигурацию плагина в CustomPanelForSendingPictures.configuration.json (вы также можете удалить эти файлы, чтобы полностью сбросить все настройки).<br />
