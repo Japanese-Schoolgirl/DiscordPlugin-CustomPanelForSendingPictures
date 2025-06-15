@@ -11,8 +11,6 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 С версии 0.0.7 теперь этот **плагин будет находить и сканировать подпапки, находящиеся в главной папке. Содержимое этих папок будет отображено секциями/группами в самой панели**. Подпапки внутри подпапок сканироваться не будут. Также *не рекомендуется* хранить 300+ картинок, потому что это всё сказывается на скорость прогрузки панели (размер файла не влияет).<br />
 ### Превью последнего обновления:
 ![Превью последнего обновления](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Overall.png)
-### Немного ЗАТЯНУТОЙ демонстрации использования плагина:
-[![Немного ЗАТЯНУТОЙ демонстрации использования плагина (Клик открывает YouTube видео)](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration.gif)](https://www.youtube.com/watch?v=4jj9iMq5YzM)
 ### Пример работы:
 ![Пример работы](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 Неотображённые в гифке выше изменения: улучшен дизайн кнопок, добавлена кнопка в панель картинок для открытия Главной папки, добавлена асинхронная подгрузка картинок на панель, добавлена поддержка разметки, добавлено отображение заглушки на превью картинки при проваленной загрузки локального или веб файла, добавлена опция для автоматического пропорционального масштабирования размера картинок из локальных или веб файлов к заданному размеру.<br />
@@ -21,6 +19,8 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 ![Поисковая строка](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SearchBar.gif)
 ### Меню настроек:
 ![Меню настроек](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings_RU.png)
+### Немного ЗАТЯНУТОЙ демонстрации использования плагина (Клик открывает YouTube видео):
+[![Немного ЗАТЯНУТОЙ демонстрации использования плагина (Клик открывает YouTube видео)](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration.gif)](https://www.youtube.com/watch?v=4jj9iMq5YzM)
 
 # Совместимость:
 С нативными и любыми пользовательскими темами плагин должен быть полностью совместим, потому что использует стандартные переменные цветов Дискорда.<br />
@@ -38,7 +38,7 @@ P.S. Я очень редко пользуюсь GitHub'ом, так что дл
 Если вы желаете помочь мне с этим кривоватым проектом, то обратите внимание на [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F), где указаны проблемы, которые я решаю на данный момент. Смотрите подробнее в разделе [Коммуникация](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/README_RU.md#%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F) о способах связи со мной.<br />
 
 # Коммуникация:
-Я не принимаю неизвестные мне заявки в друзья, поэтому если вы захотите написать мне в DM Дискорда, то велик шанс что я вас не замечу. Вместо этого лучше используйте как средство коммуникации со мной GitHub или [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) (вам необязательно добавляться ко мне, у меня открытая стена комментариев). У меня также есть [Discord сервер](https://discord.gg/nZMbKkw), но в нём ручная проверка каждого пользователя перед тем, как он получит разрешение на возможность писать и видеть большинство каналов для общения. Также вы можете попробовать написать мне на [Twitch](https://www.twitch.tv/EternalSchoolgirl) или [YouTube](https://www.youtube.com/watch?v=4jj9iMq5YzM), но это не самый удобный вариант.<br />
+Я не принимаю неизвестные мне заявки в друзья, поэтому если вы захотите написать мне в DM Дискорда, то велик шанс что я вас не замечу. Вместо этого лучше используйте как средство коммуникации со мной GitHub или [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) (вам необязательно добавляться ко мне, у меня открытая стена комментариев). У меня также есть [Discord сервер](https://discord.gg/nZMbKkw), но в нём ручная проверка каждого пользователя перед тем, как он получит разрешение на возможность писать и видеть большинство каналов для общения. Также вы можете попробовать написать мне на [Twitch](https://www.twitch.tv/EternalSchoolgirl) или [YouTube](https://www.youtube.com/@EternalSchoolgirl), но это не самый удобный вариант.<br />
 
 # Полезности:
 - [Список изменений](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/Changelog.md);<br />

@@ -11,8 +11,6 @@ Files of ".sent" type will replace files with identical name and extension. ".se
 Starting from version 0.0.7 this **plugin will search for and scan subfolders placed in the main folder. Content of these folders will be displayed as sections/groups in the panel itself**. Subfolders inside subfolders will not be scanned. It is also *not recommended* to store 300+ images as it will affect speed of panel loading (file size doesn't matter).<br />
 ### Preview of the latest update:
 ![Preview of the latest update](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Overall.png)
-### Some LENGTHY demonstration of plugin's usage:
-[![Some LENGTHY demonstration of plugin's usage (Click to open YouTube video)](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration.gif)](https://www.youtube.com/watch?v=4jj9iMq5YzM)
 ### Work Example:
 ![Work example](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/WorkExample.gif)
 Changes not displayed in the gif above: improved buttons design, added 1 new button (opens Main folder) in the pictures panel, added asynchronous pictures loading to the panel, added markdown support, added displaying error handler when loading local or web files failed, added an option for automatic proportional scaling of pictures from local or web files to set size.<br />
@@ -21,6 +19,8 @@ Also search through pictures was added and it is shown in the gif below:<br />
 ![Search bar](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/SearchBar.gif)
 ### Configuration menu:
 ![Configuration menu](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/Previews/Settings_EN.png)
+### Some LENGTHY demonstration of plugin's usage (Click to open YouTube video):
+[![Some LENGTHY demonstration of plugin's usage (Click to open YouTube video)](https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/heads/main/Previews/SomeDemonstration.gif)](https://www.youtube.com/watch?v=4jj9iMq5YzM)
 
 # Compatibility:
 Plugin should be completely compatible with native and any of user themes, as it uses default Discord colour variables.<br />
@@ -38,7 +38,7 @@ Performance on operating systems other than Windows was not tested, it is likely
 If you'd want to help me with this janky project, check the [TODO](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#todo), where I've listed problems that I'm trying to solve at the moment. You can check [Communication](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures#communication) section for ways of contacting me.<br />
 
 # Communication:
-I don't accept unknown friend requests, so if you want to DM me in Discord there is a huge chance I won't notice you. It's better to use GitHub or [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) to contact me (its not necessary to add me, I have open comment section). I also have [Discord Server](https://discord.gg/nZMbKkw), but it has a manual approval of every user before they are allowed to write or read most of conversation channels. You can also try to write me on [Twitch](https://www.twitch.tv/EternalSchoolgirl) or [YouTube](https://www.youtube.com/watch?v=4jj9iMq5YzM), but it's not the most convenient way.<br />
+I don't accept unknown friend requests, so if you want to DM me in Discord there is a huge chance I won't notice you. It's better to use GitHub or [Steam](https://steamcommunity.com/id/EternalSchoolgirl/) to contact me (its not necessary to add me, I have open comment section). I also have [Discord Server](https://discord.gg/nZMbKkw), but it has a manual approval of every user before they are allowed to write or read most of conversation channels. You can also try to write me on [Twitch](https://www.twitch.tv/EternalSchoolgirl) or [YouTube](https://www.youtube.com/@EternalSchoolgirl), but it's not the most convenient way.<br />
 
 # Utilities:
 - [Changelog](https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/blob/main/Changelog.md);<br />
