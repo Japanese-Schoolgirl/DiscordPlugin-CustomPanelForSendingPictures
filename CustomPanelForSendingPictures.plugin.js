@@ -8,7 +8,7 @@
  * @website https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures
  * @source https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
  * @updateUrl https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
- * @version 0.6.5
+ * @version 0.6.6
  */
 
 /*========================| Info |========================*/
@@ -17,9 +17,9 @@ const config =
 	changelog:
 	[
 		{
-			title: `Now works with the replies system and interacts with threads' window in a slightly different way`,
+			title: `Hotfix`,
 			type: "fixed", // without type || fixed || improved || progress
-			items: [`Sending will no longer ignore a message you are trying to reply to. Also, now prioritizes opened thread's window in case of replies.`]
+			items: [`Discord no longer uses the button tag for panel buttons and so the plugin was broken.`]
 		}
 	],
 	info:
@@ -879,7 +879,7 @@ funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 	let allPicsSettings;
 	//# Previous button click fix: START
 	let emojisMenu = emojisGUI.querySelector(searchNames.emojisGUI);
-	let previousButton = emojisMenu.querySelector('button[aria-selected*="true"]'); // Will return Button tag
+	let previousButton = emojisMenu.querySelector('div[class*="navButton_"][aria-selected*="true"]'); // Will return Button tag
 	let previousButtonID = previousButton ? previousButton.id : null;
 	if(previousButtonID)
 	{
@@ -914,7 +914,8 @@ funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 			previousButton.addEventListener("click", previousButtonFix, { once: true } );
 			previousButton.classList.value = previousButton.classList.value.replace('ButtonActive', 'Button');
 			// To not choose the already selected
-			emojisMenu.querySelectorAll('button[class*="navItem"]').forEach((el) =>
+			let buttons = emojisMenu.querySelectorAll('div[class*="navButton_"]');
+			buttons.forEach((el) =>
 			{ // For each Button with label
 				if(el.id == previousButtonID || el.id == elementNames.CPFSP_buttonGoID) { return }
 				el.removeEventListener("click", additionalButtonFix, { once: true } ); // Just in cases of incidental duplicate
@@ -1114,10 +1115,10 @@ funcs_.addPicturesPanelButton = (emojisGUI) =>
 	if(!emojisMenu) { return }
 	if(document.getElementById(elementNames.CPFSP_buttonGoID)) { return }
 
-	let buttonCPFSP = document.createElement('button');
+	let buttonCPFSP = document.createElement('div'); // Discord not using button tag for buttons anymore
 	buttonCPFSP.innerText = labelsNames.Pictures;
 	buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonGoID);
-	let buttonClass = emojisMenu.querySelector('button').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
+	let buttonClass = emojisMenu.querySelector('div[class*="navButton_"]').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
 	buttonCPFSP.setAttribute('class', buttonClass);
 	buttonCPFSP.removeEventListener('click', funcs_.moveToPicturesPanel); // Insurance
 	buttonCPFSP.addEventListener('click', funcs_.moveToPicturesPanel);

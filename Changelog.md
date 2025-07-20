@@ -1,3 +1,6 @@
+# 0.6.6
+Discord no longer uses the button tag for panel buttons and so the plugin was broken.
+
 # 0.6.5
 Sending will no longer ignore a message you are trying to reply to. Also, now prioritizes opened thread's window in case of replies.
 
