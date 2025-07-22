@@ -5,7 +5,7 @@ P.S. I rarely use GitHub, so it is my first time in dealing with such a project.
 
 # Plugin description
 This plugin adds a special "Pictures" button to the right of Emojis selection button. Clicking that button will load a panel which's contents are loaded from special folder that is created by this plugin. The folder is scanned for files of the following types: ".jpg", ".jpeg", ".bmp", ".png", ".webp", ".gif", ".src", ".sent".<br />
-Files of ".src" and ".sent" types are JSON files and contain a link to the web file (content example: "https://i.imgur.com/l5Jf0VP.png").<br />
+Files of ".src" and ".sent" types are JSON files and contain a link to the web file (content example: "https://i.imgur.com/VMXymqg.png").<br />
 After the scan the panel will show previews of all your files in the folder. After clicking a file in this panel you'll immediately send a picture file (or a link of picture in case of ".src" and ".sent") to currently opened Discord chat.<br />
 Files of ".sent" type will replace files with identical name and extension. ".sent" files will be automatically generated after sending local files and will be used if you have enabled corresponding setting.<br />
 Starting from version 0.0.7 this **plugin will search for and scan subfolders placed in the main folder. Content of these folders will be displayed as sections/groups in the panel itself**. Subfolders inside subfolders will not be scanned. It is also *not recommended* to store 300+ images as it will affect speed of panel loading (file size doesn't matter).<br />
@@ -46,6 +46,5 @@ I don't accept unknown friend requests, so if you want to DM me in Discord there
 - There is an [archive](https://mega.nz/folder/c3YSmJYb#vF9iswDuT0YqOreDA9KL-g) with some of previously global emojis saved, if you need to add more pictures.<br />
 
 # TODO (and known issues):
-(Some of these items are put on hold, because I wasn't able to find a way to "handle" sending messages)<br />
 — Improve sending images and messages in a not fully opened message's thread. Currently, sending images and messages only prioritize thread's window in case of replies. The main chat window will be prioritized in other cases;<br />
 — Add support for proportional scaling of **animated** .png (.apng), (this task has low priority since Discord cannot properly display them at the moment).<br />
