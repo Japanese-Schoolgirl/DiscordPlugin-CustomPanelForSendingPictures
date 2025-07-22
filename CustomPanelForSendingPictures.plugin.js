@@ -8,7 +8,7 @@
  * @website https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures
  * @source https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
  * @updateUrl https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
- * @version 0.6.6
+ * @version 0.6.7
  */
 
 /*========================| Info |========================*/
@@ -17,9 +17,9 @@ const config =
 	changelog:
 	[
 		{
-			title: `Hotfix`,
+			title: `Fixed a panel's bug with the new Soundmoji button`,
 			type: "fixed", // without type || fixed || improved || progress
-			items: [`Discord no longer uses the button tag for panel buttons and so the plugin was broken.`]
+			items: [`Fixed a display bug with plugin's main button caused by the new Soundmoji button. Also SendTextWithFile setting is now turned on by default.`]
 		}
 	],
 	info:
@@ -112,7 +112,7 @@ let folderListName = `?/\\!FolderList!/\\?`;
 var Configuration = { // Almost all Default values need only as placeholder
 	CheckForUpdates:		{ Value: true, 															Default: true, 						Title: `Check for updates`, 							Description: `Enables built-in update checking.` },
 	UseSentLinks:			{ Value: true, 															Default: true, 						Title: `Use "Sent Links"`, 								Description: `To create and use ${sentType} files that are replacing file sending by sending links.` },
-	SendTextWithFile:		{ Value: false, 														Default: false, 					Title: `Send text from textbox before sending file`, 	Description: `To send text from textbox before sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
+	SendTextWithFile:		{ Value: true, 														Default: true, 					Title: `Send text from textbox with sending file`, 	Description: `To send text from textbox with sending local or web file. Doesn't delete text from textbox. Doesn't send message over 2000 symbols limit.` },
 	OnlyForcedUpdate:		{ Value: false, 														Default: false, 					Title: `Only forced update`, 							Description: `Doesn't allow plugin to automatically update settings via scan with used files without user interaction.` },
 	sentType2srcType:		{ Value: false, 														Default: false, 					Title: `Treat ${sentType} as ${srcType}`, 				Description: `To use ${sentType} as ${srcType}.` },
 	RepeatLastSent:			{ Value: false, 														Default: false, 					Title: `Repeat last sent`, 								Description: `To use Alt+V hotkey for repeat sending your last sent file or link (without text) to current channel.` },
@@ -345,7 +345,7 @@ var elementNames = {
 	emojiTabID:				'emoji-picker-tab',
 	gifTabID: 				'gif-picker-tab',
 	stickerTabID: 			'sticker-picker-tab',
-	soundmojiTabID: 		'DUNNO',
+	soundmojiTabID: 		'soundboard-picker-tab',
 	Config_scaleType: 		'CPFSP_scaleType',
 	Config_scaleSubpanel: 	'CPFSP_scaleSubpanel',
 	Config_scaleExp: 		'CPFSP_scaleExp',
@@ -525,8 +525,8 @@ funcs_.setLanguage = () =>
 			Configuration.CheckForUpdates.Description = `Включает встроенную проверку обновлений.`;
 			Configuration.UseSentLinks.Title = `Использовать "Отправленные Ссылки"`;
 			Configuration.UseSentLinks.Description = `Включает создание и использование ${sentType} файлов, которые заменяют отправку файлов отправкой ссылок.`;
-			Configuration.SendTextWithFile.Title = `Отправлять текст из чата перед отправляемым файлом`;
-			Configuration.SendTextWithFile.Description = `Включает отправку текста из чата перед отправляемым локальным или веб файлом. Не удаляет текст из чата. Не отправляет сообщение превышающее 2000 символов.`;
+			Configuration.SendTextWithFile.Title = `Отправлять текст из чата с отправляемым файлом`;
+			Configuration.SendTextWithFile.Description = `Включает отправку текста из чата с отправляемым локальным или веб файлом. Не удаляет текст из чата. Не отправляет сообщение превышающее 2000 символов.`;
 			Configuration.OnlyForcedUpdate.Title = `Только принудительное обновление`;
 			Configuration.OnlyForcedUpdate.Description = `Не позволяет плагину автоматически обновлять настройки через сканирование с используемыми файлами без участия пользователя.`;
 			Configuration.sentType2srcType.Title = `Рассматривать ${sentType} как ${srcType}`;
@@ -873,7 +873,7 @@ funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 	let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonGoID);
 	if(!buttonCPFSP) { return }
 	let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
-	let emojisPanel = emojisGUI.querySelector(searchNames.emojisPanel); // Emojis panel, old way for getting this is querySelector('div[role*="tabpanel"]'), but Stickers tab doesn't have any role :I
+	let emojisPanel = emojisGUI.querySelector(searchNames.emojisPanel) || document.querySelector('div[class*="soundboardContainer_"]'); // Silly fix for soundmoji tab
 	if(!emojisPanel) { return }
 
 	let allPicsSettings;

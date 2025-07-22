@@ -1,3 +1,6 @@
+# 0.6.7
+Fixed a display bug with plugin's main button caused by the new Soundmoji button. Also SendTextWithFile setting is now turned on by default.
+
 # 0.6.6
 Discord no longer uses the button tag for panel buttons and so the plugin was broken.
 
