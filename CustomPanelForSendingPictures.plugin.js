@@ -8,7 +8,7 @@
  * @website https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures
  * @source https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
  * @updateUrl https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
- * @version 0.6.7
+ * @version 0.6.8
  */
 
 /*========================| Info |========================*/
@@ -17,9 +17,9 @@ const config =
 	changelog:
 	[
 		{
-			title: `Fixed a panel's bug with the new Soundmoji button`,
+			title: `Fixed an issue with the update module and message module & Notice of possible discontinuation of updates`,
 			type: "fixed", // without type || fixed || improved || progress
-			items: [`Fixed a display bug with plugin's main button caused by the new Soundmoji button. Also SendTextWithFile setting is now turned on by default.`]
+			items: [`Fixed an issue with the update module and message module. Also, it should be mentioned that the support for the plugin will end at some point. One of my close relatives has recently passed away, and now I have almost no desire to continue making the constantly frustrating messenger more comfortable.`]
 		}
 	],
 	info:
@@ -44,7 +44,7 @@ const getModule_ = (module) =>
 	catch(err) { console.warn(err); return false; };
 };
 const PluginApi_ = window.BdApi ? window.BdApi : window.alert("PLUGIN API NOT FOUND"); // Window scope is needed here
-const BufferFromFormat_ = getModule_("buffer").from; /*(content, format) =>
+const BufferFromFormat_ = getModule_("buffer") ? getModule_("buffer").from : null; /*(content, format) =>
 {// This library will be used when the "Buffer" module breaks: https://unpkg.com/base64-js@1.5.1/base64js.min.js
 	if(format == "base64") { return base64js.toByteArray(content); } else { return Uint8Array.from(content, (v) => v.charCodeAt(0)); }
 }*/
@@ -63,7 +63,7 @@ const messageModule = (channelID, sendText = null, replyIDs = null, file = null)
 	try
 	{
 		// Replace for broken DiscordAPI.currentChannel.sendMessage
-		let SEND = PluginApi_.findModule(m => m._sendMessage && typeof m._sendMessage === "function")._sendMessage;
+		let SEND = PluginApi_.Webpack.getModule(m => m._sendMessage && typeof m._sendMessage === "function")._sendMessage;
 		if(replyIDs) { if(replyIDs.channel !== channelID) { channelID = replyIDs.channel; console.warn("There something strange with replyIDs.channel and channelID"); } };
 
 		SEND(channelID, { content: sendText, validNonShortcutEmojis: Array(0) }, {
@@ -410,7 +410,7 @@ funcs_.updateCheck = (this_plugin) =>
 
 	function downloadNewVersion()
 	{
-		PluginApi_.showConfirmationModal(`Update ${config.info.name}?`, `If plugin's built-in updater conflicts in any way, you can always disable its update checking in the settings.`,
+		PluginApi_.UI.showConfirmationModal(`Update ${config.info.name}?`, `If plugin's built-in updater conflicts in any way, you can always disable its update checking in the settings.`,
 			{
 				confirmText: "Update Now",
 				cancelText: "Cancel",
@@ -671,7 +671,7 @@ funcs_.loadSettings = (anotherTry = null) =>
 funcs_.loadDefaultSettings = () =>
 {
 	picsGlobalSettings = {};
-	picsSettings = [ { name: 'AnnoyingLisa', link: 'https://i.imgur.com/l5Jf0VP.png' }, { name: 'AngryLisaNoises', link: 'https://i.imgur.com/VMXymqg.png'} ]; // Placeholder
+	picsSettings = [ { name: 'AnnoyingLisa', link: 'https://i.imgur.com/eN6r9d6.png' }, { name: 'AngryLisaNoises', link: 'https://i.imgur.com/VMXymqg.png'} ]; // Placeholder
 	picsGlobalSettings[folderListName] = [ { name: mainFolderName, path: Configuration.mainFolderPath.Value } ];
 	picsGlobalSettings[mainFolderName] = picsSettings;
 	//funcs_.saveSettings(picsGlobalSettings);
@@ -1197,7 +1197,7 @@ funcs_.send2ChatBox = (from) => // from is event
 	{
 		if(ChatBoxText.replace(/\s/g, '').length <= 0) { ChatBoxText = null; }
 		else if(ChatBoxText.length > 2001) // 2001 is limit for text length
-		{ // +-return for interrupt action; or BdApi.showConfirmationModal
+		{ // +-return for interrupt action; or BdApi.UI.showConfirmationModal
 			ChatBoxText = null;
 			funcs_.showAlert(labelsNames.forYou, labelsNames.symbolsLimit);
 		}

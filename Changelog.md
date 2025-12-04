@@ -1,3 +1,6 @@
+# 0.6.8
+Fixed an issue with the update module and message module. Also, it should be mentioned that the support for the plugin will end at some point. One of my close relatives has recently passed away, and now I have almost no desire to continue making the constantly frustrating messenger more comfortable.
+
 # 0.6.7
 Fixed a display bug with plugin's main button caused by the new Soundmoji button. Also SendTextWithFile setting is now turned on by default.
 
