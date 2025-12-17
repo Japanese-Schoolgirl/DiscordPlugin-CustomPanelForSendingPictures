@@ -1,3 +1,6 @@
+# 0.6.9
+Fixed the names of classes that Discord changed again (for fun, I guess).
+
 # 0.6.8
 Fixed an issue with the update module and message module. Also, it should be mentioned that the support for the plugin will end at some point. One of my close relatives has recently passed away, and now I have almost no desire to continue making the constantly frustrating messenger more comfortable.
 

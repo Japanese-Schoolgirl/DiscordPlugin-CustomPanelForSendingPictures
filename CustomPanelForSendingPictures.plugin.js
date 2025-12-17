@@ -8,7 +8,7 @@
  * @website https://github.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures
  * @source https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
  * @updateUrl https://raw.githubusercontent.com/Japanese-Schoolgirl/DiscordPlugin-CustomPanelForSendingPictures/main/CustomPanelForSendingPictures.plugin.js
- * @version 0.6.8
+ * @version 0.6.9
  */
 
 /*========================| Info |========================*/
@@ -17,9 +17,9 @@ const config =
 	changelog:
 	[
 		{
-			title: `Fixed an issue with the update module and message module & Notice of possible discontinuation of updates`,
+			title: `Fixed a bug that prevented the panel from being displayed`,
 			type: "fixed", // without type || fixed || improved || progress
-			items: [`Fixed an issue with the update module and message module. Also, it should be mentioned that the support for the plugin will end at some point. One of my close relatives has recently passed away, and now I have almost no desire to continue making the constantly frustrating messenger more comfortable.`]
+			items: [`Fixed the names of classes that Discord changed again (for fun, I guess).`]
 		}
 	],
 	info:
@@ -873,13 +873,13 @@ funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 	let buttonCPFSP = document.getElementById(elementNames.CPFSP_buttonGoID);
 	if(!buttonCPFSP) { return }
 	let emojisGUI = buttonCPFSP.parentNode.parentNode.parentNode; // Up to "contentWrapper-"
-	let emojisPanel = emojisGUI.querySelector(searchNames.emojisPanel) || document.querySelector('div[class*="soundboardContainer_"]'); // Silly fix for soundmoji tab
+	let emojisPanel = emojisGUI.querySelector(searchNames.emojisPanel) || document.querySelector('div[class*="soundboardContainer"]'); // Silly fix for soundmoji tab
 	if(!emojisPanel) { return }
 
 	let allPicsSettings;
 	//# Previous button click fix: START
 	let emojisMenu = emojisGUI.querySelector(searchNames.emojisGUI);
-	let previousButton = emojisMenu.querySelector('div[class*="navButton_"][aria-selected*="true"]'); // Will return Button tag
+	let previousButton = emojisMenu.querySelector('div[class*="navButton"][aria-selected*="true"]'); // Will return Button tag
 	let previousButtonID = previousButton ? previousButton.id : null;
 	if(previousButtonID)
 	{
@@ -914,7 +914,7 @@ funcs_.moveToPicturesPanel = (elem = null, once = null) =>
 			previousButton.addEventListener("click", previousButtonFix, { once: true } );
 			previousButton.classList.value = previousButton.classList.value.replace('ButtonActive', 'Button');
 			// To not choose the already selected
-			let buttons = emojisMenu.querySelectorAll('div[class*="navButton_"]');
+			let buttons = emojisMenu.querySelectorAll('div[class*="navButton"]');
 			buttons.forEach((el) =>
 			{ // For each Button with label
 				if(el.id == previousButtonID || el.id == elementNames.CPFSP_buttonGoID) { return }
@@ -1118,7 +1118,7 @@ funcs_.addPicturesPanelButton = (emojisGUI) =>
 	let buttonCPFSP = document.createElement('div'); // Discord not using button tag for buttons anymore
 	buttonCPFSP.innerText = labelsNames.Pictures;
 	buttonCPFSP.setAttribute('id', elementNames.CPFSP_buttonGoID);
-	let buttonClass = emojisMenu.querySelector('div[class*="navButton_"]').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
+	let buttonClass = emojisMenu.querySelector('div[class*="navButton"]').classList.value.replace('ButtonActive', 'Button'); // Copy class from other button in this menu
 	buttonCPFSP.setAttribute('class', buttonClass);
 	buttonCPFSP.removeEventListener('click', funcs_.moveToPicturesPanel); // Insurance
 	buttonCPFSP.addEventListener('click', funcs_.moveToPicturesPanel);
