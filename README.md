@@ -1,4 +1,5 @@
 # The support for the plugin will end at some point. One of my close relatives has recently passed away, and now I have almost no desire to continue making the constantly frustrating messenger more comfortable. <br />
+# ...And now I've lost another important member of my family - my cat. Barsik had been with me since I was a child. <br />
 
 # Introduction:
 This plugin was written for my own use and for people I'm communicating with. But since plugin can be useful for someone else I'm uploading it here. In case you want to rewrite this plugin (and considering my inexperience, you probably should) also check the license file.<br />
